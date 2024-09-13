@@ -3,8 +3,9 @@ import dotenv from "dotenv";
 
 
 const configureEnvironment = () => {
-    const mode = 'dev'
-    //const mode = process.env.NODE_ENV;
+    dotenv.config();
+    const mode = process.env.NODE_ENV;
+    console.log("Environment: ", mode);
     const envFile = `.env.${mode}`;
     dotenv.config({ path: envFile });
 }
