@@ -7,33 +7,17 @@ on:
       - main
 
 jobs:
-  get-secrets-on-build-time:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Get secrets
-        run: |
-          echo ${{ secrets.ENV_PRD }} | base64 --decode > .env.prd
-      
-      - name: Upload .env.prd file
-        uses: actions/upload-artifact@v3
-        with:
-          name: prd-env
-          path: .env.prd
-          retention-days: 1
           
-
   dockerhub-push:
-    needs: get-secrets-on-build-time
     runs-on: ubuntu-latest
 
     steps:
     - name: Check out the repository
       uses: actions/checkout@v4
 
-    - name: Download .env.prd file
-      uses: actions/download-artifact@v3
-      with:
-        name: prd-env
+    - name: Get secrets
+      run: |
+        echo ${{ secrets.ENV_PRD }} | base64 --decode > .env.prd
 
     - name: Login into docker
       uses: docker/login-action@v3.2.0
@@ -49,28 +33,16 @@ jobs:
           copapel/webservices:latest
 
 
-  get-secrets-on-deploy-time:
-    needs: dockerhub-push
-    runs-on: ubuntu-latest
-    steps:
-      - name: Get secrets
-        run: |
-          echo ${{ secrets.ENV_DEPLOY }} | base64 --decode > .env.deploy
-      
-      - name: Upload .env.deploy file
-        uses: actions/upload-artifact@v3
-        with:
-          name: deploy-env
-          path: .env.deploy
-          retention-days: 1
-
-
   portainer-deploy:
-    needs: get-secrets-on-deploy-time
+    needs: dockerhub-push
     runs-on: ubuntu-latest
     steps:      
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Get secrets
+        run: |
+          echo ${{ secrets.ENV_DEPLOY }} | base64 --decode > .env.deploy
 
       - name: Download .env.deploy file
         uses: actions/download-artifact@v3
