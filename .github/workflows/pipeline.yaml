@@ -12,7 +12,7 @@ jobs:
     steps:
       - name: Get secrets
         run: |
-          echo "{{secrets.ENV_PRD}}" | base64 --decode > .env.prd
+          echo "{{secrets.ENV_PRD}}" | openssl base64 --decode > .env.prd
       
       - name: Upload .env.prd file
         uses: actions/upload-artifact@v3
@@ -54,7 +54,7 @@ jobs:
     steps:
       - name: Get secrets
         run: |
-          echo "{{secrets.ENV_DEPLOY}}" | base64 --decode > .env.deploy
+          echo "{{secrets.ENV_DEPLOY}}" | openssl base64 --decode > .env.deploy
       
       - name: Upload .env.deploy file
         uses: actions/upload-artifact@v3
