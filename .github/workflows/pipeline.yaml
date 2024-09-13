@@ -44,11 +44,6 @@ jobs:
         run: |
           echo ${{ secrets.ENV_DEPLOY }} | base64 --decode > .env.deploy
 
-      - name: Download .env.deploy file
-        uses: actions/download-artifact@v3
-        with:
-          name: deploy-env
-
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
