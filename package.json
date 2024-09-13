@@ -1,0 +1,29 @@
+{
+  "name": "ts-node-express",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/index.js",
+  "scripts": {
+    "build": "npx tsc",
+    "start": "node dist/main.js",
+    "dev": "nodemon src/main.ts",
+    "test": "nodemon src/services/llm_test.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.19.1",
+    "axios": "^1.7.7",
+    "dotenv": "^16.4.5",
+    "express": "^4.20.0"
+  },
+  "prisma": {
+    "schema": "src/models/prisma/schema.prisma"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.5.4",
+    "nodemon": "^3.1.4",
+    "prisma": "^5.19.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.2"
+  }
+}
