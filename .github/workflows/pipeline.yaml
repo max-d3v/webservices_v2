@@ -17,8 +17,9 @@ jobs:
       - name: Upload .env.prd file
         uses: actions/upload-artifact@v3
         with:
-          name: env-file
+          name: prd-env
           path: .env.prd
+          retention-days: 1
           
 
   dockerhub-push:
@@ -32,7 +33,7 @@ jobs:
     - name: Download .env.prd file
       uses: actions/download-artifact@v3
       with:
-        name: env-file
+        name: prd-env
 
     - name: Login into docker
       uses: docker/login-action@v3.2.0
@@ -59,8 +60,10 @@ jobs:
       - name: Upload .env.deploy file
         uses: actions/upload-artifact@v3
         with:
-          name: env-file
+          name: deploy-env
           path: .env.deploy
+          retention-days: 1
+
 
   portainer-deploy:
     needs: get-secrets-on-deploy-time
@@ -72,7 +75,7 @@ jobs:
       - name: Download .env.deploy file
         uses: actions/download-artifact@v3
         with:
-          name: env-file
+          name: deploy-env
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
