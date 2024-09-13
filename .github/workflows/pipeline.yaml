@@ -25,5 +25,5 @@ jobs:
       with:
         push: true
         tags:
-          copapel/copiloto_backend:latest
+          copapel/webservices:latest
 
