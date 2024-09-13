@@ -5,7 +5,7 @@
   "main": "src/index.js",
   "scripts": {
     "build": "npx tsc",
-    "start": "node dist/main.js",
+    "start": "node dist/primary-cluster.js",
     "dev": "nodemon src/main.ts",
     "test": "nodemon src/services/llm_test.ts"
   },
