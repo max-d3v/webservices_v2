@@ -1,6 +1,4 @@
 import {SapServices} from "../services/sap-services";
-import SL from "../models/slClass";
-import { CnpjJa } from "../models/cnpjClass";
 import { HttpError, HttpErrorWithDetails } from "../utils/errorHandler";
 import * as helperFunctions from "../utils/helperFunctions";
 import * as interfaces from "../types/interfaces";
@@ -35,7 +33,7 @@ class SapController {
                     const cpf = fornecedor.TaxId4;
                     const CardCode = fornecedor.CardCode;
                     const isValidCnpj = helperFunctions.validCNPJ(cnpj);
-                    const isValidCpf = helperFunctions.validaCPF(cpf);
+                    const isValidCpf = helperFunctions.validaCPF(cpf);  
 
                     if (!CardCode) {
                         throw new HttpError(400, `Código do fornecedor não encontrado (Não obedeceu regras do sap)`);
@@ -75,7 +73,7 @@ class SapController {
                         fornecedoresProcessados.push(fornecedor);
                         return;
                     } if (cpf && isValidCpf) {
-                        const dateIso = 'yyyy-mm-dd';
+                        //const dateIso = 'yyyy-mm-dd';
                         const dadosPessoaFisica: interfaces.DadosPessoaFisica = {
                             TributType: 9,
                         }
@@ -115,6 +113,9 @@ class SapController {
             throw new HttpError(err.statusCode || 500, 'Erro ao cadastrar fornecedores: ' + err.message);
         }
     }
+
+
+    
 }
 
 export const SapControllerInstance = SapController.getInstance();
