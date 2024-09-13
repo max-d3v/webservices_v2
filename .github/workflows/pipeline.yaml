@@ -7,13 +7,33 @@ on:
       - main
 
 jobs:
+  get-secrets-on-build-time:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get secrets
+        run: |
+          echo {{secrets.ENV_PRD}} | base64 --decode > .env.prd
+      
+      - name: Upload .env.prd file
+        uses: actions/upload-artifact@v3
+        with:
+          name: env-file
+          path: .env.prd
+          
+
   dockerhub-push:
+    needs: get-secrets-on-build-time
     runs-on: ubuntu-latest
 
     steps:
     - name: Check out the repository
       uses: actions/checkout@v4
-    
+
+    - name: Download .env.prd file
+      uses: actions/download-artifact@v3
+      with:
+        name: env-file
+
     - name: Login into docker
       uses: docker/login-action@v3.2.0
       with:
@@ -26,4 +46,42 @@ jobs:
         push: true
         tags:
           copapel/webservices:latest
+
+
+  get-secrets-on-deploy-time:
+    needs: dockerhub-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get secrets
+        run: |
+          echo {{secrets.ENV_DEPLOY}} | base64 --decode > .env.deploy
+      
+      - name: Upload .env.deploy file
+        uses: actions/upload-artifact@v3
+        with:
+          name: env-file
+          path: .env.deploy
+
+  portainer-deploy:
+    needs: get-secrets-on-deploy-time
+    runs-on: ubuntu-latest
+    steps:      
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+    - name: Download .env.deploy file
+      uses: actions/download-artifact@v3
+      with:
+        name: env-file
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '14'
+
+      - name: Install dependencies
+        run: npm install axios https dotenv typescript ts-node @types/node
+
+      - name: Run Portainer deploy script
+        run: npx ts-node ./portainer-deploy-script.ts
 
