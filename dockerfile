@@ -13,6 +13,10 @@ RUN npm i
 
 COPY . .
 
+ARG ENV_FILE
+COPY ${ENV_FILE} .env.prd
+
+
 #generate prisma client foer debian
 RUN npx prisma generate
 

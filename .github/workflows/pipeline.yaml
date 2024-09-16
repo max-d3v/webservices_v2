@@ -31,6 +31,8 @@ jobs:
         push: true
         tags:
           copapel/webservices:latest
+        build-args: |
+          ENV_FILE: .env.prd
 
 
   vps-deploy:
