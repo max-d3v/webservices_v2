@@ -5,6 +5,8 @@ const agent = new https.Agent({
     rejectUnauthorized: false
 });
 
+//STILL HAVE TO CHANGE A PORT MANUALLY
+
 class DeployPortainer {
     private portainerUrl: string | undefined;
     private dockerAuth: string | undefined;
@@ -183,7 +185,7 @@ class DeployPortainer {
                 "name": this.NomeImagem,
                 "Image": this.Imagem,
                 "ExposedPorts": { "80/tcp": {} },
-                "HostConfig": { "PortBindings": { "8010/tcp" : [{ "HostPort": this.ExposedPorts }] }}
+                "HostConfig": { "PortBindings": { "8122/tcp" : [{ "HostPort": this.ExposedPorts }] }}
             },
             httpsAgent: agent
         }
