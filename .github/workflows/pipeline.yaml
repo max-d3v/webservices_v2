@@ -35,6 +35,8 @@ jobs:
         push: true
         tags:
           copapel/webservices:latest
+        context: .
+        file: ./Dockerfile
 
 
   vps-deploy:
