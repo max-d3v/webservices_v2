@@ -1,6 +1,7 @@
 import cluster from "cluster";
 import os from "os";
 
+try {
 const CORE_COUNT = os.cpus().length;
 let USABLE_CORES = CORE_COUNT - 2;
 if (USABLE_CORES < 1) {
@@ -9,7 +10,7 @@ if (USABLE_CORES < 1) {
 
 console.log("Number of cores used: ", USABLE_CORES);
 
-try {
+
     cluster.setupPrimary({
         exec: './dist/main.js',
         args: ['--use', 'https']
