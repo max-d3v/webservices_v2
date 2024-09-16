@@ -12,6 +12,7 @@ COPY package-lock.json .
 RUN npm i
 
 COPY . .
+COPY .env.prd .
 
 #generate prisma client foer debian
 RUN npx prisma generate
