@@ -5,8 +5,6 @@ export interface ExtendedRequest extends Request {
     executionTime?: number;
 }
 
-//mudar esse controller pra routerController e criar o serviceController pra todos os metodos publicos do sap-services
-
 
 const runService = async (
     serviceFunction: () => Promise<any>,

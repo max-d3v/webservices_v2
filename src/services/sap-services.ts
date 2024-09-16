@@ -36,6 +36,8 @@ export class SapServices {
         }
     }
 
+
+    //Cadastro de fornecedores
     public async getFornecedoresLeads(): Promise<interfaces.Fornecedor[]> {
         try {
             const query = `SELECT DISTINCT A."CardCode", A."Phone1", A."Cellular", A."AgentCode", A."CardName", A."CardType", B."TaxId0", A."State1",B."TaxId4" 
@@ -75,6 +77,3 @@ export class SapServices {
         }
     }
 }
-
-//export const SapServicesInstance = SapServices.getInstance();
-
