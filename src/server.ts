@@ -1,8 +1,7 @@
 import express, { Application, Router } from "express";
 import { ErrorHandling } from "./utils/errorHandler";
-
-
-
+import { authMiddleware } from "./middlewares/auth";
+import routes from "./router/routes";
 
 export class HttpError extends Error {
   constructor(public statusCode: number, message: string) {
@@ -15,7 +14,7 @@ class Server {
   private PORT: number;
   private routes: Router;
   
-  constructor(routes: Router) {
+  constructor() {
     this.app = express();
     this.PORT = parseInt(process.env.PORT as string);
     this.routes = routes;
@@ -23,6 +22,7 @@ class Server {
 
   private applyMiddlewares(): void {
     this.app.use(express.json());
+    this.app.use(authMiddleware);
   }
 
   private applyRoutes(routes: Router): void {

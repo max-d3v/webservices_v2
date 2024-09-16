@@ -1,4 +1,3 @@
-import Server from "./server";
 import dotenv from "dotenv";
 
 
@@ -13,14 +12,10 @@ const configureEnvironment = () => {
 
 const startServer = async () => {
     configureEnvironment();
-
-
-    const { default: router } = await import("./router/routes");
-
-    const routes = router;
     
-    console.log("Variaveis de ambiente:", process.env);
-    const server = new Server(routes);
+    const { default: Server } = await import("./server");
+
+    const server = new Server();
 
     server.start(); 
 }
