@@ -24,6 +24,7 @@ interface slConfig {
         port: string;
         token: string;
         url: string;
+        companyName: string;
     };
 }
 
@@ -50,7 +51,8 @@ export default class SL {
             webService: {
                 port: process.env.WEB_SERVICE_PORT!,
                 token: process.env.WEB_SERVICE_TOKEN!,
-                url: process.env.WEB_SERVICE_URL!
+                url: process.env.WEB_SERVICE_URL!,
+                companyName: process.env.WEB_SERVICE_COMPANY_NAME!
             }
         };
 
@@ -121,7 +123,11 @@ export default class SL {
     }
 
     async querySAP(query: string): Promise<{ data?: any; message?: string }> {
-        const url = `${this.slConfig.webService.url}:${this.slConfig.webService.port}?token=${this.slConfig.webService.token}&query=${query}`
+        const database_name = this.slConfig.serviceLayers.companyName;
+        const queryWithReplacedDbName = query.replace("SBO_COPAPEL_PRD", database_name).replace("SBO_COPAPEL_TST", database_name);
+
+        const url = `${this.slConfig.webService.url}:${this.slConfig.webService.port}?token=${this.slConfig.webService.token}&query=${queryWithReplacedDbName}`
+
         const config = {
             headers: this.headers,
             httpsAgent: agent

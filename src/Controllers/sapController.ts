@@ -73,7 +73,6 @@ class SapController {
                         fornecedoresProcessados.push(fornecedor);
                         return;
                     } if (cpf && isValidCpf) {
-                        //const dateIso = 'yyyy-mm-dd';
                         const dadosPessoaFisica: interfaces.DadosPessoaFisica = {
                             TributType: 9,
                         }
