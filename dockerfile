@@ -21,4 +21,4 @@ EXPOSE 8122
 
 RUN npm run build
 
-CMD ["npm", "run", "start"]
+CMD ["/bin/bash"]
