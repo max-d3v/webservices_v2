@@ -12,7 +12,7 @@ console.log("Number of cores used: ", USABLE_CORES);
 
 
     cluster.setupPrimary({
-        exec: './dist/main.js',
+        exec: './dist/src/main.js',
         args: ['--use', 'https']
     });
     
