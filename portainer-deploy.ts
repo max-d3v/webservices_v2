@@ -185,7 +185,12 @@ class DeployPortainer {
                 "name": this.NomeImagem,
                 "Image": this.Imagem,
                 "ExposedPorts": { "80/tcp": {} },
-                "HostConfig": { "PortBindings": { "8122/tcp" : [{ "HostPort": this.ExposedPorts }] }},
+                "HostConfig": { 
+                    "PortBindings": { "8122/tcp" : [{ "HostPort": this.ExposedPorts }] },
+                    "Memory": 500000000,
+                    "MemorySwap": 500000000,
+
+                },
                 "Tty": true,
                 "OpenStdin": true,
                 "StdinOnce": false
