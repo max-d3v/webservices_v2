@@ -42,7 +42,7 @@ export class SapServices {
             WHERE "CardType" = 'S' 
             AND "CreateDate" >= '${isoString}'  
             AND (B."TaxId0" <> '' OR B."TaxId4" <> '') 
-            ORDER BY "CardCode" DESC`;
+            ORDER BY "CardCode" DESC LIMIT 50`;
 
             console.log("Query: ", query);
 
