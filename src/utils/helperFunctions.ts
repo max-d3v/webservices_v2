@@ -124,3 +124,9 @@ export const validaCPF = (cpf: string | null) => {
  export const isIsoDate = (date: string) => {
     return new Date(date).toISOString().split('T')[0] === date;
   }
+
+  export const isIsoString = (str: string): boolean => {
+    const isoDateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    return isoDateRegex.test(str) && isIsoDate(str);
+  }
+  

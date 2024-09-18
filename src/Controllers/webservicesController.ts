@@ -41,6 +41,7 @@ const runService = async (
         request.executionTime = executionTime;
 
         response.status(statusCode).json({ message: "Success", data: result });
+
         logger.info({
             serviceId: serviceId,
             message: `Response sent to user`,
@@ -71,7 +72,7 @@ const runService = async (
         try {
             logger.info({
                 serviceId: serviceId,
-                message: `Logging service error`,
+                message: `Logged service error`,
                 url: request.originalUrl,
                 timestamp: new Date().toISOString()
             });
@@ -84,7 +85,6 @@ const runService = async (
                 timestamp: new Date().toISOString()
             });
         }
-        
         console.error(error);        
         next(error);
     }

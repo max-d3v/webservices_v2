@@ -15,9 +15,14 @@ export class SapController {
         await this.sapServices.maintainSLLogin();
     }
 
-    public async CadastroFornecedores() {
+    public async AtualizaCadastroFornecedores(isoString: string) {
         try {
-            const fornecedores = await this.sapServices.getFornecedoresLeads();
+            const isIsoString = helperFunctions.isIsoString(isoString);
+            if (!isIsoString) {
+                throw new HttpError(400, 'Data inválida (deve ser uma data no formato ISO ("yyyy-mm-dd"))');
+            }
+            const fornecedores = await this.sapServices.getFornecedoresLeads(isoString);
+
             if (helperFunctions.objetoVazio(fornecedores[0])) {
                 throw new HttpError(404, 'Nenhum fornecedor encontrado');
             }
@@ -84,13 +89,21 @@ export class SapController {
                                 U_RSD_PFouPJ: "PF",
                             }
                             fornecedor.U_RSD_PFouPJ = "PF";
+
                             await this.sapServices.updateFornecedor(dadosPessoaFisica, CardCode);
                             fornecedoresProcessados.push(fornecedor);
                             return;
                         }
                         throw new HttpError(400, 'Erro inesperado');
                     } catch (err: any) {
+                        const fornecedorIsInDb = await this.sapServices.findFornecedorCadastrado(fornecedor.CardCode);
+                        if (fornecedorIsInDb) {
+                            await this.sapServices.atualizaFornecedorCadastrado({CardCode: fornecedor.CardCode, Status: "Erro ao atualizar"});
+                        } else {
+                            await this.sapServices.logFornecedorCadastrado({CardCode: fornecedor.CardCode, Status: "Erro ao atualizar"});
+                        }
                         processErrors.push({CardCode: fornecedor.CardCode, error: err.message});
+                        
                     }
                 }));
 

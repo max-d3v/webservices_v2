@@ -28,9 +28,9 @@ class Server {
     this.app.use("/webservices", routes);
   }
 
-  public start() {
+  public async start() {
     this.applyMiddlewares();
-    this.applyRoutes();
+    await this.applyRoutes();
     this.app.use(ErrorHandling);
     this.app.listen(this.PORT, () => {
       console.log(`Server is running on port ${this.PORT} in ${process.env.NODE_ENV} mode`);

@@ -134,16 +134,19 @@ model banners_novo {
 }
 
 model blog {
-  id        Int       @id @default(autoincrement()) @db.UnsignedInt
-  id_cat    String?   @db.VarChar(255)
-  data      DateTime? @db.Date
-  titulo    String?   @db.VarChar(255)
-  subtitulo String?   @db.VarChar(255)
-  descr     String?   @db.Text
-  img       String?   @db.VarChar(255)
-  tags      String?   @db.VarChar(255)
-  slug      String?   @db.VarChar(255)
-  status    String?   @db.Char(1)
+  id               Int       @id @default(autoincrement()) @db.UnsignedInt
+  id_cat           String?   @db.VarChar(255)
+  data             DateTime? @db.Date
+  titulo           String?   @db.VarChar(255)
+  subtitulo        String?   @db.VarChar(255)
+  descr            String?   @db.Text
+  img              String?   @db.VarChar(255)
+  tags             String?   @db.VarChar(255)
+  slug             String?   @db.VarChar(255)
+  title_tag        String?   @db.VarChar(60)
+  meta_description String?   @db.VarChar(160)
+  keywords         String?   @db.VarChar(160)
+  status           String?   @db.Char(1)
 }
 
 model blog_categorias {
@@ -1946,6 +1949,8 @@ model sap_OINV {
   Venda                String?              @db.VarChar(10)
   ContabilizarLoja     String?              @db.VarChar(10)
   PregaoEletronico     String?              @db.VarChar(50)
+  NumRomaneio          String?              @db.VarChar(20)
+  ValorTotal           Decimal?             @db.Decimal(16, 2)
   sap_INV1             sap_INV1[]
   sap_clientes         sap_clientes?        @relation(fields: [CodigoCliente], references: [CardCode], onDelete: NoAction, onUpdate: NoAction, map: "FK_CLIENTE_OINV")
   sap_cond_pagamentos  sap_cond_pagamentos? @relation(fields: [CodigoPagamento], references: [GroupNumber], onDelete: NoAction, onUpdate: NoAction, map: "FK_OINV_OCTG")
@@ -2440,6 +2445,7 @@ model sap_itens {
   RevisaoMKT        String?             @db.VarChar(1)
   N3                Int?
   PicturName        String?             @db.VarChar(15)
+  Marketing         String?             @db.VarChar(1)
   sap_INV1          sap_INV1[]
   sap_RIN1          sap_RIN1[]
   sap_valor_estoque sap_valor_estoque[]
@@ -2965,4 +2971,19 @@ model webservice_logs {
   status     String?   @db.VarChar(50)
   caller     String?   @db.VarChar(255)
   time_taken Int?
+}
+
+model fornecedores_cadastro_geral_log {
+  id        Int       @id @default(autoincrement())
+  CardCode  String?   @unique(map: "CardCode") @db.VarChar(50)
+  timestamp DateTime? @default(dbgenerated("(now())")) @db.DateTime(0)
+  Status    String?   @db.VarChar(50)
+}
+
+model sap_OUSR_copy {
+  USERID             Int     @id @default(autoincrement()) @db.UnsignedInt
+  USER_CODE          String? @db.VarChar(100)
+  U_NAME             String? @db.VarChar(100)
+  senhaSAP           String? @db.VarChar(50)
+  statusSenhaNovaSAP String? @default("N") @db.VarChar(1)
 }
