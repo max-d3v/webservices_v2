@@ -17,7 +17,6 @@ const runService = async (
     const serviceId = uuidv4();
 
     try {
-        
         logger.info({
             serviceId: serviceId,
             message: `Starting service`,
@@ -58,7 +57,7 @@ const runService = async (
         logger.info({
             serviceId: serviceId,
             message: `Logging request`,
-            url: request.originalUrl,
+            url: request.originalUrl || "Não foi possível obter o url da request",
             timestamp: new Date().toISOString()
         });
         await databaseServices.logRequest(request, "success");

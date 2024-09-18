@@ -1,13 +1,12 @@
 export interface Fornecedor {
     CardCode: string;
-    Phone1: string | null;
-    Cellular: string | null;
-    AgentCode: string | null;
     CardName: string;
     CardType: string;
     TaxId0: string | null | "";
     State1: string | null | "";
     TaxId4: string | null | "";
+    U_RSD_PFouPJ?: "PJ" | "MEI" | "PF";
+    U_TX_SN?: 1 | 2 ; 
 }
 
 export interface DadosPessoaJuridica {

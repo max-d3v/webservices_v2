@@ -34,13 +34,13 @@ export class SapServices {
     //Cadastro de fornecedores
     public async getFornecedoresLeads(): Promise<interfaces.Fornecedor[]> {
         try {
-            const query = `SELECT DISTINCT A."CardCode", A."Phone1", A."Cellular", A."AgentCode", A."CardName", A."CardType", B."TaxId0", A."State1",B."TaxId4" 
+            const query = `SELECT DISTINCT A."CardCode", A."CardName", A."CardType", B."TaxId0", A."State1", B."TaxId4" 
             FROM "SBO_COPAPEL_TST".OCRD A 
             INNER JOIN "SBO_COPAPEL_TST".CRD7 B ON A."CardCode" = B."CardCode" 
             WHERE "CardType" = 'S' 
-            AND "CreateDate" >= ADD_MONTHS(CURRENT_DATE, -3)
+            AND "CreateDate" >= ADD_MONTHS(CURRENT_DATE, -6)
             AND (B."TaxId0" <> '' OR B."TaxId4" <> '') 
-            ORDER BY "CardCode" DESC LIMIT 10`;
+            ORDER BY "CardCode" DESC LIMIT 200`;
 
             const fornecedores = await this.sl.querySAP(query);
 
