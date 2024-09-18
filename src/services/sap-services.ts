@@ -9,18 +9,12 @@ export class SapServices {
     private sl: SL;
     private cnpjJa: CnpjJa;
 
-    private constructor() {
+    public constructor() {
         this.sl = new SL();
-        this.maintainSLLogin();
         this.cnpjJa = new CnpjJa();
     }
 
-    public static getInstance(): SapServices {
-        if (!SapServices.instance) {
-            SapServices.instance = new SapServices();
-        }
-        return SapServices.instance;
-    }
+    
 
     public async maintainSLLogin() {
         try {

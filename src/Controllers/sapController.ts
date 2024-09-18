@@ -3,17 +3,18 @@ import { HttpError, HttpErrorWithDetails } from "../utils/errorHandler";
 import * as helperFunctions from "../utils/helperFunctions";
 import * as interfaces from "../types/interfaces";
 
-class SapController {
+export class SapController {
     private static instance: SapController;
     private sapServices: SapServices;
-
+    
     constructor() {
-        this.sapServices = SapServices.getInstance();
+        this.sapServices = new SapServices();
     }
 
-    public static getInstance(): SapController {
+    public static async getInstance(): Promise<SapController> {
         if (!SapController.instance) {
             SapController.instance = new SapController();
+            await SapController.instance.sapServices.maintainSLLogin();
         }
         return SapController.instance;
     }
@@ -59,7 +60,7 @@ class SapController {
                                 throw new HttpError(400, 'Data de registro da microempresa inválida (deve ser uma data no formato ISO ("yyyy-mm-dd"))');
                             }
                             const dadosMicroEmpresa: interfaces.DadosMicroempresa = {
-                                TributType: 10,
+                                U_RSD_PFouPJ: "MEI",
                             }
                             await this.sapServices.updateFornecedor(dadosMicroEmpresa, CardCode);
                             fornecedoresProcessados.push(fornecedor);
@@ -67,14 +68,15 @@ class SapController {
                         }
                         const optanteSimplesNacional = fornecedorData.company.simples.optant;
                         const dadosPessoaJuridica: interfaces.DadosPessoaJuridica = {
-                            U_TX_SN: optanteSimplesNacional ? 1 : 2
+                            U_TX_SN: optanteSimplesNacional ? 1 : 2,
+                            U_RSD_PFouPJ: "PJ",
                         }
                         await this.sapServices.updateFornecedor(dadosPessoaJuridica, CardCode);
                         fornecedoresProcessados.push(fornecedor);
                         return;
                     } if (cpf && isValidCpf) {
                         const dadosPessoaFisica: interfaces.DadosPessoaFisica = {
-                            TributType: 9,
+                            U_RSD_PFouPJ: "PF",
                         }
                         await this.sapServices.updateFornecedor(dadosPessoaFisica, CardCode);
                         fornecedoresProcessados.push(fornecedor);
@@ -117,4 +119,3 @@ class SapController {
     
 }
 
-export const SapControllerInstance = SapController.getInstance();

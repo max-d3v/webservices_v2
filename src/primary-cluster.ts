@@ -9,8 +9,6 @@ if (USABLE_CORES < 1) {
 }
 
 console.log("Number of cores used: ", USABLE_CORES);
-
-
     cluster.setupPrimary({
         exec: './dist/src/main.js',
         args: ['--use', 'https']

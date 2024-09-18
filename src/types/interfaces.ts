@@ -12,14 +12,15 @@ export interface Fornecedor {
 
 export interface DadosPessoaJuridica {
     U_TX_SN: 1 | 2 ; // se é optante ou não pelo simples nacional
+    U_RSD_PFouPJ: "PJ";
 }
 
 export interface DadosPessoaFisica {
-    TributType: 9;
+    U_RSD_PFouPJ: "PF";
 }
 
 export interface DadosMicroempresa {
-    TributType: 10;
+    U_RSD_PFouPJ: "MEI";
 }
 
 
