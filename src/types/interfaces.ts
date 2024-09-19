@@ -6,20 +6,49 @@ export interface Fornecedor {
     State1: string | null | "";
     TaxId4: string | null | "";
     U_RSD_PFouPJ?: "PJ" | "MEI" | "PF";
-    U_TX_SN?: 1 | 2 ; 
+    U_TX_SN?: 1 | 2;
 }
 
-export interface DadosPessoaJuridica {
-    U_TX_SN: 1 | 2 ; // se é optante ou não pelo simples nacional
-    U_RSD_PFouPJ: "PJ";
+export interface FornecedorAdress {
+    Address: string;
 }
 
-export interface DadosPessoaFisica {
+export interface TemplateFiscal {
+    Address: string;
+    BPCode: string;
+    AddrType: "bo_ShipTo";
+    TaxId1: "Isento" | string;
+}
+
+
+
+export interface BaseFornecedorData {
+    BPFiscalTaxIDCollection: TemplateFiscal[];    
+    U_TX_IndIEDest: null | "9" | "1";
+    U_RSD_PFouPJ: "PF" | "PJ" | "MEI" | null;
+}
+
+export interface DadosPessoaFisica extends BaseFornecedorData {
     U_RSD_PFouPJ: "PF";
+    U_TX_IndIEDest: "9";
 }
 
-export interface DadosMicroempresa {
+export interface BasePessoaJuridicaData extends BaseFornecedorData {
+    U_TX_IndIEDest: "9" | "1";
+}
+
+export interface DadosMicroempresa extends BasePessoaJuridicaData {
     U_RSD_PFouPJ: "MEI";
+}
+
+export interface DadosPessoaJuridica extends BasePessoaJuridicaData {
+    U_RSD_PFouPJ: "PJ"; 
+    U_TX_SN: 1 | 2;
+}
+
+export interface FornecedorProcessado {
+    CardCode: string;
+    data: DadosPessoaFisica | DadosPessoaJuridica | DadosMicroempresa;
 }
 
 
@@ -54,47 +83,48 @@ export interface FornecedorData {
             history: Array<SimplesSimeiHistory>;
         };
         members: Array<Member>;
-        alias: string;
-        founded: string;
-        head: boolean;
-        statusDate: string;
-        status: {
-            id: number;
-            text: string;
-        };
-        reason?: {
-            id: number;
-            text: string;
-        };
-        specialDate?: string;
-        special?: {
-            id: number;
-            text: string;
-        };
-        address: {
-            municipality: number;
-            street: string;
-            number: string;
-            district: string;
-            city: string;
-            state: 'AC' | 'AL' | 'AM' | 'AP' | 'BA' | 'CE' | 'DF' | 'ES' | 'GO' | 'MA' | 'MG' | 'MS' | 'MT' | 'PA' | 'PB' | 'PE' | 'PI' | 'PR' | 'RJ' | 'RN' | 'RO' | 'RR' | 'RS' | 'SC' | 'SP' | 'SE' | 'TO';
-            details: string;
-            zip: string;
-            latitude: number;
-            longitude: number;
-        };
-        country: {
-            id: number;
-            name: string;
-        };
-        phones: Array<Phone>;
-        emails: Array<Email>;
-        mainActivity: Activity;
-        sideActivities: Array<Activity>;
-        registrations: Array<Registration>;
-        suframa: Array<Suframa>;
+    }
+    alias: string;
+    founded: string;
+    head: boolean;
+    statusDate: string;
+    status: {
+        id: number;
+        text: string;
     };
-}
+    reason?: {
+        id: number;
+        text: string;
+    };
+    specialDate?: string;
+    special?: {
+        id: number;
+        text: string;
+    };
+    address: {
+        municipality: number;
+        street: string;
+        number: string;
+        district: string;
+        city: string;
+        state: 'AC' | 'AL' | 'AM' | 'AP' | 'BA' | 'CE' | 'DF' | 'ES' | 'GO' | 'MA' | 'MG' | 'MS' | 'MT' | 'PA' | 'PB' | 'PE' | 'PI' | 'PR' | 'RJ' | 'RN' | 'RO' | 'RR' | 'RS' | 'SC' | 'SP' | 'SE' | 'TO';
+        details: string;
+        zip: string;
+        latitude: number;
+        longitude: number;
+    };
+    country: {
+        id: number;
+        name: string;
+    };
+    phones: Array<Phone>;
+    emails: Array<Email>;
+    mainActivity: Activity;
+    sideActivities: Array<Activity>;
+    registrations: Array<Registration>;
+    suframa: Array<Suframa>;
+};
+
 
 interface SimplesSimeiHistory {
     from: string;

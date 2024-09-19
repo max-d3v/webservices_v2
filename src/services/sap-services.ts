@@ -130,6 +130,16 @@ export class SapServices {
         }
     }
 
+    public async getFornecedorAdresses(CardCode: string) {
+        try {
+            const query = `SELECT "Address" FROM "SBO_COPAPEL_PRD".CRD7 WHERE "CardCode" = '${CardCode}' AND "AddrType" = 'S'`;
+            const fornecedorAdresses = await this.sl.querySAP(query);
+            return fornecedorAdresses.data;
+        } catch (err: any) {
+            throw new HttpError(500, 'Erro ao buscar endereços do fornecedor: ' + err.message);
+        }
+    }
+
 
 
 }

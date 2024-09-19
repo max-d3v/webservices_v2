@@ -28,7 +28,7 @@ export class SapController {
             }
 
             const processErrors: any[] = [];
-            const fornecedoresProcessados: interfaces.Fornecedor[] = [];
+            const fornecedoresProcessados: any[] = [];
 
             for (let i = 0; i < fornecedores.length; i += 50) {
                 const batch = fornecedores.slice(i, i + 50);
@@ -42,6 +42,7 @@ export class SapController {
                         const CardCode = fornecedor.CardCode;
                         const isValidCnpj = helperFunctions.validCNPJ(cnpj);
                         const isValidCpf = helperFunctions.validaCPF(cpf);  
+                        const estado = fornecedor.State1;
 
                         if (!CardCode) {
                             throw new HttpError(400, `Código do fornecedor não encontrado (Não obedeceu regras do sap)`);
@@ -57,41 +58,99 @@ export class SapController {
                             throw new HttpError(400, `Não foi enviado um cpf ou cnpj (Não obedeceu regras do sap)`);
                         }
 
+                        const baseFornecedorData: interfaces.BaseFornecedorData = {
+                            BPFiscalTaxIDCollection: [],
+                            U_TX_IndIEDest: null,
+                            U_RSD_PFouPJ: null,
+                        }
+
                         if (cnpj && isValidCnpj) {
                             const cleanedCnpj = cnpj.replace(/\D/g, '');
                             const fornecedorData = await this.sapServices.getFornecedorByCnpj(cleanedCnpj);
                             const isMEI = fornecedorData.company.simei.optant;
+                            const registrations = fornecedorData.registrations;
+                            const stateRegistration = registrations.find((registration) => registration.state === estado); 
+                            const isContribuinteICMS = stateRegistration?.enabled    
+
+                            const fornecedorAdresses: interfaces.FornecedorAdress[] = await this.sapServices.getFornecedorAdresses(CardCode);
+                            if (helperFunctions.objetoVazio(fornecedorAdresses)) {
+                                throw new HttpError(404, 'Nenhum endereço encontrado para o fornecedor');
+                            }
+                            const isInscricaoEstadualEnabled = stateRegistration?.number && isContribuinteICMS ? stateRegistration.number : "Isento";
+                            
+
+
+
+
+                            const indieDest = isContribuinteICMS ? "1" : "9";
+                            const BPFiscalTaxIDCollection: interfaces.TemplateFiscal[] = [];
+
+                            for ( const adress of fornecedorAdresses ) {
+                                const templateFiscal: interfaces.TemplateFiscal = {
+                                    Address: adress.Address,
+                                    BPCode: CardCode,
+                                    AddrType: "bo_ShipTo",
+                                    TaxId1: isInscricaoEstadualEnabled,
+                                }
+                                BPFiscalTaxIDCollection.push(templateFiscal);
+                            }
+
+                            const BasePessoaJuridicaData: interfaces.BasePessoaJuridicaData = {
+                                ...baseFornecedorData,
+                                BPFiscalTaxIDCollection: BPFiscalTaxIDCollection,
+                                U_TX_IndIEDest: indieDest,
+                            }
+
                             if (isMEI) {
                                 const registerDate = fornecedorData.company.simei.since;
                                 if (!helperFunctions.isIsoDate(registerDate)) {
                                     throw new HttpError(400, 'Data de registro da microempresa inválida (deve ser uma data no formato ISO ("yyyy-mm-dd"))');
                                 }
                                 const dadosMicroEmpresa: interfaces.DadosMicroempresa = {
+                                    ...BasePessoaJuridicaData,
                                     U_RSD_PFouPJ: "MEI",
-                                }
+                                }   
                                 fornecedor.U_RSD_PFouPJ = "MEI";
                                 await this.sapServices.updateFornecedor(dadosMicroEmpresa, CardCode);
-                                fornecedoresProcessados.push(fornecedor);
+                                fornecedoresProcessados.push({CardCode: fornecedor.CardCode, data: dadosMicroEmpresa});
                                 return;
                             }
                             const optanteSimplesNacional = fornecedorData.company.simples.optant;
                             const dadosPessoaJuridica: interfaces.DadosPessoaJuridica = {
+                                ...BasePessoaJuridicaData,
                                 U_TX_SN: optanteSimplesNacional ? 1 : 2,
                                 U_RSD_PFouPJ: "PJ",
                             }
                             fornecedor.U_RSD_PFouPJ = "PJ";
                             fornecedor.U_TX_SN = optanteSimplesNacional ? 1 : 2;
                             await this.sapServices.updateFornecedor(dadosPessoaJuridica, CardCode);
-                            fornecedoresProcessados.push(fornecedor);
+                            fornecedoresProcessados.push({CardCode: fornecedor.CardCode, data: dadosPessoaJuridica});
                             return;
                         } if (cpf && isValidCpf) {
-                            const dadosPessoaFisica: interfaces.DadosPessoaFisica = {
-                                U_RSD_PFouPJ: "PF",
+                            const fornecedorAdresses: interfaces.FornecedorAdress[] = await this.sapServices.getFornecedorAdresses(CardCode);
+                            if (helperFunctions.objetoVazio(fornecedorAdresses)) {
+                                throw new HttpError(404, 'Nenhum endereço encontrado para o fornecedor');
                             }
-                            fornecedor.U_RSD_PFouPJ = "PF";
+
+                            for ( const adress of fornecedorAdresses ) {
+                                const templateFiscal: interfaces.TemplateFiscal = {
+                                    Address: adress.Address,
+                                    BPCode: CardCode,
+                                    AddrType: "bo_ShipTo",
+                                    TaxId1: "Isento",   
+                                }
+                                baseFornecedorData.BPFiscalTaxIDCollection.push(templateFiscal);
+                            }
+                            
+                            const dadosPessoaFisica: interfaces.DadosPessoaFisica = {
+                                ...baseFornecedorData,
+                                U_RSD_PFouPJ: "PF",
+                                U_TX_IndIEDest: "9",
+                            }
+                            
 
                             await this.sapServices.updateFornecedor(dadosPessoaFisica, CardCode);
-                            fornecedoresProcessados.push(fornecedor);
+                            fornecedoresProcessados.push({CardCode: fornecedor.CardCode, data: dadosPessoaFisica});
                             return;
                         }
                         throw new HttpError(400, 'Erro inesperado');
