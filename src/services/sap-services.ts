@@ -42,7 +42,7 @@ export class SapServices {
             WHERE "CardType" = 'S' 
             AND "CreateDate" >= '${isoString}'  
             AND (B."TaxId0" <> '' OR B."TaxId4" <> '') 
-            ORDER BY "CardCode" DESC LIMIT 50`;
+            ORDER BY "CardCode"`;
 
             console.log("Query: ", query);
 
@@ -90,6 +90,7 @@ export class SapServices {
             }
             const fornecedorExists = await this.findFornecedorCadastrado(fornecedorObj.CardCode);
             if (fornecedorExists) {
+                console.log("Tried to update fornecedor that already exists: ", fornecedorObj.CardCode);
                 return false;
             }
             const fornecedorLog = await this.prisma.fornecedores_cadastro_geral_log.create({

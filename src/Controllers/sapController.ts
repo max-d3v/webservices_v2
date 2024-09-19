@@ -79,9 +79,6 @@ export class SapController {
                             const isInscricaoEstadualEnabled = stateRegistration?.number && isContribuinteICMS ? stateRegistration.number : "Isento";
                             
 
-
-
-
                             const indieDest = isContribuinteICMS ? "1" : "9";
                             const BPFiscalTaxIDCollection: interfaces.TemplateFiscal[] = [];
 
@@ -110,7 +107,6 @@ export class SapController {
                                     ...BasePessoaJuridicaData,
                                     U_RSD_PFouPJ: "MEI",
                                 }   
-                                fornecedor.U_RSD_PFouPJ = "MEI";
                                 await this.sapServices.updateFornecedor(dadosMicroEmpresa, CardCode);
                                 fornecedoresProcessados.push({CardCode: fornecedor.CardCode, data: dadosMicroEmpresa});
                                 return;
@@ -121,8 +117,6 @@ export class SapController {
                                 U_TX_SN: optanteSimplesNacional ? 1 : 2,
                                 U_RSD_PFouPJ: "PJ",
                             }
-                            fornecedor.U_RSD_PFouPJ = "PJ";
-                            fornecedor.U_TX_SN = optanteSimplesNacional ? 1 : 2;
                             await this.sapServices.updateFornecedor(dadosPessoaJuridica, CardCode);
                             fornecedoresProcessados.push({CardCode: fornecedor.CardCode, data: dadosPessoaJuridica});
                             return;
