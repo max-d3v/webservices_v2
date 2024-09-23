@@ -1,7 +1,7 @@
 import express, { Application, Router } from "express";
 import { ErrorHandling } from "./utils/errorHandler";
 import { authMiddleware } from "./middlewares/auth";
-import { createRoutes } from "./router/routes";
+import routerClass from "./router/routes";
 
 export class HttpError extends Error {
   constructor(public statusCode: number, message: string) {
@@ -24,7 +24,8 @@ class Server {
   }
 
   private async applyRoutes(): Promise<void> {
-    const routes = await createRoutes();
+    const routes = new routerClass().getRouter();
+    
     this.app.use("/webservices", routes);
   }
 

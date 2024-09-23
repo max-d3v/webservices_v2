@@ -11,15 +11,15 @@ export class HttpError extends Error {
       super(statusCode, message);
     }
   }
-export const ErrorHandling = (err: HttpError | HttpErrorWithDetails | Error, req: Request, res: Response, next: NextFunction): void => {
+export const ErrorHandling = (err: HttpError | HttpErrorWithDetails | Error, req: Request, res: Response, next: NextFunction): Response => {
     console.error(err.stack);
     const statusCode = (err as HttpError).statusCode || 500;
     const message = err.message || 'An unexpected error occurred';
     
     if (err instanceof HttpErrorWithDetails) {
       console.log(err);
-        res.status(statusCode).json({ error: message, details: err.details });
+      return res.status(statusCode).json({ error: message, details: err.details });
     } else {
-        res.status(statusCode).json({ error: message });
+        return res.status(statusCode).json({ error: message });
     }
 }

@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { databaseServices } from "../services/database-services";
+import { DatabaseServices } from "../services/database-services";
 import { logger } from "../middlewares/logger";
 import { v4 as uuidv4 } from 'uuid';
 
@@ -15,6 +15,7 @@ const runService = async (
     next: NextFunction
 ) => {
     const serviceId = uuidv4();
+    const databaseServices = DatabaseServices.getInstance();
 
     try {
         logger.info({

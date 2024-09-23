@@ -7,7 +7,7 @@ interface AuthRequest extends Request {
 }
 
 export const authMiddleware = (req: AuthRequest, res: Response, next: NextFunction) => {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
+  const token = req.header('Authorization')?.replace('Bearer ', '');
 
   if (!token) {
     throw new HttpError(401, 'No token provided');
@@ -21,6 +21,7 @@ export const authMiddleware = (req: AuthRequest, res: Response, next: NextFuncti
     throw new HttpError(401, 'Invalid token');
   }
 };
+
 
 //export function generateToken(userId: string): string {
 //  return jwt.sign({ userId }, process.env.JWT_SECRET as string);

@@ -3,20 +3,27 @@ import { CnpjJa } from "../models/cnpjClass";
 import { HttpError, HttpErrorWithDetails } from "../utils/errorHandler";
 import * as helperFunctions from "../utils/helperFunctions";
 import * as interfaces from "../types/interfaces";
-import { PrismaClient, Prisma, fornecedores_cadastro_geral_log } from "@prisma/client";
+import { DatabaseServices } from "./database-services";
+
 export class SapServices {
     private static instance: SapServices;
     private sl: SL;
     private cnpjJa: CnpjJa;
-    private prisma: PrismaClient;
+    private dataBaseServices: DatabaseServices;
 
     public constructor() {
         this.sl = new SL();
         this.cnpjJa = new CnpjJa();
-        this.prisma = new PrismaClient();
+        this.dataBaseServices = DatabaseServices.getInstance();
+        this.maintainSLLogin();
     }
 
-    
+    public static getInstance(): SapServices {
+        if (!SapServices.instance) {
+            SapServices.instance = new SapServices();
+        }
+        return SapServices.instance;
+    }
 
     public async maintainSLLogin() {
         try {
@@ -67,7 +74,7 @@ export class SapServices {
 
     public async updateFornecedor(fieldsToUpdateObject: interfaces.DadosPessoaJuridica | interfaces.DadosPessoaFisica | interfaces.DadosMicroempresa | any, CardCode: string) {
         try {
-            await this.logFornecedorCadastrado({ CardCode: CardCode, Status: "Pendente" });
+            await this.dataBaseServices.logFornecedorCadastrado({ CardCode: CardCode, Status: "Pendente" });
         } catch(err: any) {
             throw new HttpError(500, 'Erro ao logar fornecedor cadastrado: ' + err.message);
         }
@@ -75,61 +82,15 @@ export class SapServices {
         try {
             const data = fieldsToUpdateObject;
             const update = await this.sl.patch("BusinessPartners", CardCode, data);
-            this.atualizaFornecedorCadastrado({ CardCode: CardCode, Status: "Atualizado" });
+            this.dataBaseServices.atualizaFornecedorCadastrado({ CardCode: CardCode, Status: "Atualizado" });
             console.log("Updated fornecedor: ", CardCode, "with data: ", data);
         } catch (err: any) {    
-            this.atualizaFornecedorCadastrado({ CardCode: CardCode, Status: "Erro ao atualizar" });
+            this.dataBaseServices.atualizaFornecedorCadastrado({ CardCode: CardCode, Status: "Erro ao atualizar" });
             throw new HttpError(500, 'Erro ao atualizar fornecedor no SAP: ' + err.message);
         }
     }
 
-    public async logFornecedorCadastrado(fornecedorObj: Omit<fornecedores_cadastro_geral_log, "id" | "timestamp">) {
-        try {
-            if (!fornecedorObj.CardCode) {
-                throw new HttpError(400, 'CardCode não informado');
-            }
-            const fornecedorExists = await this.findFornecedorCadastrado(fornecedorObj.CardCode);
-            if (fornecedorExists) {
-                console.log("Tried to update fornecedor that already exists: ", fornecedorObj.CardCode);
-                return false;
-            }
-            const fornecedorLog = await this.prisma.fornecedores_cadastro_geral_log.create({
-                data: fornecedorObj
-            });
-            return fornecedorLog;
-        } catch (err: any) {
-            throw new HttpError(500, 'Erro ao logar fornecedor cadastrado: ' + err.message);
-        }
-    }
-
-    public async findFornecedorCadastrado(CardCode: string) {
-        try {
-            const fornecedorLog = await this.prisma.fornecedores_cadastro_geral_log.findUnique({
-                where: { CardCode: CardCode }
-            });
-            return fornecedorLog;
-        } catch (err: any) {
-            throw new HttpError(500, 'Erro ao buscar fornecedor cadastrado: ' + err.message);
-        }
-    }
-
-
-    public async atualizaFornecedorCadastrado(fornecedorObj: Omit<fornecedores_cadastro_geral_log, "id" | "timestamp">) {
-        try {
-            if (!fornecedorObj.CardCode) {
-                throw new HttpError(400, 'CardCode não informado');
-            }
-
-
-            const fornecedorLog = await this.prisma.fornecedores_cadastro_geral_log.update({
-                where: { CardCode: fornecedorObj.CardCode },
-                data: { Status: fornecedorObj.Status }
-            });
-            return fornecedorLog;
-        } catch (err: any) {
-            throw new HttpError(500, 'Erro ao atualizar fornecedor cadastrado: ' + err.message);
-        }
-    }
+    
 
     public async getFornecedorAdresses(CardCode: string) {
         try {

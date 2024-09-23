@@ -2,13 +2,23 @@ import {SapServices} from "../services/sap-services";
 import { HttpError, HttpErrorWithDetails } from "../utils/errorHandler";
 import * as helperFunctions from "../utils/helperFunctions";
 import * as interfaces from "../types/interfaces";
+import { DatabaseServices } from "../services/database-services";
 
 export class SapController {
     private static instance: SapController;
     private sapServices: SapServices;
-    
+    private dataBaseServices: DatabaseServices;
+
     constructor() {
-        this.sapServices = new SapServices();
+        this.sapServices = SapServices.getInstance();
+        this.dataBaseServices = DatabaseServices.getInstance();
+    }
+
+    public static getInstance(): SapController {
+        if (!SapController.instance) {
+            SapController.instance = new SapController();
+        }
+        return SapController.instance;
     }
 
     public async maintainServicesLogin(): Promise<void> {
@@ -149,11 +159,11 @@ export class SapController {
                         }
                         throw new HttpError(400, 'Erro inesperado');
                     } catch (err: any) {
-                        const fornecedorIsInDb = await this.sapServices.findFornecedorCadastrado(fornecedor.CardCode);
+                        const fornecedorIsInDb = await this.dataBaseServices.findFornecedorCadastrado(fornecedor.CardCode);
                         if (fornecedorIsInDb) {
-                            await this.sapServices.atualizaFornecedorCadastrado({CardCode: fornecedor.CardCode, Status: "Erro ao atualizar"});
+                            await this.dataBaseServices.atualizaFornecedorCadastrado({CardCode: fornecedor.CardCode, Status: "Erro ao atualizar"});
                         } else {
-                            await this.sapServices.logFornecedorCadastrado({CardCode: fornecedor.CardCode, Status: "Erro ao atualizar"});
+                            await this.dataBaseServices.logFornecedorCadastrado({CardCode: fornecedor.CardCode, Status: "Erro ao atualizar"});
                         }
                         processErrors.push({CardCode: fornecedor.CardCode, error: err.message});
                         

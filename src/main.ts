@@ -1,24 +1,14 @@
-import dotenv from "dotenv";
+//make sure this is the furst import. to load the env variables
+import './config';
 
-
-const configureEnvironment = () => {
-    dotenv.config();
-    const mode = process.env.NODE_ENV;
-
-    const envFile = `.env.${mode}`;
-    dotenv.config({ path: envFile });
-    console.log("Configurado o ambiente: ", mode);
-}
-
-const startServer = async () => {
-    configureEnvironment();
-    
-    const { default: Server } = await import("./server");
-
+import Server from "./server";
+export const startServer = async () => {
     const server = new Server();
 
     server.start(); 
+
+    return server;
 }
 
-//Managed to deploy
+
 startServer();

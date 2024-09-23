@@ -15,7 +15,7 @@ interface Credentials {
 interface slConfig {
     serviceLayers: {
         port: string;
-        url: string;
+        url: string | undefined;
         username: string;
         password: string;
         companyName: string;

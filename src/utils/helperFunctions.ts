@@ -1,8 +1,12 @@
-export const objetoVazio = (objeto: Object) => {
-    return Object.keys(objeto).length === 0;
+export const objetoVazio = (objeto: Object | null | undefined) => {
+  console.log(typeof objeto)
+  if (typeof objeto !== 'object' || objeto === null || Array.isArray(objeto)) {
+    return false;
+  }
+  return Object.keys(objeto).length === 0;
 }
 
-export const validaCPF = (cpf: string | null) => {
+export const validaCPF = (cpf: string | null | undefined | number) => {
     var Soma = 0
     var Resto
   
