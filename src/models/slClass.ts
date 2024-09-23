@@ -55,7 +55,6 @@ export default class SL {
                 companyName: process.env.WEB_SERVICE_COMPANY_NAME!
             }
         };
-
         this.host = this.slConfig.serviceLayers.url!;
         this.port = this.slConfig.serviceLayers.port!;
 

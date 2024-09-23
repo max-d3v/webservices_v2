@@ -8,7 +8,7 @@
     "start-dev": "node dist/primary-cluster.js",
     "start": "node dist/src/primary-cluster.js",
     "dev": "nodemon src/main.ts",
-    "test": "jest"
+    "test": "jest --watch"
   },
   "dependencies": {
     "@prisma/client": "^5.19.1",

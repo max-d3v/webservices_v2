@@ -3,7 +3,7 @@ import { HttpError, HttpErrorWithDetails } from "../utils/errorHandler";
 import { Request, Response, NextFunction } from "express";
 import * as helperFunctions from "../utils/helperFunctions";
 
-/*
+
 describe("Error Handling", () => {
     let req: Request;
     let res: Response;
@@ -57,94 +57,86 @@ describe("Helper Functions", () => {
     //Only checkin vital functions
     describe("CPF Validation", () => {
         describe("Valid CPF", () => {
-            it("Should return true for a valid string with only digits", () => {
-                expect(helperFunctions.validaCPF("35524782053")).toBe(true);
-            });
-            it("Should return true for a valid string with valid ponctuation", () => {
-                expect(helperFunctions.validaCPF("355.247.820-53")).toBe(true);
-            });
-            it("Should return true for a non-string valid CPF value", () => {
-                expect(helperFunctions.validaCPF(35524782053)).toBe(true);
-            });
+            it.each([
+                {cpf: "35524782053", expected: true, description: "Valid CPF string"},
+                {cpf: "355.247.820-53", expected: true, description: "Valid CPF string with valid ponctuation"},
+                {cpf: 35524782053, expected: true, description: "Valid CPF number"},
+            ])("$cpf $description should return true", ({cpf, expected}) => {
+                expect(helperFunctions.validaCPF(cpf as any)).toBe(expected);
+            })
         })
 
 
-        it("Should return false for an invalid CPF", () => {
-            expect(helperFunctions.validaCPF("12345678900")).toBe(false);
-        });
-        it("Should return false for an empty string", () => {
-            expect(helperFunctions.validaCPF("")).toBe(false);
-        });
-
-        it("Should return false for a null value", () => {
-            expect(helperFunctions.validaCPF(null)).toBe(false);
-        });
-
-        it("Should return false for an undefined value", () => {
-            expect(helperFunctions.validaCPF(undefined)).toBe(false);
-        });
+        describe("Invalid CPFs", () => {
+            it.each([
+                {cpf: "12345678900", expected: false, description: "Invalid CPF string with only digits"},
+                {cpf: "123.456.789-00", expected: false, description: "Invalid CPF string with valid ponctuation"},
+                {cpf: 12345678900, expected: false, description: "Invalid CPF number"},
+                {cpf: false, expected: false, description: "Falsy value, could be null or undefined etc"},
+            ])("$cpf $description should return false", ({cpf, expected}) => {
+                expect(helperFunctions.validaCPF(cpf as any)).toBe(expected);
+            })
+        })
     })
 
     describe("CNPJ Validation", () => {
         describe("Valid CNPJ", () => {
-            it("Should return true for a valid string with only digits", () => {
-                expect(helperFunctions.validCNPJ("78047595000128")).toBe(true);
-            });
-            it("Should return true for a non-string valid CNPJ value", () => {
-                expect(helperFunctions.validCNPJ(78047595000128)).toBe(true);
-            });
-
-            it("Should return true for a valid string with valid ponctuation", () => {
-                expect(helperFunctions.validCNPJ("78.047.595/0001-28")).toBe(true);
-            });
+            it.each([
+                {cnpj: "78047595000128", expected: true, description: "Valid string with only digits"},
+                {cnpj: "78.047.595/0001-28", expected: true, description: "Valid string with valid ponctuation"},
+                {cnpj: 78047595000128, expected: true, description: "Valid number"},
+            ])("$cnpj $description should return true", ({cnpj, expected}) => {
+                expect(helperFunctions.validCNPJ(cnpj as any)).toBe(expected);
+            })
         })
 
-
-        describe("Invalid CNPJ", () => {
-            it("Should return false for a non-string invalid CNPJ value", () => {
-                expect(helperFunctions.validCNPJ(12345678901234)).toBe(false);
-            });
-            it("Should return false for an invalid CNPJ", () => {
-                expect(helperFunctions.validCNPJ("12345678901234")).toBe(false);
-            });
-
-            it("Should return false for an empty string", () => {
-                expect(helperFunctions.validCNPJ("")).toBe(false);
-            });
-
-            it("Should return false for a null value", () => {
-                expect(helperFunctions.validCNPJ(null)).toBe(false);
-            });
-
-            it("Should return false for an undefined value", () => {
-                expect(helperFunctions.validCNPJ(undefined)).toBe(false);
-            });
+        describe("Invalid CNPJs", () => {
+            it.each([
+                {cnpj: 12345678901234, expected: false, description: "Invalid string with only digits"},
+                {cnpj: "12345678901234", expected: false, description: "Invalid string with only digits"},
+                {cnpj: null, expected: false, description: "Invalid null"},
+                {cnpj: undefined, expected: false, description: "Invalid undefined"},
+                {cnpj: false, expected: false, description: "Invalid boolean"},
+                {cnpj: true, expected: false, description: "Invalid boolean"},
+                {cnpj: {}, expected: false, description: "Invalid object"},
+                {cnpj: [], expected: false, description: "Invalid array"},
+                {cnpj: "", expected: false, description: "Invalid empty string"},
+            ])("$cnpj $description should return false", ({cnpj, expected}) => {
+                expect(helperFunctions.validCNPJ(cnpj as any)).toBe(expected);
+            })
         })
-
     })
 
     describe("Empty Object", () => {
-        it("Should return true for an empty object", () => {
+
+        describe("invalid empty object", () => {
+            it.each([
+                {object: [], expected: false, description: "Empty array"},
+                {object: "", expected: false, description: "Empty string"},
+                {object: 0, expected: false, description: "Empty number"},
+                {object: null, expected: false, description: "Empty null"},
+                {object: undefined, expected: false, description: "Empty undefined"},
+            ])("$object $description should return false", ({object, expected}) => {
+                expect(helperFunctions.objetoVazio(object)).toBe(expected);
+            })
+        })
+
+        describe("Valid non-empty objects", () => {
+            it.each([
+                {object: {a: 1}, expected: false, description: "Non-empty object"},
+                {object: {array: [1, 2, 3]}, expected: false, description: "Non-empty array"},
+                {object: {string: "Hello, world!"}, expected: false, description: "Non-empty string"},
+                {object: {number: 42}, expected: false, description: "Non-empty number"},
+            ])("$object $description should return false", ({object, expected}) => {
+                expect(helperFunctions.objetoVazio(object)).toBe(expected);
+            })
+        })
+        
+        describe("Valid empty objects", () => {
+          it("Should return true for an empty object", () => {
             expect(helperFunctions.objetoVazio({})).toBe(true);
         });
-        it("Should return false for a non-empty object", () => {
-            expect(helperFunctions.objetoVazio({ a: 1 })).toBe(false);
-        });
-        it("Should return false for an empty array", () => {
-            expect(helperFunctions.objetoVazio([])).toBe(false);
-        });
-        it("Should return false for an empty string", () => {
-            expect(helperFunctions.objetoVazio("")).toBe(false);
-        });
-        it("Should return false for an empty number", () => {
-            expect(helperFunctions.objetoVazio(0)).toBe(false);
-        });
-        it("Should return false for an empty null", () => {
-            expect(helperFunctions.objetoVazio(null)).toBe(false);
-        });
-        it("Should return false for an empty undefined", () => {
-            expect(helperFunctions.objetoVazio(undefined)).toBe(false);
-        });
+        })
+
     })
 })
-*/

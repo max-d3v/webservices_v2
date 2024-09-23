@@ -1,11 +1,10 @@
 import dotenv from 'dotenv';
 
-dotenv.config();
+export const setupEnv = () => {
+    dotenv.config();
+    const mode = process.env.NODE_ENV || 'prd';
+    const envFile = `.env.${mode}`;
+    dotenv.config({ path: envFile });
+}
 
-const mode = process.env.NODE_ENV || 'development';
-const envFile = `.env.${mode}`;
-dotenv.config({ path: envFile });
-
-const env = process.env;
-
-export default env;
+setupEnv();

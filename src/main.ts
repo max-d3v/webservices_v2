@@ -1,8 +1,11 @@
 //make sure this is the furst import. to load the env variables
-import './config';
-
+import { setupEnv } from './config.js';
 import Server from "./server";
+
+
 export const startServer = async () => {
+    setupEnv();
+
     const server = new Server();
 
     server.start(); 

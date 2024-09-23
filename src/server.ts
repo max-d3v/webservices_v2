@@ -1,4 +1,4 @@
-import express, { Application, Router } from "express";
+import express, { Application } from "express";
 import { ErrorHandling } from "./utils/errorHandler";
 import { authMiddleware } from "./middlewares/auth";
 import routerClass from "./router/routes";
