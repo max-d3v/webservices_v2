@@ -58,23 +58,23 @@ describe("Helper Functions", () => {
     describe("CPF Validation", () => {
         describe("Valid CPF", () => {
             it.each([
-                {cpf: "35524782053", expected: true, description: "Valid CPF string"},
-                {cpf: "355.247.820-53", expected: true, description: "Valid CPF string with valid ponctuation"},
-                {cpf: 35524782053, expected: true, description: "Valid CPF number"},
-            ])("$cpf $description should return true", ({cpf, expected}) => {
-                expect(helperFunctions.validaCPF(cpf as any)).toBe(expected);
+                {cpf: "35524782053", description: "Valid CPF string"},
+                {cpf: "355.247.820-53", description: "Valid CPF string with valid ponctuation"},
+                {cpf: 35524782053, description: "Valid CPF number"},
+            ])("$cpf $description should return true", ({cpf}) => {
+                expect(helperFunctions.validaCPF(cpf as any)).toBe(true);
             })
         })
 
 
         describe("Invalid CPFs", () => {
             it.each([
-                {cpf: "12345678900", expected: false, description: "Invalid CPF string with only digits"},
-                {cpf: "123.456.789-00", expected: false, description: "Invalid CPF string with valid ponctuation"},
-                {cpf: 12345678900, expected: false, description: "Invalid CPF number"},
-                {cpf: false, expected: false, description: "Falsy value, could be null or undefined etc"},
-            ])("$cpf $description should return false", ({cpf, expected}) => {
-                expect(helperFunctions.validaCPF(cpf as any)).toBe(expected);
+                {cpf: "12345678900", description: "Invalid CPF string with only digits"},
+                {cpf: "123.456.789-00", description: "Invalid CPF string with valid ponctuation"},
+                {cpf: 12345678900, description: "Invalid CPF number"},
+                {cpf: false, description: "Falsy value, could be null or undefined etc"},
+            ])("$cpf $description should return false", ({cpf}) => {
+                expect(helperFunctions.validaCPF(cpf as any)).toBe(false);
             })
         })
     })
@@ -82,27 +82,27 @@ describe("Helper Functions", () => {
     describe("CNPJ Validation", () => {
         describe("Valid CNPJ", () => {
             it.each([
-                {cnpj: "78047595000128", expected: true, description: "Valid string with only digits"},
-                {cnpj: "78.047.595/0001-28", expected: true, description: "Valid string with valid ponctuation"},
-                {cnpj: 78047595000128, expected: true, description: "Valid number"},
-            ])("$cnpj $description should return true", ({cnpj, expected}) => {
-                expect(helperFunctions.validCNPJ(cnpj as any)).toBe(expected);
+                {cnpj: "78047595000128", description: "Valid string with only digits"},
+                {cnpj: "78.047.595/0001-28", description: "Valid string with valid ponctuation"},
+                {cnpj: 78047595000128, description: "Valid number"},
+            ])("$cnpj $description should return true", ({cnpj}) => {
+                expect(helperFunctions.validCNPJ(cnpj as any)).toBe(true);
             })
         })
 
         describe("Invalid CNPJs", () => {
             it.each([
-                {cnpj: 12345678901234, expected: false, description: "Invalid string with only digits"},
-                {cnpj: "12345678901234", expected: false, description: "Invalid string with only digits"},
-                {cnpj: null, expected: false, description: "Invalid null"},
-                {cnpj: undefined, expected: false, description: "Invalid undefined"},
-                {cnpj: false, expected: false, description: "Invalid boolean"},
-                {cnpj: true, expected: false, description: "Invalid boolean"},
-                {cnpj: {}, expected: false, description: "Invalid object"},
-                {cnpj: [], expected: false, description: "Invalid array"},
-                {cnpj: "", expected: false, description: "Invalid empty string"},
-            ])("$cnpj $description should return false", ({cnpj, expected}) => {
-                expect(helperFunctions.validCNPJ(cnpj as any)).toBe(expected);
+                {cnpj: 12345678901234, description: "Invalid string with only digits"},
+                {cnpj: "12345678901234", description: "Invalid string with only digits"},
+                {cnpj: null, description: "Invalid null"},
+                {cnpj: undefined, description: "Invalid undefined"},
+                {cnpj: false, description: "Invalid boolean"},
+                {cnpj: true, description: "Invalid boolean"},
+                {cnpj: {}, description: "Invalid object"},
+                {cnpj: [], description: "Invalid array"},
+                {cnpj: "", description: "Invalid empty string"},
+            ])("$cnpj $description should return false", ({cnpj}) => {
+                expect(helperFunctions.validCNPJ(cnpj as any)).toBe(false);
             })
         })
     })
@@ -111,24 +111,24 @@ describe("Helper Functions", () => {
 
         describe("invalid empty object", () => {
             it.each([
-                {object: [], expected: false, description: "Empty array"},
-                {object: "", expected: false, description: "Empty string"},
-                {object: 0, expected: false, description: "Empty number"},
-                {object: null, expected: false, description: "Empty null"},
-                {object: undefined, expected: false, description: "Empty undefined"},
-            ])("$object $description should return false", ({object, expected}) => {
-                expect(helperFunctions.objetoVazio(object)).toBe(expected);
+                {object: [], description: "Empty array"},
+                {object: "", description: "Empty string"},
+                {object: 0, description: "Empty number"},
+                {object: null, description: "Empty null"},
+                {object: undefined, description: "Empty undefined"},
+            ])("$object $description should return false", ({object}) => {
+                expect(helperFunctions.objetoVazio(object)).toBe(false);
             })
         })
 
         describe("Valid non-empty objects", () => {
             it.each([
-                {object: {a: 1}, expected: false, description: "Non-empty object"},
-                {object: {array: [1, 2, 3]}, expected: false, description: "Non-empty array"},
-                {object: {string: "Hello, world!"}, expected: false, description: "Non-empty string"},
-                {object: {number: 42}, expected: false, description: "Non-empty number"},
-            ])("$object $description should return false", ({object, expected}) => {
-                expect(helperFunctions.objetoVazio(object)).toBe(expected);
+                {object: {a: 1}, description: "Non-empty object"},
+                {object: {array: [1, 2, 3]}, description: "Non-empty array"},
+                {object: {string: "Hello, world!"}, description: "Non-empty string"},
+                {object: {number: 42}, description: "Non-empty number"},
+            ])("$object $description should return false", ({object}) => {
+                expect(helperFunctions.objetoVazio(object)).toBe(false);
             })
         })
         
