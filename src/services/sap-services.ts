@@ -102,6 +102,26 @@ export class SapServices {
         }
     }
 
+    public async getOpenTicketsFromVendor(userId: number) {
+        try {
+            const query = `SELECT "ClgCode" FROM "SBO_COPAPEL_PRD".OCLG WHERE "AttendUser" = '${userId}' AND "Closed" = 'N'`;
+            const tickets = await this.sl.querySAP(query);
+            return tickets.data;
+        } catch (err: any) {
+            throw new HttpError(500, 'Erro ao buscar tickets do fornecedor: ' + err.message);
+        }
+    }
+
+    public async deactivateTicket(ticketNumber: number) {
+        try {
+            console.log("Desativando ticket: ", ticketNumber);
+            const tickets = await this.sl.patch("Activities", ticketNumber, { "Closed": "tYES" });
+            return tickets.data;
+        } catch (err: any) {
+            throw new HttpError(500, 'Erro ao desativar ticket: ' + err.message);
+        }
+    }
+
 
 
 }

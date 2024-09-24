@@ -206,3 +206,8 @@ interface Suframa {
         basis: string;
     }>;
 }
+
+
+export interface TicketNumber {
+    ClgCode: number;
+}

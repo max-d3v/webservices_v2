@@ -1,5 +1,5 @@
 //make sure this is the furst import. to load the env variables
-import { setupEnv } from './config.js';
+import { setupEnv } from './config';
 import Server from "./server";
 
 

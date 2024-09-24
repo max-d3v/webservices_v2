@@ -29,7 +29,9 @@ const runService = async (
         const endTime = performance.now();
 
         const statusCode = result.customStatusCode || 200;
-        delete result.customStatusCode;
+        if (result.customStatusCode) {
+            delete result.customStatusCode;
+        }
 
 
         logger.info({

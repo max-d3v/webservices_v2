@@ -1,4 +1,4 @@
-import {SapServices} from "../services/sap-services";
+import { SapServices } from "../services/sap-services";
 import { HttpError, HttpErrorWithDetails } from "../utils/errorHandler";
 import * as helperFunctions from "../utils/helperFunctions";
 import * as interfaces from "../types/interfaces";
@@ -44,14 +44,14 @@ export class SapController {
                 const batch = fornecedores.slice(i, i + 50);
 
                 let processingStartTime = Date.now();
-            
+
                 await Promise.all(batch.map(async (fornecedor) => {
                     try {
                         const cnpj = fornecedor.TaxId0;
                         const cpf = fornecedor.TaxId4;
                         const CardCode = fornecedor.CardCode;
                         const isValidCnpj = helperFunctions.validCNPJ(cnpj);
-                        const isValidCpf = helperFunctions.validaCPF(cpf);  
+                        const isValidCpf = helperFunctions.validaCPF(cpf);
                         const estado = fornecedor.State1;
 
                         if (!CardCode) {
@@ -79,20 +79,20 @@ export class SapController {
                             const fornecedorData = await this.sapServices.getFornecedorByCnpj(cleanedCnpj);
                             const isMEI = fornecedorData.company.simei.optant;
                             const registrations = fornecedorData.registrations;
-                            const stateRegistration = registrations.find((registration) => registration.state === estado); 
-                            const isContribuinteICMS = stateRegistration?.enabled    
+                            const stateRegistration = registrations.find((registration) => registration.state === estado);
+                            const isContribuinteICMS = stateRegistration?.enabled
 
                             const fornecedorAdresses: interfaces.FornecedorAdress[] = await this.sapServices.getFornecedorAdresses(CardCode);
                             if (helperFunctions.objetoVazio(fornecedorAdresses)) {
                                 throw new HttpError(404, 'Nenhum endereço encontrado para o fornecedor');
                             }
                             const isInscricaoEstadualEnabled = stateRegistration?.number && isContribuinteICMS ? stateRegistration.number : "Isento";
-                            
+
 
                             const indieDest = isContribuinteICMS ? "1" : "9";
                             const BPFiscalTaxIDCollection: interfaces.TemplateFiscal[] = [];
 
-                            for ( const adress of fornecedorAdresses ) {
+                            for (const adress of fornecedorAdresses) {
                                 const templateFiscal: interfaces.TemplateFiscal = {
                                     Address: adress.Address,
                                     BPCode: CardCode,
@@ -116,9 +116,9 @@ export class SapController {
                                 const dadosMicroEmpresa: interfaces.DadosMicroempresa = {
                                     ...BasePessoaJuridicaData,
                                     U_RSD_PFouPJ: "MEI",
-                                }   
+                                }
                                 await this.sapServices.updateFornecedor(dadosMicroEmpresa, CardCode);
-                                fornecedoresProcessados.push({CardCode: fornecedor.CardCode, data: dadosMicroEmpresa});
+                                fornecedoresProcessados.push({ CardCode: fornecedor.CardCode, data: dadosMicroEmpresa });
                                 return;
                             }
                             const optanteSimplesNacional = fornecedorData.company.simples.optant;
@@ -128,7 +128,7 @@ export class SapController {
                                 U_RSD_PFouPJ: "PJ",
                             }
                             await this.sapServices.updateFornecedor(dadosPessoaJuridica, CardCode);
-                            fornecedoresProcessados.push({CardCode: fornecedor.CardCode, data: dadosPessoaJuridica});
+                            fornecedoresProcessados.push({ CardCode: fornecedor.CardCode, data: dadosPessoaJuridica });
                             return;
                         } if (cpf && isValidCpf) {
                             const fornecedorAdresses: interfaces.FornecedorAdress[] = await this.sapServices.getFornecedorAdresses(CardCode);
@@ -136,37 +136,37 @@ export class SapController {
                                 throw new HttpError(404, 'Nenhum endereço encontrado para o fornecedor');
                             }
 
-                            for ( const adress of fornecedorAdresses ) {
+                            for (const adress of fornecedorAdresses) {
                                 const templateFiscal: interfaces.TemplateFiscal = {
                                     Address: adress.Address,
                                     BPCode: CardCode,
                                     AddrType: "bo_ShipTo",
-                                    TaxId1: "Isento",   
+                                    TaxId1: "Isento",
                                 }
                                 baseFornecedorData.BPFiscalTaxIDCollection.push(templateFiscal);
                             }
-                            
+
                             const dadosPessoaFisica: interfaces.DadosPessoaFisica = {
                                 ...baseFornecedorData,
                                 U_RSD_PFouPJ: "PF",
                                 U_TX_IndIEDest: "9",
                             }
-                            
+
 
                             await this.sapServices.updateFornecedor(dadosPessoaFisica, CardCode);
-                            fornecedoresProcessados.push({CardCode: fornecedor.CardCode, data: dadosPessoaFisica});
+                            fornecedoresProcessados.push({ CardCode: fornecedor.CardCode, data: dadosPessoaFisica });
                             return;
                         }
                         throw new HttpError(400, 'Erro inesperado');
                     } catch (err: any) {
                         const fornecedorIsInDb = await this.dataBaseServices.findFornecedorCadastrado(fornecedor.CardCode);
                         if (fornecedorIsInDb) {
-                            await this.dataBaseServices.atualizaFornecedorCadastrado({CardCode: fornecedor.CardCode, Status: "Erro ao atualizar"});
+                            await this.dataBaseServices.atualizaFornecedorCadastrado({ CardCode: fornecedor.CardCode, Status: "Erro ao atualizar" });
                         } else {
-                            await this.dataBaseServices.logFornecedorCadastrado({CardCode: fornecedor.CardCode, Status: "Erro ao atualizar"});
+                            await this.dataBaseServices.logFornecedorCadastrado({ CardCode: fornecedor.CardCode, Status: "Erro ao atualizar" });
                         }
-                        processErrors.push({CardCode: fornecedor.CardCode, error: err.message});
-                        
+                        processErrors.push({ CardCode: fornecedor.CardCode, error: err.message });
+
                     }
                 }));
 
@@ -187,7 +187,7 @@ export class SapController {
                     CardCode: err.CardCode || 'Não foi possível obter o CardCode do fornecedor',
                     error: err.error || 'Erro desconhecido'
                 }));
-                throw new HttpErrorWithDetails(500, 'Erros dos fornecedores:', errorDetails)            
+                throw new HttpErrorWithDetails(500, 'Erros dos fornecedores:', errorDetails)
             } else if (processErrors.length > 0 && fornecedoresProcessados.length > 0) {
                 return {
                     customStatusCode: 206,
@@ -209,7 +209,62 @@ export class SapController {
         }
     }
 
+    public async deactiveAllTicketsFromVendor(userId: string) {
+        try {
+            if (!userId) {
+                throw new HttpError(400, 'Nenhum Id de usuário encontrado');
+            }
+            const parsedUserId = parseInt(userId);
+            if (isNaN(parsedUserId)) {
+                throw new HttpError(400, 'Id de usuário inválido');
+            }
+            const tickets: interfaces.TicketNumber[] = await this.sapServices.getOpenTicketsFromVendor(parsedUserId);
+            if (helperFunctions.objetoVazio(tickets[0])) {
+                throw new HttpError(404, 'Nenhum ticket encontrado para o vendedor');
+            }
+            const ticketsProcessados: interfaces.TicketNumber[] = [];
+            const ticketsErros: any[] = [];
 
-    
+            await Promise.all(tickets.map(async (ticket) => {
+                try {
+                    this.sapServices.deactivateTicket(ticket.ClgCode),
+                    ticketsProcessados.push({ ClgCode: ticket.ClgCode });
+                } catch (err: any) {
+                    ticketsErros.push({ ClgCode: ticket.ClgCode, error: err.message });
+                }
+            }))
+
+            if (ticketsErros.length > 0 && ticketsProcessados.length === 0) {
+                const errorDetails = ticketsErros.map(err => ({
+                    ClgCode: err.ClgCode || 'Não foi possível obter o ClgCode do ticket',
+                    error: err.error || 'Erro desconhecido'
+                }));
+                throw new HttpErrorWithDetails(500, 'Erros dos tickets:', errorDetails)
+            }
+            else if ( ticketsErros.length > 0 && ticketsProcessados.length > 0 ) {
+                return {
+                    customStatusCode: 206,
+                    ticketsProcessados: ticketsProcessados,
+                    errors: ticketsErros.map(err => ({
+                        ClgCode: err.ClgCode || 'Não foi possível obter o ClgCode do ticket',
+                        error: err.error || 'Erro desconhecido'
+                    }))
+                }
+            }
+            else if (ticketsProcessados.length > 0 && ticketsErros.length === 0) {
+                return {
+                    customStatusCode: 200,
+                    ticketsProcessados: ticketsProcessados,
+                }
+            } else {
+                throw new HttpError(500, 'Erro inesperado');
+            }   
+        } catch (err: any) {
+            throw new HttpError(err.statusCode || 500, 'Erro ao desativar todos os tickets do vendedor: ' + err.message);
+        }
+    }
+
+
+
 }
 
