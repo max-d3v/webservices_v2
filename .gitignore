@@ -12,7 +12,8 @@ sensitive_data/
 info.log
 error.log
 
-__tests__/password_check.test.ts
+__tests__/*
+
 
 
 src/practice/
