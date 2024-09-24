@@ -12,8 +12,9 @@ sensitive_data/
 info.log
 error.log
 
+
 __tests__/*
 
-
+coverage/*
 
 src/practice/
