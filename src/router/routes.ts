@@ -20,10 +20,17 @@ class Routes {
         this.router.get("/AtualizarCadastroTodosFornecedores", (req, res, next) => 
             this.serviceRunner(() => this.sapControllerInstance.AtualizaCadastroFornecedores('1989-01-01'), req, res, next)
         );
+        
         this.router.get("/AtualizarCadastroFornecedores", (req, res, next) => {
             const todayIsoString = new Date().toISOString().split('T')[0];
             this.serviceRunner(() => this.sapControllerInstance.AtualizaCadastroFornecedores(todayIsoString), req, res, next);
         });
+
+        this.router.get("/DesativarTodosTicketsVendedor/:userId", (req, res, next) => {
+            this.serviceRunner(() => this.sapControllerInstance.deactiveAllTicketsFromVendor(req.params.userId), req, res, next);
+        })
+
+
     }
 
     public getRouter() {
