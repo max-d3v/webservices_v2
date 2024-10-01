@@ -367,7 +367,7 @@ export class SapController {
         return string;
     }
 
-    private async processClient(client: interfaces.ClientRegistrationData, JsonInMemory: JsonInMemoryHandler) {
+    private async processClient(client: interfaces.RelevantClientData, JsonInMemory: JsonInMemoryHandler) {
         const cardCode = client.CardCode;
 
         const cnpj = client.TaxId0?.replace(/\D/g, '') ?? null;

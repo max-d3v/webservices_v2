@@ -121,9 +121,14 @@ export default class SL {
         return response.data;
     }
 
-    async querySAP(query: string): Promise<{ data?: any; message?: string }> {
-        const database_name = this.slConfig.serviceLayers.companyName;
-        const queryWithReplacedDbName = query.replace("SBO_COPAPEL_PRD", database_name).replace("SBO_COPAPEL_TST", database_name);
+    async querySAP(query: string, onlyPrd: boolean = false): Promise<{ data?: any; message?: string }> {
+        let database_name = this.slConfig.serviceLayers.companyName;
+        if (onlyPrd) {
+            database_name = "SBO_COPAPEL_PRD";
+        }
+        const queryWithReplacedDbName = query.replace(/SBO_COPAPEL_(PRD|TST)/g, database_name);
+
+        console.log("Query: ", queryWithReplacedDbName);
 
         const url = `${this.slConfig.webService.url}:${this.slConfig.webService.port}?token=${this.slConfig.webService.token}&query=${queryWithReplacedDbName}`
 
@@ -131,6 +136,7 @@ export default class SL {
             headers: this.headers,
             httpsAgent: agent
         }
+
         const response = await axios.get(url, config);
 
         if (response.data.STATUS === '-1') {

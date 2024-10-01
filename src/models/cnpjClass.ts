@@ -26,7 +26,7 @@ export class CnpjJa {
     }
 
     public async searchCnpj(cnpj: string): Promise<any> {
-        const endpoint = `/office/${cnpj}?simples=true&simplesHistory=false&strategy=CACHE&registrations=BR&registrationsStatus=false&geocoding=false&links=OFFICE_MAP&links=OFFICE_MAP&maxAge=30&maxStale=30&sync=%3Cboolean%3E`;
+        const endpoint = `/office/${cnpj}?simples=true&simplesHistory=false&strategy=CACHE_IF_ERROR&registrations=BR&registrationsStatus=false&geocoding=false&links=OFFICE_MAP&links=OFFICE_MAP&maxAge=45&maxStale=30&sync=%3Cboolean%3E`;
         const config = {
             ...this.baseConfig,
             url: this.url + endpoint

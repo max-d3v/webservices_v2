@@ -88,7 +88,7 @@ const runService = async (
                 timestamp: new Date().toISOString()
             });
         }
-        console.error(error);        
+        //console.error(error);        
         next(error);
     }
 };
