@@ -123,7 +123,7 @@ export class SapServices {
         }
     }
 
-    public async getAllActiveClientsRegistrationData(): Promise<interfaces.ClientRegistrationData[]> {
+    public async getAllActiveClientsRegistrationData(): Promise<interfaces.RelevantClientData[]> {
         try {
             const query = `SELECT B."TaxId0", A."State1", A."CardCode", A."CardName", CAST(A."Free_Text" AS NVARCHAR) as "Free_Text"
             FROM "SBO_COPAPEL_PRD".OCRD A 
