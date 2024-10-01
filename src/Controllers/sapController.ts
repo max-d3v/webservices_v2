@@ -240,11 +240,9 @@ export class SapController {
                     }
 
                     if(!clientRegistrationLog) {
-                        const insertFirstLog = {
-                            CardCode: cardCode,
-                            Status: "PENDING",
-                        }
-                        await this.dataBaseServices.logClientRegistration(insertFirstLog);    
+                        await this.dataBaseServices.logClientRegistration({
+                            CardCode: cardCode, Status: "PENDING"
+                        });    
                     }
             
                     const [processedClient, processedData] = await this.processClient(client, JsonInMemory);
@@ -252,11 +250,10 @@ export class SapController {
 
                     console.log("Finished client with success: ", cardCode);
             
-                    const insertLogObj = {
+                    await this.dataBaseServices.updateClientRegistrationLog(cardCode, {
                         Status: "SUCCESS",
                         data_updated: JSON.stringify(processedData),
-                    }
-                    await this.dataBaseServices.updateClientRegistrationLog(cardCode, insertLogObj);
+                    });
             
                     return true;
                 } catch (err: any) {
@@ -264,15 +261,19 @@ export class SapController {
                     if (!cardCode) {
                         return errors.push({ CardCode: null, error: "No CardCode" })
                     }
-
-                    const updateLogObj = {
-                        Status: "ERROR",
-                        Error: err.message,
+                    try {
+                        this.dataBaseServices.updateClientRegistrationLog(cardCode, {
+                            Status: "ERROR",
+                            Error: err.message,
+                        });
+                    } catch(err: any) {
+                        console.log("Error updating log on catch: ", err.message);
                     }
-                    this.dataBaseServices.updateClientRegistrationLog(cardCode, updateLogObj);
+                    
 
                     console.log("Finished client with error: ", cardCode);
                     console.log("Error: ", err.message);
+                    
                     return errors.push({ CardCode: cardCode, error: err.message });
                 }
             }))
@@ -282,7 +283,7 @@ export class SapController {
             if (errors.length === totalClients) {
                 throw new HttpErrorWithDetails(500, "Erro ao atualizar clientes por CNPJ", errors);
             } else if (errors.length > 0) {
-                throw new HttpErrorWithDetails(206, "Erro ao atualizar parte dos clientes", errors)
+                throw new HttpErrorWithDetails(206, "Erro ao atualizar parte dos clientes", { ClientesComErro: errors, ClientesProcessados:processedClients })
             } else if (errors.length === 0) {
                 return processedClients;
             } else {
@@ -426,7 +427,9 @@ export class SapController {
     private getCnpjBaixado(status: number, ClientData: any): void {
         try {
             const statusForSL = status === 2 ? "tYES" : "tNO";
+            const frozenForSL = status === 2 ? "tNO" : "tYES";
             ClientData.Valid = statusForSL;
+            ClientData.Frozen = frozenForSL;
         } catch (err: any) {
             throw new HttpError(err.statusCode || 500, 'Erro ao processar CNPJ baixado do cliente: ' + err.message);
         }
