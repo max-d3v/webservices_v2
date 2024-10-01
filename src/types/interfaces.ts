@@ -9,6 +9,27 @@ export interface Fornecedor {
     U_TX_SN?: 1 | 2;
 }
 
+export interface RelevantClientData {
+    TaxId0: string | null | "";
+    TaxId4: string | null | "";
+    State1: string | null | "";
+    CardCode: string;
+    CardName: string;
+    Free_Text?: string | null | "";
+}
+
+export interface ClientUpdateData {
+    FreeText: string | null;
+    U_TX_SN: 1 | 2 | null;
+    U_TX_IndIEDest: "1" | "9" | null;
+    BPFiscalTaxIDCollection: TemplateFiscal[] | null;  
+}
+
+export interface IsOptant {
+    U_TX_SN: 1 | 2;
+}
+
+
 export interface FornecedorAdress {
     Address: string;
 }
@@ -52,10 +73,17 @@ export interface FornecedorProcessado {
 }
 
 
+export interface BaseClientRegistrationData {
+    U_TX_SN: 1 | 2 ;
+    U_TX_IndIEDest: "9" | "1";
+    BPFiscalTaxIDCollection: TemplateFiscal[];
+}
 
 
 
-export interface FornecedorData {
+
+
+export interface CnpjJaData {
     taxId: string;
     updated: string;
     company: {
@@ -121,7 +149,7 @@ export interface FornecedorData {
     emails: Array<Email>;
     mainActivity: Activity;
     sideActivities: Array<Activity>;
-    registrations: Array<Registration>;
+    registrations: Array<Registration> | [];
     suframa: Array<Suframa>;
 };
 
@@ -170,12 +198,12 @@ interface Email {
     domain: string;
 }
 
-interface Activity {
+export interface Activity {
     id: number;
     text: string;
 }
 
-interface Registration {
+export interface Registration {
     number: string;
     state: 'AC' | 'AL' | 'AM' | 'AP' | 'BA' | 'CE' | 'DF' | 'ES' | 'GO' | 'MA' | 'MG' | 'MS' | 'MT' | 'PA' | 'PB' | 'PE' | 'PI' | 'PR' | 'RJ' | 'RN' | 'RO' | 'RR' | 'RS' | 'SC' | 'SP' | 'SE' | 'TO';
     enabled: boolean;

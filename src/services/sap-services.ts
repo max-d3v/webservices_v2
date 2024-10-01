@@ -4,13 +4,14 @@ import { HttpError, HttpErrorWithDetails } from "../utils/errorHandler";
 import * as helperFunctions from "../utils/helperFunctions";
 import * as interfaces from "../types/interfaces";
 import { DatabaseServices } from "./database-services";
+//import { RedisServices } from "./redisServices";
 
 export class SapServices {
     private static instance: SapServices;
     private sl: SL;
     private cnpjJa: CnpjJa;
     private dataBaseServices: DatabaseServices;
-
+    
     public constructor() {
         this.sl = new SL();
         this.cnpjJa = new CnpjJa();
@@ -51,9 +52,9 @@ export class SapServices {
             AND (B."TaxId0" <> '' OR B."TaxId4" <> '') 
             ORDER BY "CardCode"`;
 
-            console.log("Query: ", query);
+            //console.log("Query: ", query);
 
-            const fornecedores = await this.sl.querySAP(query);
+            const fornecedores = await this.sl.querySAP(query, true);
 
             return fornecedores.data;
         } catch (err: any) {                                                    
@@ -63,7 +64,7 @@ export class SapServices {
 
 
 
-    public async getFornecedorByCnpj(cnpj: string): Promise<interfaces.FornecedorData> {
+    public async getFornecedorByCnpj(cnpj: string): Promise<interfaces.CnpjJaData> {
         try {
             const response = await this.cnpjJa.searchCnpj(cnpj);
             return response;
@@ -74,7 +75,7 @@ export class SapServices {
 
     public async updateFornecedor(fieldsToUpdateObject: interfaces.DadosPessoaJuridica | interfaces.DadosPessoaFisica | interfaces.DadosMicroempresa | any, CardCode: string) {
         try {
-            await this.dataBaseServices.logFornecedorCadastrado({ CardCode: CardCode, Status: "Pendente" });
+            await this.dataBaseServices.logFornecedorCadastrado({ CardCode: CardCode, Status: "Pendente", Erro: null });
         } catch(err: any) {
             throw new HttpError(500, 'Erro ao logar fornecedor cadastrado: ' + err.message);
         }
@@ -92,7 +93,7 @@ export class SapServices {
 
     
 
-    public async getFornecedorAdresses(CardCode: string) {
+    public async getClientAdresses(CardCode: string) {
         try {
             const query = `SELECT "Address" FROM "SBO_COPAPEL_PRD".CRD7 WHERE "CardCode" = '${CardCode}' AND "AddrType" = 'S'`;
             const fornecedorAdresses = await this.sl.querySAP(query);
@@ -121,6 +122,46 @@ export class SapServices {
             throw new HttpError(500, 'Erro ao desativar ticket: ' + err.message);
         }
     }
+
+    public async getAllActiveClientsRegistrationData(): Promise<interfaces.ClientRegistrationData[]> {
+        try {
+            const query = `SELECT B."TaxId0", A."State1", A."CardCode", A."CardName", CAST(A."Free_Text" AS NVARCHAR) as "Free_Text"
+            FROM "SBO_COPAPEL_PRD".OCRD A 
+            INNER JOIN "SBO_COPAPEL_PRD".CRD7 B ON A."CardCode" = B."CardCode" 
+            WHERE A."CardType" = 'C' 
+            AND A."validFor" = 'Y' 
+            AND B."TaxId0" <> '' 
+            AND B."TaxId0" IS NOT NULL 
+            AND B."TaxId0" <> 'null'    
+            GROUP BY B."TaxId0", A."State1", A."CardCode", A."CardName", CAST(A."Free_Text" AS NVARCHAR)
+            LIMIT 100
+            `;
+            const clients = await this.sl.querySAP(query, true);
+            return clients.data;
+        } catch (err: any) {
+            throw new HttpError(500, 'Erro ao buscar dados relevantes dos clientes: ' + err.message);
+        }
+    }
+
+    public async getObservationFromSAP(cardCode: string): Promise<string | null> {
+        try {
+            const query = `SELECT "Free_Text" FROM "SBO_COPAPEL_PRD".OCRD WHERE "CardCode" = '${cardCode}'`;
+            const observation = await this.sl.querySAP(query);
+            return observation.data;
+        } catch (err: any) {
+            throw new HttpError(500, 'Erro ao buscar observação do fornecedor: ' + err.message);
+        }
+    }
+
+    public async updateClient(Data: any, CardCode: string) {
+        try {
+            const update = await this.sl.patch("BusinessPartners", CardCode, Data);
+            return update.data;
+        } catch (err: any) {
+            throw new HttpError(500, 'Erro ao atualizar cliente no SAP: ' + err.message);
+        }
+    }
+
 
 
 

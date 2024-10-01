@@ -3,15 +3,18 @@ import { HttpError, HttpErrorWithDetails } from "../utils/errorHandler";
 import * as helperFunctions from "../utils/helperFunctions";
 import * as interfaces from "../types/interfaces";
 import { DatabaseServices } from "../services/database-services";
+import { JsonInMemoryHandler } from "../services/jsonLoaderClass";
 
 export class SapController {
     private static instance: SapController;
     private sapServices: SapServices;
     private dataBaseServices: DatabaseServices;
+    private JsonInMemoryHandler: JsonInMemoryHandler;
 
     constructor() {
         this.sapServices = SapServices.getInstance();
         this.dataBaseServices = DatabaseServices.getInstance();
+        this.JsonInMemoryHandler = JsonInMemoryHandler.getInstance();
     }
 
     public static getInstance(): SapController {
@@ -45,6 +48,9 @@ export class SapController {
 
                 let processingStartTime = Date.now();
 
+                const DataInMemory = new JsonInMemoryHandler();
+                DataInMemory.loadFile('./src/models/data/cnpj_data_all_fornecedores.json');
+
                 await Promise.all(batch.map(async (fornecedor) => {
                     try {
                         const cnpj = fornecedor.TaxId0;
@@ -76,13 +82,13 @@ export class SapController {
 
                         if (cnpj && isValidCnpj) {
                             const cleanedCnpj = cnpj.replace(/\D/g, '');
-                            const fornecedorData = await this.sapServices.getFornecedorByCnpj(cleanedCnpj);
+                            const fornecedorData = DataInMemory.getObjectByValue('taxId', cleanedCnpj);
                             const isMEI = fornecedorData.company.simei.optant;
                             const registrations = fornecedorData.registrations;
-                            const stateRegistration = registrations.find((registration) => registration.state === estado);
+                            const stateRegistration = registrations?.find((registration: any) => registration?.state === estado);
                             const isContribuinteICMS = stateRegistration?.enabled
 
-                            const fornecedorAdresses: interfaces.FornecedorAdress[] = await this.sapServices.getFornecedorAdresses(CardCode);
+                            const fornecedorAdresses: interfaces.FornecedorAdress[] = await this.sapServices.getClientAdresses(CardCode);
                             if (helperFunctions.objetoVazio(fornecedorAdresses)) {
                                 throw new HttpError(404, 'Nenhum endereço encontrado para o fornecedor');
                             }
@@ -131,7 +137,7 @@ export class SapController {
                             fornecedoresProcessados.push({ CardCode: fornecedor.CardCode, data: dadosPessoaJuridica });
                             return;
                         } if (cpf && isValidCpf) {
-                            const fornecedorAdresses: interfaces.FornecedorAdress[] = await this.sapServices.getFornecedorAdresses(CardCode);
+                            const fornecedorAdresses: interfaces.FornecedorAdress[] = await this.sapServices.getClientAdresses(CardCode);
                             if (helperFunctions.objetoVazio(fornecedorAdresses)) {
                                 throw new HttpError(404, 'Nenhum endereço encontrado para o fornecedor');
                             }
@@ -161,9 +167,9 @@ export class SapController {
                     } catch (err: any) {
                         const fornecedorIsInDb = await this.dataBaseServices.findFornecedorCadastrado(fornecedor.CardCode);
                         if (fornecedorIsInDb) {
-                            await this.dataBaseServices.atualizaFornecedorCadastrado({ CardCode: fornecedor.CardCode, Status: "Erro ao atualizar" });
+                            await this.dataBaseServices.atualizaFornecedorCadastrado({ CardCode: fornecedor.CardCode, Status: "Erro ao atualizar", Erro: err.message });
                         } else {
-                            await this.dataBaseServices.logFornecedorCadastrado({ CardCode: fornecedor.CardCode, Status: "Erro ao atualizar" });
+                            await this.dataBaseServices.logFornecedorCadastrado({ CardCode: fornecedor.CardCode, Status: "Erro ao atualizar", Erro: err.message });
                         }
                         processErrors.push({ CardCode: fornecedor.CardCode, error: err.message });
 
@@ -209,6 +215,88 @@ export class SapController {
         }
     }
 
+    public async updateAllClientsRegistrationData() {
+        try {
+            const clients = await this.sapServices.getAllActiveClientsRegistrationData();
+            const errors: any[] = [];
+            const processedClients: any[] = [];
+
+            const JsonInMemory = new JsonInMemoryHandler()
+            JsonInMemory.loadFile('./src/models/data/cnpj_data_clientes_full.json');
+
+            await Promise.all(clients.map(async (client) => {   
+                try {
+                    const cardCode = client.CardCode;
+                    if (!client || !cardCode) {
+                        throw new HttpError(400, 'Cliente inválido');
+                    }
+                    
+                    console.log("Starting client: ", client);
+
+                    const clientRegistrationLog = await this.dataBaseServices.findClientRegistrationLog(cardCode);
+                    if (clientRegistrationLog?.Status === "SUCCESS") {
+                        console.log("Found client that already has been processed with success: ", cardCode);
+                        return;
+                    }
+
+                    if(!clientRegistrationLog) {
+                        const insertFirstLog = {
+                            CardCode: cardCode,
+                            Status: "PENDING",
+                        }
+                        await this.dataBaseServices.logClientRegistration(insertFirstLog);    
+                    }
+            
+                    const [processedClient, processedData] = await this.processClient(client, JsonInMemory);
+                    processedClients.push(processedClient);
+
+                    console.log("Finished client with success: ", cardCode);
+            
+                    const insertLogObj = {
+                        Status: "SUCCESS",
+                        data_updated: JSON.stringify(processedData),
+                    }
+                    await this.dataBaseServices.updateClientRegistrationLog(cardCode, insertLogObj);
+            
+                    return true;
+                } catch (err: any) {
+                    const cardCode = client.CardCode;
+                    if (!cardCode) {
+                        return errors.push({ CardCode: null, error: "No CardCode" })
+                    }
+
+                    const updateLogObj = {
+                        Status: "ERROR",
+                        Error: err.message,
+                    }
+                    this.dataBaseServices.updateClientRegistrationLog(cardCode, updateLogObj);
+
+                    console.log("Finished client with error: ", cardCode);
+                    console.log("Error: ", err.message);
+                    return errors.push({ CardCode: cardCode, error: err.message });
+                }
+            }))
+
+            const totalClients = clients.length;
+            
+            if (errors.length === totalClients) {
+                throw new HttpErrorWithDetails(500, "Erro ao atualizar clientes por CNPJ", errors);
+            } else if (errors.length > 0) {
+                throw new HttpErrorWithDetails(206, "Erro ao atualizar parte dos clientes", errors)
+            } else if (errors.length === 0) {
+                return processedClients;
+            } else {
+                throw new HttpError(500, 'Erro inesperado');
+            }
+
+        } catch (err: any) {
+            if(err instanceof HttpErrorWithDetails) {
+                throw new HttpErrorWithDetails(err.statusCode, "Erro na atualizacao de clientes por CNPJ: " + err.message, err.details);
+            }
+            throw new HttpError(err.statusCode || 500, 'Erro ao atualizar clientes por CNPJ: ' + err.message);
+        }
+    }
+
     public async deactiveAllTicketsFromVendor(userId: string) {
         try {
             if (!userId) {
@@ -228,7 +316,7 @@ export class SapController {
             await Promise.all(tickets.map(async (ticket) => {
                 try {
                     this.sapServices.deactivateTicket(ticket.ClgCode),
-                    ticketsProcessados.push({ ClgCode: ticket.ClgCode });
+                        ticketsProcessados.push({ ClgCode: ticket.ClgCode });
                 } catch (err: any) {
                     ticketsErros.push({ ClgCode: ticket.ClgCode, error: err.message });
                 }
@@ -241,7 +329,7 @@ export class SapController {
                 }));
                 throw new HttpErrorWithDetails(500, 'Erros dos tickets:', errorDetails)
             }
-            else if ( ticketsErros.length > 0 && ticketsProcessados.length > 0 ) {
+            else if (ticketsErros.length > 0 && ticketsProcessados.length > 0) {
                 return {
                     customStatusCode: 206,
                     ticketsProcessados: ticketsProcessados,
@@ -258,13 +346,166 @@ export class SapController {
                 }
             } else {
                 throw new HttpError(500, 'Erro inesperado');
-            }   
+            }
         } catch (err: any) {
             throw new HttpError(err.statusCode || 500, 'Erro ao desativar todos os tickets do vendedor: ' + err.message);
         }
     }
 
+    public async getAllClientsCnpjClear() {
+        const clients = await this.sapServices.getAllActiveClientsRegistrationData();
+        let string = "";
+        clients.map((client: any) => string += client.TaxId0 + ",");
+        return string;
+    }
+
+    public async getAllFornecedoresCnpjClear() {
+        const isoStringAllTime = '1900-01-01';
+        const fornecedores = await this.sapServices.getFornecedoresLeads(isoStringAllTime);
+        let string = "";
+        fornecedores.map((fornecedor: any) => string += fornecedor.TaxId0 + ",");
+        return string;
+    }
+
+    private async processClient(client: interfaces.ClientRegistrationData, JsonInMemory: JsonInMemoryHandler) {
+        const cardCode = client.CardCode;
+
+        const cnpj = client.TaxId0?.replace(/\D/g, '') ?? null;
+        const estado = client.State1 ?? null;
+        const cardName = client.CardName ?? null;
+        const freeText = client.Free_Text ?? null;
+        
+        
+        if (!cardName || cardName === "") {
+            throw new HttpError(400, 'Nome do cliente inválido da query ao SAP');
+        }
+        if (!cnpj || cnpj === "") {
+            throw new HttpError(400, 'CNPJ inválido da query ao SAP');
+        }
+        if (!estado || estado === "") {
+            throw new HttpError(400, 'Estado inválido da query ao SAP');
+        }
+
+        
+
+        const cnpjInformation = await JsonInMemory.getObjectByValue('taxId', cnpj);
+        console.log(cnpjInformation);
+        if (!cnpjInformation) {
+            throw new HttpError(404, `CNPJ não encontrado no cache`);
+        }
+
+        const ClientData: interfaces.ClientUpdateData = {
+            U_TX_IndIEDest: null,
+            U_TX_SN: null,
+            BPFiscalTaxIDCollection: null,
+            FreeText: null
+        }
+
+        const simplesOptant = cnpjInformation.company.simples.optant;
+        this.getInscricaoSimples(simplesOptant, ClientData);
+
+
+        const registrations = cnpjInformation.registrations;
+        await this.getInscricaoEstadual(registrations, estado, cardCode, ClientData);
+
+        const status = cnpjInformation.status.id;
+        this.getCnpjBaixado(status, ClientData)
+
+        const mainActivityText = cnpjInformation.mainActivity.text;
+        const reason = cnpjInformation.reason?.text;
+        await this.getNewObservation(mainActivityText, status, reason, freeText, cardCode, ClientData);
+        
+        this.checkAllFields(ClientData);
+
+        await this.sapServices.updateClient(ClientData, cardCode);
+
+        return [{ CardCode: cardCode, data: ClientData }, ClientData];
+
+    }
+ 
+    private getCnpjBaixado(status: number, ClientData: any): void {
+        try {
+            const statusForSL = status === 2 ? "tYES" : "tNO";
+            ClientData.Valid = statusForSL;
+        } catch (err: any) {
+            throw new HttpError(err.statusCode || 500, 'Erro ao processar CNPJ baixado do cliente: ' + err.message);
+        }
+    }
+
+    private async getInscricaoEstadual(registrations: interfaces.Registration[] | [], estado: string, cardCode: string, ClientData: any): Promise<void> {
+        try {
+            
+            const registration = registrations?.find((registration) => registration?.state === estado);
+            const clientAdresses = await this.sapServices.getClientAdresses(cardCode);
+            const BPFiscalTaxIDCollection: interfaces.TemplateFiscal[] = [];
+
+            const isEnabled = registration?.enabled;
+            const InscricaoEstadual = isEnabled ? registration?.number : "Isento";
+
+            const isIsento = !isEnabled;
+
+            for (const adress of clientAdresses) {
+                const templateFiscal: interfaces.TemplateFiscal = {
+                    Address: adress.Address,
+                    BPCode: cardCode,
+                    AddrType: "bo_ShipTo",
+                    TaxId1: InscricaoEstadual,
+                }
+                BPFiscalTaxIDCollection.push(templateFiscal);
+            }
+
+            ClientData.BPFiscalTaxIDCollection = BPFiscalTaxIDCollection;
+            ClientData.U_TX_IndIEDest = isIsento ? "9" : "1";
+        } catch (err: any) {
+            throw new HttpError(err.statusCode || 500, 'Erro ao processar inscrição estadual do cliente: ' + err.message);
+        }
+    }
+
+    private getInscricaoSimples(simplesOptant: boolean, ClientData: any): void {
+        try {
+            ClientData.U_TX_SN = simplesOptant ? 1 : 2;
+        } catch (err: any) {
+            throw new HttpError(err.statusCode || 500, 'Erro ao processar inscrição simples do cliente: ' + err.message);
+        }
+    }
+
+    private async getNewObservation(mainActivityText: string, cnpjStatus: number, reasonForBaixa: string | undefined, freeText: string | null, cardCode: string, ClientData: any): Promise<void> {
+        try {
+            const oldObservation = freeText || "";
+            let templateString = oldObservation + " - Informações da Atualiação cadastral geral, realizada dia " + new Date().toISOString().split('T')[0] + ": ";
+            templateString += "  Atividade principal: " + mainActivityText;
+
+            if (cnpjStatus !== 2) {
+                templateString += "  Motivo da baixa: " + reasonForBaixa;
+            }
+
+            ClientData.FreeText = templateString;
+
+        } catch (err: any) {
+            throw new HttpError(err.statusCode || 500, 'Erro ao processar observação do cliente: ' + err.message);
+        }
+    }
+
+    private checkAllFields(Data: any): void {
+        try {
+            const fields = Object.keys(Data);
+            for (const field of fields) {
+                if (Data[field] === null || Data[field] === undefined || Data[field] === "") {
+                    throw new HttpError(400, `Dado: ${field} inválido: (null undefined ou empty str)`);
+                }
+            }
+
+        } catch (err: any) {
+            throw new HttpError(err.statusCode || 500, 'Erro ao verificar se os dados do cliente estão completos: ' + err.message);
+        }
+    }
+
+    public async getMysqlSapClients() {
+        return await this.dataBaseServices.getMysqlSapClients();
+    }
+
+
+
 
 
 }
-

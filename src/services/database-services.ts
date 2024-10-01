@@ -33,7 +33,7 @@ export class DatabaseServices {
             throw new HttpError(500, 'Error logging request');
         }
     }
-    public async logFornecedorCadastrado(fornecedorObj: Omit<PrismaTypes.fornecedores_cadastro_geral_log, "id" | "timestamp">) {
+    public async logFornecedorCadastrado(fornecedorObj: Omit<PrismaTypes.fornecedores_cadastro_geral_log, "id" | "timestamp"> & { Erro?: string | undefined | null }) {
         try {
             if (!fornecedorObj.CardCode) {
                 throw new HttpError(400, 'CardCode não informado');
@@ -80,5 +80,49 @@ export class DatabaseServices {
             throw new HttpError(500, 'Erro ao atualizar fornecedor cadastrado: ' + err.message);
         }
     }
+
+    public async logClientRegistration(data: Partial<Omit<PrismaTypes.log_atualizacao_cadastral_clientes, "id" | "timestamp">>) {
+        try {
+            const clientRegistration = await this.prisma.log_atualizacao_cadastral_clientes.create({
+                data: data
+            });
+            return clientRegistration;
+        } catch (err: any) {
+            throw new HttpError(500, 'Erro ao criar log da atualização cadastral de cliente: ' + err.message);
+        }
+    }
+
+    public async updateClientRegistrationLog(CardCode: string,data: Partial<Omit<PrismaTypes.log_atualizacao_cadastral_clientes, "id" | "timestamp" | "CardCode">>) {
+        try {
+            const clientRegistration = await this.prisma.log_atualizacao_cadastral_clientes.update({
+                where: { CardCode: CardCode },
+                data: data
+            });
+            return clientRegistration;
+        } catch (err: any) {
+            throw new HttpError(500, 'Erro ao atualizar atualização cadastral de cliente: ' + err.message);
+        }
+    }
+
+    public async findClientRegistrationLog(CardCode: string) {
+        try {
+            const clientRegistration = await this.prisma.log_atualizacao_cadastral_clientes.findUnique({
+                where: { CardCode: CardCode }
+            });
+            return clientRegistration;
+        } catch (err: any) {
+            throw new HttpError(500, 'Erro ao buscar log da atualização cadastral de cliente: ' + err.message);
+        }
+    }
+
+    public async getMysqlSapClients() {
+        try {
+            const clients = await this.prisma.sap_clientes.findMany();
+            return clients;
+        } catch (err: any) {
+            throw new HttpError(500, 'Erro ao buscar clientes do SAP: ' + err.message);
+        }
+    }
+
 }
 

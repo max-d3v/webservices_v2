@@ -12,6 +12,7 @@ sensitive_data/
 info.log
 error.log
 
+src/services/redisServices.ts
 
 src/__tests__/*
 
