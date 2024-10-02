@@ -94,7 +94,6 @@ export class SapController {
                             }
                             const isInscricaoEstadualEnabled = stateRegistration?.number && isContribuinteICMS ? stateRegistration.number : "Isento";
 
-
                             const indieDest = isContribuinteICMS ? "1" : "9";
                             const BPFiscalTaxIDCollection: interfaces.TemplateFiscal[] = [];
 
@@ -298,18 +297,20 @@ export class SapController {
             if (!cardCode) {
                 return errors.push({ CardCode: null, error: "No CardCode" })
             }
-            try {
-                this.dataBaseServices.updateClientRegistrationLog(cardCode, {
-                    Status: "ERROR",
-                    Error: err.message,
-                });
-            } catch(err: any) {
-                console.log("Error updating log on catch: ", err.message);
-            }
-            
 
             console.log("Finished client with error: ", cardCode);
             console.log("Error: ", err.message);
+            
+            try {
+                await this.dataBaseServices.updateClientRegistrationLog(cardCode, {
+                    Status: "ERROR",
+                    Error: err.message,
+                });
+                console.log("Error log updated with success");
+            } catch (logErr: any) {
+                console.error("Error updating log on catch: ", logErr.message);    
+                return errors.push({ CardCode: cardCode, error: `Main error: ${err.message}. Log update error: ${logErr.message}` });
+            }
             
             return errors.push({ CardCode: cardCode, error: err.message });
         }
