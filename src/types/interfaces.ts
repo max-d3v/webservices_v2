@@ -9,7 +9,9 @@ export interface Fornecedor {
     U_TX_SN?: 1 | 2;
 }
 
-export interface RelevantClientData {
+
+export interface getClientDataQueryReturn {
+    Address: string;
     TaxId0: string | null | "";
     TaxId4: string | null | "";
     State1: string | null | "";
@@ -17,6 +19,11 @@ export interface RelevantClientData {
     CardName: string;
     Free_Text?: string | null | "";
 }
+
+export interface RelevantClientData extends getClientDataQueryReturn {
+    Adresses: string[];
+}
+
 
 export interface ClientUpdateData {
     FreeText: string | null;
@@ -29,7 +36,6 @@ export interface IsOptant {
     U_TX_SN: 1 | 2;
 }
 
-
 export interface FornecedorAdress {
     Address: string;
 }
@@ -40,7 +46,6 @@ export interface TemplateFiscal {
     AddrType: "bo_ShipTo";
     TaxId1: "Isento" | string;
 }
-
 
 
 export interface BaseFornecedorData {
