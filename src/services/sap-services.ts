@@ -134,6 +134,7 @@ export class SapServices {
             AND B."TaxId0" IS NOT NULL 
             AND B."TaxId0" <> 'null'    
             AND A."CardCode" NOT IN (${removedClients ? removedClients : "''"})
+            LIMIT 5000
             `;
             //console.log("Query: ", query);
 
