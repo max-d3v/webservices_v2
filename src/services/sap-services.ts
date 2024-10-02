@@ -133,7 +133,6 @@ export class SapServices {
             AND B."TaxId0" <> ''
             AND B."TaxId0" IS NOT NULL 
             AND B."TaxId0" <> 'null'    
-            LIMIT 600
             `;
             const clients = await this.sl.querySAP(query, true);
             
