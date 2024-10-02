@@ -224,59 +224,22 @@ export class SapController {
             const JsonInMemory = new JsonInMemoryHandler()
             JsonInMemory.loadFile('./src/models/data/cnpj_data_clientes_full.json');
 
-            await Promise.all(clients.map(async (client) => {   
-                try {
-                    const cardCode = client.CardCode;
-                    if (!client || !cardCode) {
-                        throw new HttpError(400, 'Cliente inválido');
-                    }
-                    
-                    console.log("Starting client: ", client);
-
-                    const clientRegistrationLog = await this.dataBaseServices.findClientRegistrationLog(cardCode);
-                    if (clientRegistrationLog?.Status === "SUCCESS") {
-                        console.log("Found client that already has been processed with success: ", cardCode);
-                        return;
-                    }
-
-                    if(!clientRegistrationLog) {
-                        await this.dataBaseServices.logClientRegistration({
-                            CardCode: cardCode, Status: "PENDING"
-                        });    
-                    }
             
-                    const [processedClient, processedData] = await this.processClient(client, JsonInMemory);
-                    processedClients.push(processedClient);
-
-                    console.log("Finished client with success: ", cardCode);
+            //Size of batches - so the prisma is not overloaded and does not threaten db memory usage
+            const BATCH_SIZE = 200;
             
-                    await this.dataBaseServices.updateClientRegistrationLog(cardCode, {
-                        Status: "SUCCESS",
-                        data_updated: JSON.stringify(processedData),
-                    });
-            
-                    return true;
-                } catch (err: any) {
-                    const cardCode = client.CardCode;
-                    if (!cardCode) {
-                        return errors.push({ CardCode: null, error: "No CardCode" })
-                    }
-                    try {
-                        this.dataBaseServices.updateClientRegistrationLog(cardCode, {
-                            Status: "ERROR",
-                            Error: err.message,
-                        });
-                    } catch(err: any) {
-                        console.log("Error updating log on catch: ", err.message);
-                    }
-                    
+            const maxIterations = Math.ceil(clients.length / BATCH_SIZE);
+            for(let iteration = 0; iteration < maxIterations; iteration++) {
+                console.log(`Starting iteration ${iteration}, of ${BATCH_SIZE} clients - total iterations: ${maxIterations}`);
+                
+                const firstPosition = iteration * BATCH_SIZE;
+                console.log(`Vai pegar os clientes do index ${firstPosition} ao ${firstPosition + BATCH_SIZE}`);
+                
+                const batch = clients.slice(firstPosition, firstPosition + BATCH_SIZE);
 
-                    console.log("Finished client with error: ", cardCode);
-                    console.log("Error: ", err.message);
-                    
-                    return errors.push({ CardCode: cardCode, error: err.message });
-                }
-            }))
+                await Promise.all(batch.map(async (client) => this.ClientProcessController(client, JsonInMemory, processedClients, errors)))
+            }
+
 
             const totalClients = clients.length;
             
@@ -296,6 +259,61 @@ export class SapController {
             }
             throw new HttpError(err.statusCode || 500, 'Erro ao atualizar clientes por CNPJ: ' + err.message);
         }
+    }
+
+    private async ClientProcessController(client: interfaces.RelevantClientData, JsonInMemory: JsonInMemoryHandler, processedClients: any[], errors: any[]) {
+        try {
+            const cardCode = client.CardCode;
+            if (!client || !cardCode) {
+                throw new HttpError(400, 'Cliente inválido');
+            }
+            
+            console.log("Starting client: ", client);
+
+            const clientRegistrationLog = await this.dataBaseServices.findClientRegistrationLog(cardCode);
+            if (clientRegistrationLog?.Status === "SUCCESS") {
+                console.log("Found client that already has been processed with success: ", cardCode);
+                return;
+            }
+
+            if(!clientRegistrationLog) {
+                await this.dataBaseServices.logClientRegistration({
+                    CardCode: cardCode, Status: "PENDING"
+                });    
+            }
+    
+            const [processedClient, processedData] = await this.processClient(client, JsonInMemory);
+            processedClients.push(processedClient);
+
+            console.log("Finished client with success: ", cardCode);
+    
+            await this.dataBaseServices.updateClientRegistrationLog(cardCode, {
+                Status: "SUCCESS",
+                data_updated: JSON.stringify(processedData),
+            });
+    
+            return true;
+        } catch (err: any) {
+            const cardCode = client.CardCode;
+            if (!cardCode) {
+                return errors.push({ CardCode: null, error: "No CardCode" })
+            }
+            try {
+                this.dataBaseServices.updateClientRegistrationLog(cardCode, {
+                    Status: "ERROR",
+                    Error: err.message,
+                });
+            } catch(err: any) {
+                console.log("Error updating log on catch: ", err.message);
+            }
+            
+
+            console.log("Finished client with error: ", cardCode);
+            console.log("Error: ", err.message);
+            
+            return errors.push({ CardCode: cardCode, error: err.message });
+        }
+
     }
 
     public async deactiveAllTicketsFromVendor(userId: string) {
@@ -387,10 +405,8 @@ export class SapController {
             throw new HttpError(400, 'Estado inválido da query ao SAP');
         }
 
-        
 
-        const cnpjInformation = await JsonInMemory.getObjectByValue('taxId', cnpj);
-        console.log(cnpjInformation);
+        const cnpjInformation = JsonInMemory.getObjectByValue('taxId', cnpj);
         if (!cnpjInformation) {
             throw new HttpError(404, `CNPJ não encontrado no cache`);
         }
@@ -407,7 +423,8 @@ export class SapController {
 
 
         const registrations = cnpjInformation.registrations;
-        await this.getInscricaoEstadual(registrations, estado, cardCode, ClientData);
+        const adresses = client.Adresses;
+        await this.getInscricaoEstadual(registrations, estado, cardCode, adresses, ClientData);
 
         const status = cnpjInformation.status.id;
         this.getCnpjBaixado(status, ClientData)
@@ -435,11 +452,9 @@ export class SapController {
         }
     }
 
-    private async getInscricaoEstadual(registrations: interfaces.Registration[] | [], estado: string, cardCode: string, ClientData: any): Promise<void> {
+    private async getInscricaoEstadual(registrations: interfaces.Registration[] | [], estado: string, cardCode: string, clientAdresses: interfaces.RelevantClientData["Adresses"], ClientData: any): Promise<void> {
         try {
-            
             const registration = registrations?.find((registration) => registration?.state === estado);
-            const clientAdresses = await this.sapServices.getClientAdresses(cardCode);
             const BPFiscalTaxIDCollection: interfaces.TemplateFiscal[] = [];
 
             const isEnabled = registration?.enabled;
@@ -449,7 +464,7 @@ export class SapController {
 
             for (const adress of clientAdresses) {
                 const templateFiscal: interfaces.TemplateFiscal = {
-                    Address: adress.Address,
+                    Address: adress,
                     BPCode: cardCode,
                     AddrType: "bo_ShipTo",
                     TaxId1: InscricaoEstadual,

@@ -128,7 +128,7 @@ export default class SL {
         }
         const queryWithReplacedDbName = query.replace(/SBO_COPAPEL_(PRD|TST)/g, database_name);
 
-        console.log("Query: ", queryWithReplacedDbName);
+        //console.log("Query: ", queryWithReplacedDbName);
 
         const url = `${this.slConfig.webService.url}:${this.slConfig.webService.port}?token=${this.slConfig.webService.token}&query=${queryWithReplacedDbName}`
 
