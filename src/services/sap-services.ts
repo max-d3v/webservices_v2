@@ -123,7 +123,7 @@ export class SapServices {
         }
     }
 
-    public async getAllActiveClientsRegistrationData(): Promise<interfaces.RelevantClientData[]> {
+    public async getAllActiveClientsRegistrationData( removedClients: string | null = null ): Promise<interfaces.RelevantClientData[]> {
         try {
             const query = `SELECT B."TaxId0", B."Address", A."State1", A."CardCode", A."CardName", CAST(A."Free_Text" AS NVARCHAR) as "Free_Text"
             FROM "SBO_COPAPEL_PRD".OCRD A 
@@ -133,7 +133,10 @@ export class SapServices {
             AND B."TaxId0" <> ''
             AND B."TaxId0" IS NOT NULL 
             AND B."TaxId0" <> 'null'    
+            AND A."CardCode" NOT IN (${removedClients ? removedClients : "''"})
             `;
+            //console.log("Query: ", query);
+
             const clients = await this.sl.querySAP(query, true);
             
             const data: interfaces.getClientDataQueryReturn[] = clients.data;

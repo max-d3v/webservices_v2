@@ -33,6 +33,18 @@ export class DatabaseServices {
             throw new HttpError(500, 'Error logging request');
         }
     }
+
+    public async getClientsAlreadyProcessed() {
+        try {
+            const clients = await this.prisma.log_atualizacao_cadastral_clientes.findMany({
+                where: { Status: "SUCCESS" }
+            });
+            return clients;
+        } catch (err: any) {
+            throw new HttpError(500, 'Erro ao buscar clientes já processados: ' + err.message);
+        }
+    }
+
     public async logFornecedorCadastrado(fornecedorObj: Omit<PrismaTypes.fornecedores_cadastro_geral_log, "id" | "timestamp"> & { Erro?: string | undefined | null }) {
         try {
             if (!fornecedorObj.CardCode) {

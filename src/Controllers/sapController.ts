@@ -214,9 +214,28 @@ export class SapController {
         }
     }
 
+
     public async updateAllClientsRegistrationData() {
         try {
-            const clients = await this.sapServices.getAllActiveClientsRegistrationData();
+
+            const clientAlreadyProcessed = await this.dataBaseServices.getClientsAlreadyProcessed();
+            const clientsProcessedCardCodesString = clientAlreadyProcessed.map((client) => `'${client.CardCode}'`).join(",");
+
+
+            //Double check no client is re-processed
+            const allClients = await this.sapServices.getAllActiveClientsRegistrationData(clientsProcessedCardCodesString);            
+            const clients = allClients.map((client) => {
+                if ( clientAlreadyProcessed.find((processedClient) => processedClient.CardCode === client.CardCode) ) {
+                    console.log("Client already processed: ", client.CardCode);
+                    return;
+                }
+                return client;
+            });
+
+            if (!clients || clients.length === 0) {
+                throw new HttpError(404, "Nenhum cliente encontrado para processamento!");
+            }
+
             const errors: any[] = [];
             const processedClients: any[] = [];
 
@@ -234,7 +253,7 @@ export class SapController {
                 const firstPosition = iteration * BATCH_SIZE;
                 console.log(`Vai pegar os clientes do index ${firstPosition} ao ${firstPosition + BATCH_SIZE}`);
                 
-                const batch = clients.slice(firstPosition, firstPosition + BATCH_SIZE);
+                const batch = clients.slice(firstPosition, firstPosition + BATCH_SIZE) as interfaces.RelevantClientData[];
 
                 await Promise.all(batch.map(async (client) => this.ClientProcessController(client, JsonInMemory, processedClients, errors)))
             }
