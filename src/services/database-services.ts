@@ -34,7 +34,7 @@ export class DatabaseServices {
         }
     }
 
-    public async getClientsAlreadyProcessed() {
+    public async getClientsAlreadyProcessed(): Promise<PrismaTypes.log_atualizacao_cadastral_clientes[]> {
         try {
             const clients = await this.prisma.log_atualizacao_cadastral_clientes.findMany({
                 where: { Status: "SUCCESS" }

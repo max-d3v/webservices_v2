@@ -221,10 +221,9 @@ export class SapController {
             const clientAlreadyProcessed = await this.dataBaseServices.getClientsAlreadyProcessed();
             const clientsProcessedCardCodesString = clientAlreadyProcessed.map((client) => `'${client.CardCode}'`).join(",");
 
-
             //Double check no client is re-processed
-            const allClients = await this.sapServices.getAllActiveClientsRegistrationData(clientsProcessedCardCodesString);            
-            const clients = allClients.map((client) => {
+            const ActiveClients = await this.sapServices.getAllActiveClientsRegistrationData(clientsProcessedCardCodesString);            
+            const clients = ActiveClients.map((client) => {
                 if ( clientAlreadyProcessed.find((processedClient) => processedClient.CardCode === client.CardCode) ) {
                     console.log("Client already processed: ", client.CardCode);
                     return;
