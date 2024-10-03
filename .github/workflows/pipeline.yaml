@@ -18,6 +18,12 @@ jobs:
     - name: Get secrets
       run: |
         echo ${{ secrets.ENV_PRD }} | base64 --decode > .env.prd
+    
+    - name: Get client data
+      run: |
+        openssl enc -aes-256-cbc -d -in src/models/data/encrypted_cnpj_data/cnpj_clientes.bin -out src/models/data/cnpj_data_clientes_full.json -k ${{ secrets.DECRYPTION_KEY }}
+        openssl enc -aes-256-cbc -d -in src/models/data/encrypted_cnpj_data/cnpj_fornecedores.bin -out src/models/data/cnpj_data_fornecedores_full.json -k ${{ secrets.DECRYPTION_KEY }}
+
 
     - name: Echo files
       run: |
