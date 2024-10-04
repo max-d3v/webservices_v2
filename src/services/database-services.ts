@@ -1,5 +1,5 @@
 import { HttpError } from "../utils/errorHandler";
-import {ExtendedRequest} from "../Controllers/webservicesController";
+import {ExtendedRequest} from "../Handlers/ServicesHandler";
 import { PrismaClient } from "@prisma/client";
 import * as PrismaTypes from "@prisma/client";
 
@@ -16,6 +16,17 @@ export class DatabaseServices {
             DatabaseServices.instance = new DatabaseServices();
         }
         return DatabaseServices.instance;
+    }
+
+    public async getInactivatedClients() {
+        try {
+            const clients = await this.prisma.log_atualizacao_cadastral_clientes.findMany({
+                where: { data_updated: { contains: `"Valid":"tNO"` } }
+            });
+            return clients;
+        } catch (err: any) {
+            throw new HttpError(500, 'Erro ao buscar clientes inativos: ' + err.message);
+        }
     }
 
     public async logRequest(request: ExtendedRequest, status: string) {
