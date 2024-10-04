@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response, Router } from "express";
 import runService from "../Handlers/ServicesHandler";
-import { SapController } from "../Controllers/SapController";
+import { SapController } from "../Controllers/sapController";
 import { SapServices } from "../services/sap-services";
 
 class Routes {
