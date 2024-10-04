@@ -14,7 +14,10 @@ RUN npm i
 COPY . .
 COPY .env.prd .
 
-#generate prisma client foer debian
+#Update prisma schema with current db structure
+RUN npx prisma db pull
+
+#generate prisma client for debian
 RUN npx prisma generate
 
 
