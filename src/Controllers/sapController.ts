@@ -4,7 +4,7 @@ import * as helperFunctions from "../utils/helperFunctions";
 import * as interfaces from "../types/interfaces";
 import { DatabaseServices } from "../services/database-services";
 import { JsonInMemoryHandler } from "../services/jsonLoaderClass";
-//
+
 export class SapController {
     private static instance: SapController;
     private sapServices: SapServices;
