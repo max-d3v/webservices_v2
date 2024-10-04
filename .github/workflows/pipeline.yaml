@@ -18,6 +18,8 @@ jobs:
     - name: Get secrets
       run: |
         echo ${{ secrets.ENV_PRD }} | base64 --decode > .env.prd
+        echo ${{ secrets.ENV_DEPLOY }} | base64 --decode > .env
+
     
     - name: Get client data
       run: |

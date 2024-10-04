@@ -12,7 +12,6 @@ COPY package-lock.json .
 RUN npm i
 
 COPY . .
-COPY .env.prd .
 
 #Update prisma schema with current db structure
 RUN npx prisma db pull
