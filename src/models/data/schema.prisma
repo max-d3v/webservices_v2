@@ -1268,7 +1268,7 @@ model pdh_products {
 model pesquisa_blip {
   id               Int       @id @default(autoincrement())
   ticket           String?   @db.VarChar(20)
-  cardcode         String?   @db.VarChar(20)
+  cardcode         String?   @db.VarChar(255)
   contato_cliente  String?   @db.VarChar(255)
   nota_atendimento Int?
   nome_atendente   String?   @db.VarChar(255)
@@ -2992,7 +2992,7 @@ model webservice_logs {
 model fornecedores_cadastro_geral_log {
   id        Int       @id @default(autoincrement())
   CardCode  String?   @unique(map: "CardCode") @db.VarChar(50)
-  timestamp DateTime? @default(dbgenerated("(now())")) @db.DateTime(0)
+  timestamp DateTime? @default(dbgenerated("(now(3))")) @db.DateTime(0)
   Status    String?   @db.VarChar(50)
   Erro      String?   @db.Text
 }
@@ -3032,19 +3032,22 @@ model log_atualizacao_cadastral_clientes {
 }
 
 model saida_comodato {
-  NumDocumento  Int
-  TipoDocumento String    @db.VarChar(20)
-  DataDocumento DateTime? @db.Date
-  Status        String?   @db.VarChar(20)
-  CodigoCliente String?   @db.VarChar(20)
-  NumLinha      Int
-  CodigoItem    String?   @db.VarChar(20)
-  Qtde          Decimal?  @db.Decimal(16, 2)
-  ValorUnitario Decimal?  @db.Decimal(16, 2)
-  NumNF         Int?
-  DataInsercao  DateTime? @default(now()) @db.Timestamp(0)
+  NumDocumento   Int
+  TipoDocumento  String           @db.VarChar(20)
+  DataDocumento  DateTime?        @db.Date
+  Status         String?          @db.VarChar(20)
+  CodigoCliente  String?          @db.VarChar(20)
+  NumLinha       Int
+  CodigoItem     String?          @db.VarChar(20)
+  Qtde           Decimal?         @db.Decimal(16, 2)
+  ValorUnitario  Decimal?         @db.Decimal(16, 2)
+  NumNF          Int?
+  DataInsercao   DateTime?        @default(now()) @db.Timestamp(0)
+  IdSaida        Int              @unique(map: "ID") @default(autoincrement())
+  Amortizado     String?          @db.VarChar(1)
+  baixa_comodato baixa_comodato[]
 
-  @@id([NumDocumento, NumLinha, TipoDocumento])
+  @@id([NumDocumento, TipoDocumento, NumLinha])
 }
 
 model entrada_comodato {
@@ -3058,6 +3061,17 @@ model entrada_comodato {
   Qtde          Decimal?  @db.Decimal(16, 2)
   NumNF         String?   @db.VarChar(45)
   DataInsercao  DateTime? @default(now()) @db.Timestamp(0)
+  IdEntrada     Int       @unique(map: "ID") @default(autoincrement())
 
   @@id([NumDocumento, TipoDocumento, NumLinha])
+}
+
+model baixa_comodato {
+  IdBaixa        Int             @id @default(autoincrement())
+  IdEntrada      Int?
+  IdSaida        Int?
+  QtdeBaixada    Int?
+  saida_comodato saida_comodato? @relation(fields: [IdSaida], references: [IdSaida], onDelete: NoAction, onUpdate: NoAction, map: "fk_saida_comodato")
+
+  @@index([IdSaida], map: "fk_saida_comodato")
 }

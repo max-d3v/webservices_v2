@@ -13,9 +13,6 @@ RUN npm i
 
 COPY . .
 
-#Update prisma schema with current db structure
-RUN npx prisma db pull
-
 #generate prisma client for debian
 RUN npx prisma generate
 
