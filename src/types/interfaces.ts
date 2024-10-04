@@ -40,6 +40,10 @@ export interface FornecedorAdress {
     Address: string;
 }
 
+export interface Observations {
+    Free_text: string | null;
+}
+
 export interface TemplateFiscal {
     Address: string;
     BPCode: string;
@@ -84,6 +88,10 @@ export interface BaseClientRegistrationData {
     BPFiscalTaxIDCollection: TemplateFiscal[];
 }
 
+export interface GetClientsFilter {
+    field: string;
+    value: string;
+}
 
 
 

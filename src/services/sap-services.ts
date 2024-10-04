@@ -56,6 +56,8 @@ export class SapServices {
 
             const fornecedores = await this.sl.querySAP(query, true);
 
+            const data = fornecedores.data;
+
             return fornecedores.data;
         } catch (err: any) {                                                    
             throw new HttpError(500, 'Erro ao buscar fornecedores cadastrados no SAP: ' + err.message);
@@ -93,10 +95,13 @@ export class SapServices {
 
     
 
-    public async getClientAdresses(CardCode: string) {
+    public async getClientAdresses(CardCode: string): Promise<interfaces.FornecedorAdress[]> {
         try {
             const query = `SELECT "Address" FROM "SBO_COPAPEL_PRD".CRD7 WHERE "CardCode" = '${CardCode}' AND "AddrType" = 'S'`;
             const fornecedorAdresses = await this.sl.querySAP(query);
+
+            const data = fornecedorAdresses.data;
+
             return fornecedorAdresses.data;
         } catch (err: any) {
             throw new HttpError(500, 'Erro ao buscar endereços do fornecedor: ' + err.message);
@@ -123,24 +128,28 @@ export class SapServices {
         }
     }
 
-    public async getAllActiveClientsRegistrationData( removedClients: string | null = null ): Promise<interfaces.RelevantClientData[]> {
+    public async getClientsRegistrationData(removedClients: string | null = null, filter: interfaces.GetClientsFilter | null = null): Promise<interfaces.RelevantClientData[]> {
         try {
             const query = `SELECT B."TaxId0", B."Address", A."State1", A."CardCode", A."CardName", CAST(A."Free_Text" AS NVARCHAR) as "Free_Text"
             FROM "SBO_COPAPEL_PRD".OCRD A 
             LEFT JOIN "SBO_COPAPEL_PRD".CRD7 B ON A."CardCode" = B."CardCode" 
             WHERE A."CardType" = 'C' 
-            AND A."validFor" = 'Y' 
             AND B."TaxId0" <> ''
             AND B."TaxId0" IS NOT NULL 
             AND B."TaxId0" <> 'null'    
+            ${filter ? `AND ${filter.field} IN (${filter.value})` : ""}
             AND A."CardCode" NOT IN (${removedClients ? removedClients : "''"})
             LIMIT 5000
-            `;
-            //console.log("Query: ", query);
+            `;            
 
             const clients = await this.sl.querySAP(query, true);
             
-            const data: interfaces.getClientDataQueryReturn[] = clients.data;
+            const data: interfaces.getClientDataQueryReturn[] | string = clients.data;
+            
+            if (data.length == 0) {
+                throw new HttpError(404, "Nenhum cliente encontrado para processamento!");
+            }
+            
 
             const formattedData: any[] = [];
 
@@ -170,9 +179,61 @@ export class SapServices {
         } catch (err: any) {
             throw new HttpError(500, 'Erro ao buscar dados relevantes dos clientes: ' + err.message);
         }
+
     }
 
-    public async getObservationFromSAP(cardCode: string): Promise<string | null> {
+    public async getAllActiveClientsRegistrationData( removedClients: string | null = null, filter: interfaces.GetClientsFilter | null = null ): Promise<interfaces.RelevantClientData[]> {
+        try {
+            const query = `SELECT B."TaxId0", B."Address", A."State1", A."CardCode", A."CardName", CAST(A."Free_Text" AS NVARCHAR) as "Free_Text"
+            FROM "SBO_COPAPEL_PRD".OCRD A 
+            LEFT JOIN "SBO_COPAPEL_PRD".CRD7 B ON A."CardCode" = B."CardCode" 
+            WHERE A."CardType" = 'C' 
+            AND A."validFor" = 'Y' 
+            AND B."TaxId0" <> ''
+            AND B."TaxId0" IS NOT NULL 
+            AND B."TaxId0" <> 'null'    
+            ${filter ? `AND ${filter.field} IN (${filter.value})` : ""}
+            AND A."CardCode" NOT IN (${removedClients ? removedClients : "''"})
+            LIMIT 5000
+            `;            
+
+            const clients = await this.sl.querySAP(query, true);
+            
+            const data: interfaces.getClientDataQueryReturn[] | string = clients.data;
+            
+            if (data.length == 0) {
+                throw new HttpError(404, "Nenhum cliente encontrado para processamento!");
+            }
+
+            const formattedData: any[] = [];
+
+            data.forEach((client: interfaces.getClientDataQueryReturn) => {
+                const isAlreadyInFormattedData = formattedData.some((formattedClient) => formattedClient.CardCode === client.CardCode);
+                if (isAlreadyInFormattedData) return;
+                
+                const allRecordsFromSameCardCode = data.filter((record) => record.CardCode === client.CardCode);
+                const firstRecord = allRecordsFromSameCardCode[0];
+                const addresses = allRecordsFromSameCardCode.map((record) => record.Address);
+                const newObj = {
+                    CardCode: firstRecord.CardCode,
+                    CardName: firstRecord.CardName,
+                    State1: firstRecord.State1,
+                    TaxId0: firstRecord.TaxId0,
+                    Free_Text: firstRecord.Free_Text,
+                    Adresses: addresses
+                }
+                formattedData.push(newObj);
+            })
+            
+            console.log("Number of clients: ", formattedData.length);
+
+            return formattedData;
+        } catch (err: any) {
+            throw new HttpError(500, 'Erro ao buscar dados relevantes dos clientes: ' + err.message);
+        }
+    }
+
+    public async getObservationFromSAP(cardCode: string): Promise<Array<interfaces.Observations>> {
         try {
             const query = `SELECT "Free_Text" FROM "SBO_COPAPEL_PRD".OCRD WHERE "CardCode" = '${cardCode}'`;
             const observation = await this.sl.querySAP(query);

@@ -24,7 +24,7 @@ export class JsonInMemoryHandler {
       }
     }
   
-    public getObjectByValue(valueName: string, value: any): interfaces.CnpjJaData {
+    public getObjectByValue(valueName: string, value: any): interfaces.CnpjJaData | undefined {
         try {
             const data = this.parsedData;
             const object = data.find((object: any) => object[valueName] === value);

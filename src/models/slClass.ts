@@ -2,6 +2,8 @@ import axios, { AxiosRequestConfig } from 'axios';
 import https from 'https';
 import { HttpError } from '../utils/errorHandler';
 import { llm_api } from './llmApi';
+import * as helperFunctions from '../utils/helperFunctions';
+
 const agent = new https.Agent({
     rejectUnauthorized: false
 });
@@ -121,7 +123,7 @@ export default class SL {
         return response.data;
     }
 
-    async querySAP(query: string, onlyPrd: boolean = false): Promise<{ data?: any; message?: string }> {
+    async querySAP(query: string, onlyPrd: boolean = false): Promise<{ data: Array<any> }> {
         let database_name = this.slConfig.serviceLayers.companyName;
         if (onlyPrd) {
             database_name = "SBO_COPAPEL_PRD";
@@ -138,10 +140,24 @@ export default class SL {
         }
 
         const response = await axios.get(url, config);
-
-        if (response.data.STATUS === '-1') {
+        const data = response.data;
+        
+        if (data.STATUS === '-1') {
             throw new HttpError(500, 'Erro ao executar query: ' + response.data.MENSAGEM);
         }
+
+        if (helperFunctions.objetoVazio(data[0])) {
+            return { data: [] };
+        }
+
+        if (!data || typeof data == "string") {
+            throw new HttpError(500, 'Erro ao executar query: ' + data);
+        }
+
+        if (!Array.isArray(data)) {
+            throw new HttpError(500, 'Erro ao executar query (Não retornou array no final): ' + data);
+        }
+
         return response;
     }
 

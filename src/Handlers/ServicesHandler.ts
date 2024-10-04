@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { DatabaseServices } from "../services/database-services";
 import { logger } from "../middlewares/logger";
 import { v4 as uuidv4 } from 'uuid';
-
+import { HttpError } from "../server"; 
 export interface ExtendedRequest extends Request {
     executionTime?: number;
 }
@@ -27,6 +27,10 @@ const runService = async (
         const initialTime = performance.now();
         const result = await serviceFunction();
         const endTime = performance.now();
+
+        if (!result) {
+            throw new HttpError(500, "Serviço não retornou dados");
+        }
 
         const statusCode = result.customStatusCode || 200;
         if (result.customStatusCode) {
@@ -73,13 +77,13 @@ const runService = async (
             timestamp: new Date().toISOString()
         });
         try {
+            await databaseServices.logRequest(request, "error");
             logger.info({
                 serviceId: serviceId,
                 message: `Logged service error`,
                 url: request.originalUrl,
                 timestamp: new Date().toISOString()
             });
-            await databaseServices.logRequest(request, "error");
         } catch (error: any) {
             logger.error({
                 serviceId: serviceId,
@@ -88,7 +92,6 @@ const runService = async (
                 timestamp: new Date().toISOString()
             });
         }
-        //console.error(error);        
         next(error);
     }
 };
