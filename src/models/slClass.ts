@@ -88,25 +88,25 @@ export default class SL {
         return response.data;
     }
 
-    async get(tipo: string, parametro?: string | number, skip = 0, select?: string): Promise<{ data?: any;}> {
+    async get(tipo: string, parametro?: string | number, skip = 0, select?: string): Promise<{ data?: any; }> {
 
         try {
-        const configCopy = { ...this.config };
-        let url = `${this.host}:${this.port}/b1s/v1/${tipo}`;
+            const configCopy = { ...this.config };
+            let url = `${this.host}:${this.port}/b1s/v1/${tipo}`;
 
-        if (parametro !== undefined) {
-            url += typeof parametro === 'number' ? `(${parametro})` : `('${parametro}')`;
-        }
+            if (parametro !== undefined) {
+                url += typeof parametro === 'number' ? `(${parametro})` : `('${parametro}')`;
+            }
 
-        if (select) {
-            url += `?$select=${encodeURIComponent(select)}&$skip=${skip}`;
-        }
+            if (select) {
+                url += `?$select=${encodeURIComponent(select)}&$skip=${skip}`;
+            }
 
-        configCopy.url = url;
-        configCopy.method = 'get';
+            configCopy.url = url;
+            configCopy.method = 'get';
 
-        const response = await axios.request(configCopy);
-        return {data: response.data};
+            const response = await axios.request(configCopy);
+            return { data: response.data };
         } catch (error: any) {
             const errorMessage = error.response.data.error?.message?.value || error.message;
             throw new HttpError(500, 'Erro ao buscar dados: ' + errorMessage);
@@ -124,69 +124,121 @@ export default class SL {
     }
 
     async querySAP(query: string, onlyPrd: boolean = false): Promise<{ data: Array<any> }> {
-        let database_name = this.slConfig.serviceLayers.companyName;
-        if (onlyPrd) {
-            database_name = "SBO_COPAPEL_PRD";
+        try {
+            let database_name = this.slConfig.serviceLayers.companyName;
+            if (onlyPrd) {
+                database_name = "SBO_COPAPEL_PRD";
+            }
+            const queryWithReplacedDbName = query.replace(/SBO_COPAPEL_(PRD|TST)/g, database_name);
+
+            const url = `${this.slConfig.webService.url}:${this.slConfig.webService.port}?token=${this.slConfig.webService.token}&query=${queryWithReplacedDbName}`
+
+            const config = {
+                headers: this.headers,
+                httpsAgent: agent
+            }
+
+
+            console.log("url: ", url);
+
+            const response = await axios.get(url, config);
+            
+            console.log("response: ", response);
+            
+            const data = response.data;
+
+            if (data.STATUS === '-1') {
+                throw new HttpError(500, 'Erro ao executar query: ' + response.data.MENSAGEM);
+            }
+
+            if (helperFunctions.objetoVazio(data[0])) {
+                return { data: [] };
+            }
+
+            if (!data || typeof data == "string") {
+                throw new HttpError(500, 'Erro ao executar query: ' + data);
+            }
+
+            if (!Array.isArray(data)) {
+                throw new HttpError(500, 'Erro ao executar query (Não retornou array no final): ' + data);
+            }
+
+            return response;
+        } catch (err: any) {
+            throw new HttpError(500, err.message);
         }
-        const queryWithReplacedDbName = query.replace(/SBO_COPAPEL_(PRD|TST)/g, database_name);
+    }
 
-        //console.log("Query: ", queryWithReplacedDbName);
+    async newQuerySAP(query: string, onlyPrd: boolean = false): Promise<{ data: Array<any> }> {
+        try {
+            let database_name = this.slConfig.serviceLayers.companyName;
+            if (onlyPrd) {
+                database_name = "SBO_COPAPEL_PRD";
+            }
 
-        const url = `${this.slConfig.webService.url}:${this.slConfig.webService.port}?token=${this.slConfig.webService.token}&query=${queryWithReplacedDbName}`
+            const queryWithReplacedDbName = query.replace(/SBO_COPAPEL_(PRD|TST)/g, database_name);
+            const baseUrl = `${this.slConfig.webService.url}:${this.slConfig.webService.port}/ConsultaSQL?token=${this.slConfig.webService.token}`;
 
-        const config = {
-            headers: this.headers,
-            httpsAgent: agent
-        }
 
-        const response = await axios.get(url, config);
-        const data = response.data;
+            const config = {
+                method: 'post',
+                headers: {
+                    'Content-Type': 'text/plain'
+                },
+                httpsAgent: agent,
+                url: baseUrl,
+                data: queryWithReplacedDbName
+            }
+
+
+            const response = await axios.request(config);
+
+            const data = response.data;
+
+            if (data.STATUS === '-1') {
+                throw new HttpError(500, 'Erro ao executar query: ' + response.data.MENSAGEM);
+            }
+
+            if (helperFunctions.objetoVazio(data[0])) {
+                return { data: [] };
+            }
+
+            if (!Array.isArray(data)) {
+                throw new HttpError(500, 'Erro ao executar query (Não retornou array no final): ' + data);
+            }
         
-        if (data.STATUS === '-1') {
-            throw new HttpError(500, 'Erro ao executar query: ' + response.data.MENSAGEM);
+            return { data };
+        } catch (err: any) {
+            throw new HttpError(500, err.message);
         }
-
-        if (helperFunctions.objetoVazio(data[0])) {
-            return { data: [] };
-        }
-
-        if (!data || typeof data == "string") {
-            throw new HttpError(500, 'Erro ao executar query: ' + data);
-        }
-
-        if (!Array.isArray(data)) {
-            throw new HttpError(500, 'Erro ao executar query (Não retornou array no final): ' + data);
-        }
-
-        return response;
     }
 
     async patch(tipo: string, id: string | number, data?: any): Promise<{ status: boolean; data?: any; message?: string }> {
         try {
             const configCopy = { ...this.config };
             configCopy.url = `${this.host}:${this.port}/b1s/v1/${tipo}`;
-    
+
             if (data) {
                 configCopy.data = JSON.stringify(data);
             } else {
                 delete configCopy.data;
             }
-    
+
             if (id !== undefined) {
                 configCopy.url += typeof id === 'number' ? `(${id})` : `('${id}')`;
             }
-    
+
             configCopy.method = 'patch';
-    
+
             const response = await axios.request(configCopy);
             return { status: true, data: response.data };
-            
+
         } catch (err: any) {
             const errorMessage = err.response.data.error?.message?.value || err.message;
             let translatedErrorMessage = errorMessage;
             try {
                 translatedErrorMessage = await this.translateErrorMessage(errorMessage);
-            } catch(err: any) {
+            } catch (err: any) {
                 throw new HttpError(500, 'Erro ao atualizar dados na SL: ' + errorMessage);
             }
             throw new HttpError(500, 'Erro ao atualizar dados na SL: ' + translatedErrorMessage);
@@ -196,17 +248,17 @@ export default class SL {
     async post(tipo: string, data?: any): Promise<{ status: boolean; data?: any; message?: string }> {
         try {
 
-        const configCopy = { ...this.config };
-        configCopy.url = `${this.host}:${this.port}/b1s/v1/${tipo}`;
-        configCopy.method = 'post';
+            const configCopy = { ...this.config };
+            configCopy.url = `${this.host}:${this.port}/b1s/v1/${tipo}`;
+            configCopy.method = 'post';
 
-        if (data) {
-            configCopy.data = JSON.stringify(data);
-        } else {
-            delete configCopy.data;
-        }
+            if (data) {
+                configCopy.data = JSON.stringify(data);
+            } else {
+                delete configCopy.data;
+            }
 
-        const response = await axios.request(configCopy);
+            const response = await axios.request(configCopy);
             return { status: true, data: response.data };
         } catch (err: any) {
             const errorMessage = err.response.data.error?.message?.value || err.message;

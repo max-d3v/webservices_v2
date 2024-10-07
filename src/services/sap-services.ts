@@ -186,7 +186,7 @@ export class SapServices {
             LIMIT 5000
             `;            
 
-            const clients = await this.sl.querySAP(query, true);
+            const clients = await this.sl.newQuerySAP(query, true);
             
             const data: interfaces.getClientDataQueryReturn[] | string = clients.data;
             
@@ -213,7 +213,7 @@ export class SapServices {
                 }
                 formattedData.push(newObj);
             })
-            
+
             console.log("Number of clients: ", formattedData.length);
 
             return formattedData;
