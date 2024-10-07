@@ -4,7 +4,6 @@ import { HttpError, HttpErrorWithDetails } from "../utils/errorHandler";
 import * as helperFunctions from "../utils/helperFunctions";
 import * as interfaces from "../types/interfaces";
 import { DatabaseServices } from "./database-services";
-//import { RedisServices } from "./redisServices";
 
 export class SapServices {
     private static instance: SapServices;
