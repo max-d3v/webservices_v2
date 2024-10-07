@@ -211,7 +211,7 @@ export class SapController {
                 }
                 }
             //
-            
+
             public async updateClientsRegistrationData(tipo: string) {
                 try {
                     let clients: interfaces.RelevantClientData[] = [];
@@ -349,12 +349,13 @@ export class SapController {
             }
 
             private async processClient(client: interfaces.RelevantClientData, JsonInMemory: JsonInMemoryHandler): Promise<(interfaces.ClientUpdateData | {CardCode: string; data: interfaces.ClientUpdateData;})[]> {
-            const cardCode = client.CardCode;
-
+            const cardCode = client.CardCode
+            
             const cnpj = client.TaxId0?.replace(/\D/g, '') ?? null;
             const estado = client.State1 ?? null;
             const cardName = client.CardName;
             const freeText = client.Free_Text ?? null;
+            const balance = client.Balance;
             
             if (!cnpj || cnpj === "") {
                 throw new HttpError(400, 'CNPJ inválido da query ao SAP');
@@ -373,7 +374,9 @@ export class SapController {
                 U_TX_IndIEDest: null,
                 U_TX_SN: null,
                 BPFiscalTaxIDCollection: null,
-                FreeText: null
+                FreeText: null,
+                Valid: null,
+                Frozen: null
             }
 
             const simplesOptant = cnpjInformation.company.simples.optant;
@@ -385,7 +388,7 @@ export class SapController {
             await this.getInscricaoEstadual(registrations, estado, cardCode, adresses, ClientData);
 
             const status = cnpjInformation.status.id;
-            this.getCnpjBaixado(status, ClientData)
+            this.getCnpjBaixado(status, balance, ClientData)
 
             const mainActivityText = cnpjInformation.mainActivity.text;
             const reason = cnpjInformation.reason?.text;
@@ -438,12 +441,18 @@ export class SapController {
             }
         }
 
-        private getCnpjBaixado(status: number, ClientData: any): void {
+        private getCnpjBaixado(status: number, balance: number, ClientData: any): void {
             try {
-                const statusForSL = status === 2 || status === 4 ? "tYES" : "tNO";
-                const frozenForSL = status === 2 || status === 4 ? "tNO" : "tYES";
-                ClientData.Valid = statusForSL;
-                ClientData.Frozen = frozenForSL;
+                if (balance === 0) {
+                    const statusForSL = status === 2 || status === 4 ? "tYES" : "tNO";
+                    const frozenForSL = status === 2 || status === 4 ? "tNO" : "tYES";
+                    ClientData.Valid = statusForSL;
+                    ClientData.Frozen = frozenForSL;    
+                } else {
+                    console.log("Achou cnpj com saldo diferente de 0");
+                    ClientData.Valid = "tYES";
+                    ClientData.Frozen = "tNO";
+                }
             } catch (err: any) {
                 throw new HttpError(err.statusCode || 500, 'Erro ao processar CNPJ baixado do cliente: ' + err.message);
             }

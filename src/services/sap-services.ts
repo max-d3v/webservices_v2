@@ -119,7 +119,7 @@ export class SapServices {
 
     public async getClientsRegistrationData(removedClients: string | null = null, filter: interfaces.GetClientsFilter | null = null): Promise<interfaces.RelevantClientData[]> {
         try {
-            const query = `SELECT B."TaxId0", B."Address", A."State1", A."CardCode", A."CardName", CAST(A."Free_Text" AS NVARCHAR) as "Free_Text"
+            const query = `SELECT A."Balance", B."TaxId0", B."Address", A."State1", A."CardCode", A."CardName", CAST(A."Free_Text" AS NVARCHAR) as "Free_Text"
             FROM "SBO_COPAPEL_PRD".OCRD A 
             LEFT JOIN "SBO_COPAPEL_PRD".CRD7 B ON A."CardCode" = B."CardCode" 
             WHERE A."CardType" = 'C' 
@@ -140,7 +140,7 @@ export class SapServices {
             }
             
 
-            const formattedData: any[] = [];
+            const formattedData: interfaces.RelevantClientData[] = [];
 
             data.forEach((client: interfaces.getClientDataQueryReturn) => {
                 const isAlreadyInFormattedData = formattedData.some((formattedClient) => formattedClient.CardCode === client.CardCode);
@@ -149,12 +149,13 @@ export class SapServices {
                 const allRecordsFromSameCardCode = data.filter((record) => record.CardCode === client.CardCode);
                 const firstRecord = allRecordsFromSameCardCode[0];
                 const addresses = allRecordsFromSameCardCode.map((record) => record.Address);
-                const newObj = {
+                const newObj: interfaces.RelevantClientData = {
                     CardCode: firstRecord.CardCode,
                     CardName: firstRecord.CardName,
                     State1: firstRecord.State1,
                     TaxId0: firstRecord.TaxId0,
                     Free_Text: firstRecord.Free_Text,
+                    Balance: firstRecord.Balance,
                     Adresses: addresses
                 }
                 formattedData.push(newObj);
@@ -173,7 +174,7 @@ export class SapServices {
 
     public async getAllActiveClientsRegistrationData( removedClients: string | null = null, filter: interfaces.GetClientsFilter | null = null ): Promise<interfaces.RelevantClientData[]> {
         try {
-            const query = `SELECT B."TaxId0", B."Address", A."State1", A."CardCode", A."CardName", CAST(A."Free_Text" AS NVARCHAR) as "Free_Text"
+            const query = `SELECT A."Balance", B."TaxId0", B."Address", A."State1", A."CardCode", A."CardName", CAST(A."Free_Text" AS NVARCHAR) as "Free_Text"
             FROM "SBO_COPAPEL_PRD".OCRD A 
             LEFT JOIN "SBO_COPAPEL_PRD".CRD7 B ON A."CardCode" = B."CardCode" 
             WHERE A."CardType" = 'C' 
@@ -194,7 +195,7 @@ export class SapServices {
                 throw new HttpError(404, "Nenhum cliente encontrado para processamento!");
             }
 
-            const formattedData: any[] = [];
+            const formattedData: interfaces.RelevantClientData[] = [];
 
             data.forEach((client: interfaces.getClientDataQueryReturn) => {
                 const isAlreadyInFormattedData = formattedData.some((formattedClient) => formattedClient.CardCode === client.CardCode);
@@ -203,12 +204,13 @@ export class SapServices {
                 const allRecordsFromSameCardCode = data.filter((record) => record.CardCode === client.CardCode);
                 const firstRecord = allRecordsFromSameCardCode[0];
                 const addresses = allRecordsFromSameCardCode.map((record) => record.Address);
-                const newObj = {
+                const newObj: interfaces.RelevantClientData = {
                     CardCode: firstRecord.CardCode,
                     CardName: firstRecord.CardName,
                     State1: firstRecord.State1,
                     TaxId0: firstRecord.TaxId0,
                     Free_Text: firstRecord.Free_Text,
+                    Balance: firstRecord.Balance,
                     Adresses: addresses
                 }
                 formattedData.push(newObj);

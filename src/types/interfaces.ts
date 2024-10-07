@@ -17,11 +17,18 @@ export interface getClientDataQueryReturn {
     State1: string | null | "";
     CardCode: string;
     CardName: string;
+    Balance: number;
     Free_Text?: string | null | "";
 }
 
-export interface RelevantClientData extends getClientDataQueryReturn {
+export interface RelevantClientData {
     Adresses: string[];
+    TaxId0: string | null | "";
+    State1: string | null | "";
+    CardCode: string;
+    CardName: string;
+    Balance: number;
+    Free_Text?: string | null | "";
 }
 
 
@@ -30,6 +37,8 @@ export interface ClientUpdateData {
     U_TX_SN: 1 | 2 | null;
     U_TX_IndIEDest: "1" | "9" | null;
     BPFiscalTaxIDCollection: TemplateFiscal[] | null;  
+    Valid: "tYES" | "tNO" | null;
+    Frozen: "tYES" | "tNO" | null;
 }
 
 export interface IsOptant {
