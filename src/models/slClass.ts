@@ -138,13 +138,8 @@ export default class SL {
                 httpsAgent: agent
             }
 
-
-            console.log("url: ", url);
-
             const response = await axios.get(url, config);
-            
-            console.log("response: ", response);
-            
+                        
             const data = response.data;
 
             if (data.STATUS === '-1') {

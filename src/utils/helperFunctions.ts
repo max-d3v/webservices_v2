@@ -134,3 +134,10 @@ export const validaCPF = (cpf: string | null | undefined | number) => {
     return isoDateRegex.test(str) && isIsoDate(str);
   }
   
+
+  export const isEmpty = (value: any[]): boolean => {
+    if (!Array.isArray(value)) {
+      return false;
+    }
+    return value.length === 0;
+  }

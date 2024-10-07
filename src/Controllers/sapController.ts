@@ -449,7 +449,6 @@ export class SapController {
                     ClientData.Valid = statusForSL;
                     ClientData.Frozen = frozenForSL;    
                 } else {
-                    console.log("Achou cnpj com saldo diferente de 0");
                     ClientData.Valid = "tYES";
                     ClientData.Frozen = "tNO";
                 }
@@ -567,16 +566,59 @@ export class SapController {
                     throw new HttpError(err.statusCode || 500, 'Erro ao desativar todos os tickets do vendedor: ' + err.message);
                 }
         }
+
+
+        public async changeTicketsOwnerShip(originUserId: string, destinyUserId: string) {
+            try {
+                if (!originUserId || !destinyUserId) {
+                    throw new HttpError(400, 'Nenhum Id de usuário encontrado');
+                }
+                const parsedOriginUserId = parseInt(originUserId);
+                const parsedDestinyUserId = parseInt(destinyUserId);
+                if (isNaN(parsedOriginUserId) || isNaN(parsedDestinyUserId)) {
+                    throw new HttpError(400, 'Id de usuário inválido');
+                }
+
+                const getTickets = await this.sapServices.getOpenTicketsFromVendor(parsedOriginUserId);
+                if (helperFunctions.isEmpty(getTickets)) {
+                    throw new HttpError(404, 'Nenhum ticket encontrado para o vendedor');
+                }
+
+                const ticketsProcessados: any[] = [];
+                const ticketsErros: any[] = [];
+
+                await Promise.all(getTickets.map(async (ticket) => {
+                    try {
+                        const attObj = {
+                            HandledBy: parsedDestinyUserId
+                        }
+        
+                        await this.sapServices.updateActivity(ticket.ClgCode, attObj);    
+                        ticketsProcessados.push({ ClgCode: ticket.ClgCode });
+                    } catch(err: any) {
+                        ticketsErros.push({ ClgCode: ticket.ClgCode, error: err.message });
+                    }
+                }))
+
+                const apiReturn = this.handleMultipleProcessesResult(ticketsErros, ticketsProcessados);
+                return apiReturn;
+            } catch(err: any) {
+                if (err instanceof HttpErrorWithDetails) {
+                    throw err;
+                }
+                throw new HttpError(err.statusCode || 500, 'Erro ao mudar proprietário dos tickets: ' + err.message);
+            }
+        }
+
     //
 
 
     // UTILS ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
         private handleMultipleProcessesResult( errors: any[], processedEntities: any[] ) {
-            const totalEntities = processedEntities.length;
-            if (errors.length === totalEntities) {
-                throw new HttpErrorWithDetails(500, "Erro ao atualizar clientes por CNPJ", errors);
+            if (processedEntities.length === 0) {
+                throw new HttpErrorWithDetails(400, "Erro ao executar todas as operações", errors);
             } else if (errors.length > 0) {
-                throw new HttpErrorWithDetails(206, "Erro ao atualizar parte dos clientes", { ClientesComErro: errors, ClientesProcessados:processedEntities })
+                throw new HttpErrorWithDetails(206, "Erro ao atualizar parte das operações", { ObjetosComErro: errors, ObjetosProcessados:processedEntities })
             } else if (errors.length === 0) {
                 return processedEntities;
             } else {

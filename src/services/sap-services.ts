@@ -97,7 +97,7 @@ export class SapServices {
         }
     }
 
-    public async getOpenTicketsFromVendor(userId: number) {
+    public async getOpenTicketsFromVendor(userId: number): Promise<any[]> {
         try {
             const query = `SELECT "ClgCode" FROM "SBO_COPAPEL_PRD".OCLG WHERE "AttendUser" = '${userId}' AND "Closed" = 'N'`;
             const tickets = await this.sl.querySAP(query);
@@ -240,6 +240,15 @@ export class SapServices {
             return update.data;
         } catch (err: any) {
             throw new HttpError(500, 'Erro ao atualizar cliente no SAP: ' + err.message);
+        }
+    }
+
+    public async updateActivity(ActivityId: number, Data: any) {
+        try {
+            const update = await this.sl.patch("Activities", ActivityId, Data);
+            return update.data;
+        } catch (err: any) {
+            throw new HttpError(500, 'Erro ao atualizar atividade no SAP: ' + err.message);
         }
     }
 

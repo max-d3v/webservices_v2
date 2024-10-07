@@ -21,6 +21,7 @@ class Routes {
     private initializeRoutes() {
 
 
+
         //SUPPLIER ROUTES
         this.router.patch("/SupplierData/all", (req:  Request, res: Response, next: NextFunction) => 
             this.serviceRunner(() => this.sapControllerInstance.AtualizaCadastroFornecedores('1989-01-01'), req, res, next)
@@ -33,14 +34,21 @@ class Routes {
 
 
         //FISCAL DATA ROUTES
-        this.router.get("/FiscalData/:entityType", (req:  Request, res: Response, next: NextFunction) => {
+        this.router.patch("/FiscalData/:entityType", (req:  Request, res: Response, next: NextFunction) => {
             this.serviceRunner(() => this.sapControllerInstance.updateClientsRegistrationData(req.params.entityType), req, res, next)
         })
 
-        //MISC ROUTES
-        this.router.get("/DesativarTodosTicketsVendedor/:userId", (req:  Request, res: Response, next: NextFunction) => {
+
+        //TICKETS ROUTES
+        this.router.post("/Activities/DesativarTodosTicketsVendedor/:userId", (req:  Request, res: Response, next: NextFunction) => {
             this.serviceRunner(() => this.sapControllerInstance.deactiveAllTicketsFromVendor(req.params.userId), req, res, next);
         })
+        this.router.patch("/Activities/MudarProprietarioTickets", (req:  Request, res: Response, next: NextFunction) => {
+            this.serviceRunner(() => this.sapControllerInstance.changeTicketsOwnerShip(req.body.originUserId, req.body.destinyUserId), req, res, next);
+        })
+
+
+        //MISC ROUTES
         this.router.get("/BuscarCnpjTodosClientes", (req:  Request, res: Response, next: NextFunction) => {
             this.serviceRunner(() => this.sapControllerInstance.getAllClientsCnpjClear(), req, res, next);
         })
