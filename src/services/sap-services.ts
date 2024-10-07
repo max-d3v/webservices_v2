@@ -64,17 +64,6 @@ export class SapServices {
         }
     }
 
-
-
-    public async getFornecedorByCnpj(cnpj: string): Promise<interfaces.CnpjJaData> {
-        try {
-            const response = await this.cnpjJa.searchCnpj(cnpj);
-            return response;
-        } catch (err: any) {
-            throw new HttpError(500, 'Erro ao buscar fornecedor pela api CNPJ: ' + err.message);
-        }
-    }
-
     public async updateFornecedor(fieldsToUpdateObject: interfaces.DadosPessoaJuridica | interfaces.DadosPessoaFisica | interfaces.DadosMicroempresa | any, CardCode: string) {
         try {
             await this.dataBaseServices.logFornecedorCadastrado({ CardCode: CardCode, Status: "Pendente", Erro: null });

@@ -183,7 +183,6 @@ export class SapController {
                                     await this.dataBaseServices.logFornecedorCadastrado({ CardCode: fornecedor.CardCode, Status: "Erro ao atualizar", Erro: err.message });
                                 }
                                 processErrors.push({ CardCode: fornecedor.CardCode, error: err.message });
-
                             }
                         }));
 
@@ -198,25 +197,11 @@ export class SapController {
                         processingStartTime = Date.now();
                     }
 
+                    JsonInMemory.quit();
 
-                    if (processErrors.length > 0 && fornecedoresProcessados.length === 0) {
-                        const errorDetails = processErrors.map(err => ({
-                            CardCode: err.CardCode || 'Não foi possível obter o CardCode do fornecedor',
-                            error: err.error || 'Erro desconhecido'
-                        }));
-                        throw new HttpErrorWithDetails(500, 'Erros dos fornecedores:', errorDetails)
-                    } else if (processErrors.length > 0 && fornecedoresProcessados.length > 0) {
-                        return {
-                            customStatusCode: 206,
-                            fornecedoresProcessados: fornecedoresProcessados,
-                            errors: processErrors.map(err => ({
-                                CardCode: err.CardCode || 'Não foi possível obter o CardCode do fornecedor',
-                                error: err.error || 'Erro desconhecido'
-                            }))
-                        };
-                    }
 
-                    return { fornecedoresProcessados: fornecedoresProcessados, errors: [] };
+                    const apiReturn = this.handleMultipleProcessesResult(processErrors, fornecedoresProcessados);
+                    return apiReturn;
                 }
                 catch (err: any) {
                     if (err instanceof HttpErrorWithDetails) {
@@ -226,6 +211,7 @@ export class SapController {
                 }
                 }
             //
+            
             public async updateClientsRegistrationData(tipo: string) {
                 try {
                     let clients: interfaces.RelevantClientData[] = [];
