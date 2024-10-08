@@ -276,6 +276,9 @@ export class SapController {
 
             private async getClientsToProcess(): Promise<interfaces.RelevantClientData[]> {
                 const clientAlreadyProcessed = await this.dataBaseServices.getClientsAlreadyProcessed();
+
+                console.log(`Filtering ${clientAlreadyProcessed.length} Clients out of the cliens to process (Clients already processed with success)`)
+
                 const clientsProcessedCardCodesString = clientAlreadyProcessed.map((client) => `'${client.CardCode}'`).join(",");
 
                 //Double check no client is re-processed
