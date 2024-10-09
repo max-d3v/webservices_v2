@@ -3,6 +3,10 @@
 const baseDir = "<rootDir>/src";
 const baseTestDir = "<rootDir>/src/__tests__";
 
+const testMatch = `${baseTestDir}/integrationTests/*.test.ts`
+
+console.log(testMatch)
+
 module.exports = {
   testEnvironment: "node",
   transform: {
@@ -10,6 +14,6 @@ module.exports = {
   },
   collectCoverage: true,
   collectCoverageFrom: [`${baseDir}/**/*.ts`],
-  testMatch: [`${baseTestDir}/integrationTests/**/*.test.ts`],
+  testMatch: [`${baseTestDir}/integrationTests/*.test.ts`],
   setupFiles: [`${baseTestDir}/config.ts`],
 };

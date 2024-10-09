@@ -38,6 +38,10 @@ class Routes {
             this.serviceRunner(() => this.sapControllerInstance.updateClientsRegistrationData(req.params.entityType), req, res, next)
         })
 
+        this.router.patch("/FiscalData/Client/:CardCode", (req:  Request, res: Response, next: NextFunction) => {
+            this.serviceRunner(() => this.sapControllerInstance.updateClientsRegistrationData("client", req.params.CardCode), req, res, next)
+        })
+
 
         //TICKETS ROUTES
         this.router.post("/Activities/DesativarTodosTicketsVendedor/:userId", (req:  Request, res: Response, next: NextFunction) => {

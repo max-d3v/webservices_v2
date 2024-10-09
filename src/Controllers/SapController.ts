@@ -212,7 +212,7 @@ export class SapController {
                 }
             //
 
-            public async updateClientsRegistrationData(tipo: string) {
+            public async updateClientsRegistrationData(tipo: string, CardCode: string | null = null) {
                 try {
                     let clients: interfaces.RelevantClientData[] = [];
 
@@ -221,13 +221,22 @@ export class SapController {
                     }
                     else if (tipo == 'inativados') {
                         clients = await this.getInactivatedClientsSAP();
-                    } else {
+                    } else if (tipo == "client") {
+                        if (!CardCode) {
+                            throw new HttpError(400, "CardCode não informado");
+                        }
+                        clients = await this.sapServices.getActiveClientRegistrationData(CardCode);
+                        console.log("Cliente selecionado: ", clients);
+                    }
+                     else {
                         clients = await this.getClientsToProcess();
                     }
 
                     if (clients.length === 0) {
                         throw new HttpError(404, "Nenhum cliente encontrado para processamento!");
                     }
+
+                    
 
                     const errors: any[] = [];
                     const processedClients: any[] = [];
@@ -295,6 +304,7 @@ export class SapController {
 
                 return filteredClients;
             }
+
 
             private async ClientProcessController(client: interfaces.RelevantClientData, JsonInMemory: JsonInMemoryHandler, processedClients: any[], errors: any[], type: string) {
                 try {
@@ -462,12 +472,27 @@ export class SapController {
 
         private async getInscricaoEstadual(registrations: interfaces.Registration[] | [], estado: string, cardCode: string, clientAdresses: interfaces.RelevantClientData["Adresses"], ClientData: any): Promise<void> {
             try {
-                const registration = registrations?.find((registration) => registration?.state === estado);
+                const registrationsInState = registrations?.filter((registration) => registration?.state === estado);
+                let registration;
+                if (!registrationsInState || registrationsInState.length === 0) {
+                    registration = undefined;
+                } else {
+                    if (registrationsInState.length > 1) {
+                        console.log("Achou mais de uma inscrição estadual para o estado ", estado);
+                        const newestRegistration = registrationsInState.reduce((newest, current) => {
+                            return new Date(newest.statusDate) > new Date(current.statusDate) ? newest : current;
+                        });
+                        console.log("Inscrição estadual mais recente: ", newestRegistration);
+                        registration = newestRegistration;
+                    } else {
+                        registration = registrationsInState[0];
+                    }
+                }
+                
                 const BPFiscalTaxIDCollection: interfaces.TemplateFiscal[] = [];
 
                 const isEnabled = registration?.enabled;
-                const InscricaoEstadual = isEnabled ? registration?.number : "Isento";
-
+                const InscricaoEstadual = isEnabled ? (registration?.number || "Isento") : "Isento";
                 const isIsento = !isEnabled;
 
                 for (const adress of clientAdresses) {
