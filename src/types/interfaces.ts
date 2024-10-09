@@ -49,6 +49,10 @@ export interface FornecedorAdress {
     Address: string;
 }
 
+export interface ActivitiesCode {
+    ClgCode: number
+}
+
 export interface Observations {
     Free_text: string | null;
 }

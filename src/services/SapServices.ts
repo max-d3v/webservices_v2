@@ -96,7 +96,7 @@ export class SapServices {
         }
     }
 
-    public async getOpenTicketsFromVendor(userId: number): Promise<any[]> {
+    public async getOpenTicketsFromVendor(userId: number): Promise<interfaces.ActivitiesCode[]> {
         try {
             const query = `SELECT "ClgCode" FROM "SBO_COPAPEL_PRD".OCLG WHERE "AttendUser" = '${userId}' AND "Closed" = 'N'`;
             const tickets = await this.sl.querySAP(query);

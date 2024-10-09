@@ -427,7 +427,7 @@ export class SapController {
     //
 
 
-    // COMPANY ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    // COMPANY DATA ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
         public async getCompanyByTaxId(taxid: string) {
             try {
                 if (!taxid) {
@@ -576,6 +576,7 @@ export class SapController {
                 if (!originUserId || !destinyUserId) {
                     throw new HttpError(400, 'Nenhum Id de usuário encontrado');
                 }
+
                 const parsedOriginUserId = parseInt(originUserId);
                 const parsedDestinyUserId = parseInt(destinyUserId);
                 if (isNaN(parsedOriginUserId) || isNaN(parsedDestinyUserId)) {
@@ -583,25 +584,14 @@ export class SapController {
                 }
 
                 const getTickets = await this.sapServices.getOpenTicketsFromVendor(parsedOriginUserId);
-                if (helperFunctions.isEmpty(getTickets)) {
+                if (getTickets.length === 0) {
                     throw new HttpError(404, 'Nenhum ticket encontrado para o vendedor');
                 }
 
                 const ticketsProcessados: any[] = [];
                 const ticketsErros: any[] = [];
 
-                await Promise.all(getTickets.map(async (ticket) => {
-                    try {
-                        const attObj = {
-                            HandledBy: parsedDestinyUserId
-                        }
-        
-                        await this.sapServices.updateActivity(ticket.ClgCode, attObj);    
-                        ticketsProcessados.push({ ClgCode: ticket.ClgCode });
-                    } catch(err: any) {
-                        ticketsErros.push({ ClgCode: ticket.ClgCode, error: err.message });
-                    }
-                }))
+                await Promise.all(getTickets.map((ticket) => {this.ChangeTicketOwner(ticket, parsedDestinyUserId, ticketsProcessados, ticketsErros)}))
 
                 const apiReturn = this.handleMultipleProcessesResult(ticketsErros, ticketsProcessados);
                 return apiReturn;
@@ -612,6 +602,20 @@ export class SapController {
                 throw new HttpError(err.statusCode || 500, 'Erro ao mudar proprietário dos tickets: ' + err.message);
             }
         }
+
+        private async ChangeTicketOwner(ticket: interfaces.ActivitiesCode, destinyUserId: number, ticketsProcessados: any[], ticketErrors: any[]) {
+            try {
+                const attObj = {
+                    HandledBy: destinyUserId
+                }
+
+                await this.sapServices.updateActivity(ticket.ClgCode, attObj);    
+                ticketsProcessados.push({ ClgCode: ticket.ClgCode });
+            } catch(err: any) {
+                ticketErrors.push({ ClgCode: ticket.ClgCode, error: err.message });
+            }
+        }
+        
 
     //
 
