@@ -1,5 +1,5 @@
 import {CnpjJa} from "../models/cnpjClass";
-import * as interfaces from ' ../../../../webservices_node/src/types/interfaces';
+import * as interfaces from '../types/interfaces';
 
 expect.extend({
     toBeValidCnpjData(cnpj: interfaces.CnpjJaData) {  
