@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { DatabaseServices } from "../services/database-services";
+import { DatabaseServices } from "../services/DatabaseServices";
 import { logger } from "../middlewares/logger";
 import { v4 as uuidv4 } from 'uuid';
 import { HttpError } from "../server"; 

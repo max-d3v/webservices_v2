@@ -1,9 +1,9 @@
-import SL from "../models/slClass";
-import { CnpjJa } from "../models/cnpjClass";
-import { HttpError, HttpErrorWithDetails } from "../utils/errorHandler";
-import * as helperFunctions from "../utils/helperFunctions";
+import SL from "../models/ServiceLayerClass";
+import { CnpjJa } from "../models/CnpjClass";
+import { HttpError, HttpErrorWithDetails } from "../utils/ErrorHandler";
+import * as helperFunctions from "../utils/HelperFunctions";
 import * as interfaces from "../types/interfaces";
-import { DatabaseServices } from "./database-services";
+import { DatabaseServices } from "./DatabaseServices";
 
 export class SapServices {
     private static instance: SapServices;

@@ -1,5 +1,5 @@
 import express, { Application } from "express";
-import { ErrorHandling } from "./utils/errorHandler";
+import { ErrorHandling } from "./utils/ErrorHandler";
 import { authMiddleware } from "./middlewares/auth";
 import routerClass from "./router/routes";
 

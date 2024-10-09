@@ -15,9 +15,10 @@ info.log
 error.log
 
 src/services/redisServices.ts
-
+src/services/llm_test.ts
 src/__tests__/*
 
 coverage/*
 
 src/practice/
+

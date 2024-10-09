@@ -1,9 +1,9 @@
-import { SapServices } from "../services/sap-services";
-import { HttpError, HttpErrorWithDetails } from "../utils/errorHandler";
-import * as helperFunctions from "../utils/helperFunctions";
+import { SapServices } from "../services/SapServices";
+import { HttpError, HttpErrorWithDetails } from "../utils/ErrorHandler";
+import * as helperFunctions from "../utils/HelperFunctions";
 import * as interfaces from "../types/interfaces";
-import { DatabaseServices } from "../services/database-services";
-import { JsonInMemoryHandler } from "../services/jsonLoaderClass";
+import { DatabaseServices } from "../services/DatabaseServices";
+import { JsonInMemoryHandler } from "../models/JsonLoaderClass";
 
 //Updated deploy env
 

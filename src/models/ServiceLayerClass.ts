@@ -1,8 +1,8 @@
 import axios, { AxiosRequestConfig } from 'axios';
 import https from 'https';
-import { HttpError } from '../utils/errorHandler';
-import { llm_api } from './llmApi';
-import * as helperFunctions from '../utils/helperFunctions';
+import { HttpError } from '../utils/ErrorHandler';
+import { llm_api } from './LLMApi';
+import * as helperFunctions from '../utils/HelperFunctions';
 
 const agent = new https.Agent({
     rejectUnauthorized: false
