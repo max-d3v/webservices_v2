@@ -641,7 +641,6 @@ export class SapController {
                         throw new HttpError(400, `Dado: ${field} inválido: (null undefined ou empty str)`);
                     }
                 }
-
             } catch (err: any) {
                 throw new HttpError(err.statusCode || 500, 'Erro ao verificar se os dados do cliente estão completos: ' + err.message);
             }

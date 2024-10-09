@@ -9,6 +9,7 @@ on:
 jobs:
           
   dockerhub-push:
+    needs: run-tests
     runs-on: ubuntu-latest
 
     steps:

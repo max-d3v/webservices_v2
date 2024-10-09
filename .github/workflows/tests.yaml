@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - development
-  pull_request:
-    branches:
       - main
 
 jobs:
@@ -19,5 +17,8 @@ jobs:
     - name: Install dependencies
       run: npm install
 
-    - name: Run tests
-      run: npm run test
+    - name: Run unit tests
+      run: npm test
+
+    - name: Run integration tests
+      run: npm run itest
