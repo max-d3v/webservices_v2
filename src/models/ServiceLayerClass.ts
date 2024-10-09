@@ -1,7 +1,7 @@
 import axios, { AxiosRequestConfig } from 'axios';
 import https from 'https';
 import { HttpError } from '../utils/errorHandler';
-import { llm_api } from './LLMApi';
+import { llm_api } from './llmApi';
 import * as helperFunctions from '../utils/helperFunctions';
 
 const agent = new https.Agent({
