@@ -7,14 +7,37 @@ on:
       - main
 
 jobs:
-
-
-  dockerhub-push:
+  run-tests:
     runs-on: ubuntu-latest
 
     steps:
     - name: Check out the repository
       uses: actions/checkout@v4
+
+    - name: Install dependencies and start jest
+      run: npm install && npx jest
+
+    - name: Run unit tests
+      run: npm test
+
+    - name: Run integration tests
+      run: npm run itest
+
+  dockerhub-push:
+    needs: run-tests
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check out the repository
+      uses: actions/checkout@v4
+
+    - name: echo files
+      run: |
+        cd src/Controllers
+        ls -la
+        cd ../services
+        ls -la
+
 
     - name: Get secrets
       run: |
