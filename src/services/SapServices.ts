@@ -1,6 +1,6 @@
 import SL from "../models/ServiceLayerClass";
-import { CnpjJa } from "../models/CnpjClass";
-import { HttpError } from "../utils/ErrorHandler";
+import { CnpjJa } from "../models/cnpjClass";
+import { HttpError } from "../utils/errorHandler";
 import * as interfaces from "../types/interfaces";
 import { DatabaseServices } from "./DatabaseServices";
 /*

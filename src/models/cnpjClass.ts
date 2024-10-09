@@ -1,6 +1,6 @@
 import axios, { AxiosRequestConfig } from 'axios';
 import https from 'https';
-import { HttpError } from '../utils/ErrorHandler';
+import { HttpError } from '../utils/errorHandler';
 
 const agent = new https.Agent({
     rejectUnauthorized: false

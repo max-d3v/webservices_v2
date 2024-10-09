@@ -1,4 +1,4 @@
-import {CnpjJa} from "../models/CnpjClass";
+import {CnpjJa} from "../models/cnpjClass";
 import * as interfaces from ' ../../../../webservices_node/src/types/interfaces';
 
 expect.extend({

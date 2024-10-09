@@ -1,4 +1,4 @@
-import { HttpError } from "../utils/ErrorHandler";
+import { HttpError } from "../utils/errorHandler";
 import {ExtendedRequest} from "../Handlers/ServicesHandler";
 import { PrismaClient } from "@prisma/client";
 import * as PrismaTypes from "@prisma/client";

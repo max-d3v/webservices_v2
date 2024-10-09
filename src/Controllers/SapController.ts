@@ -1,6 +1,6 @@
 import { SapServices } from "../services/SapServices";
-import { HttpError, HttpErrorWithDetails } from "../utils/ErrorHandler";
-import * as helperFunctions from "../utils/HelperFunctions";
+import { HttpError, HttpErrorWithDetails } from "../utils/errorHandler";
+import * as helperFunctions from "../utils/helperFunctions";
 import * as interfaces from "../types/interfaces";
 import { DatabaseServices } from "../services/DatabaseServices";
 import { JsonInMemoryHandler } from "../models/JsonLoaderClass";
