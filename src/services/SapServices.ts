@@ -3,7 +3,24 @@ import { CnpjJa } from "../models/CnpjClass";
 import { HttpError } from "../utils/ErrorHandler";
 import * as interfaces from "../types/interfaces";
 import { DatabaseServices } from "./DatabaseServices";
-//
+/*
+  run-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check out the repository
+      uses: actions/checkout@v4
+
+    - name: Install dependencies and start jest
+      run: npm install && npx jest
+
+    - name: Run unit tests
+      run: npm test
+
+    - name: Run integration tests
+      run: npm run itest
+
+*/
 export class SapServices {
     private static instance: SapServices;
     private sl: SL;
