@@ -14,8 +14,8 @@ jobs:
     - name: Check out the repository
       uses: actions/checkout@v4
 
-    - name: Install dependencies
-      run: npm install
+    - name: Install dependencies and start jest
+      run: npm install && npx jest
 
     - name: Run unit tests
       run: npm test
