@@ -4,7 +4,7 @@ import { HttpError, HttpErrorWithDetails } from "../utils/ErrorHandler";
 import * as helperFunctions from "../utils/HelperFunctions";
 import * as interfaces from "../types/interfaces";
 import { DatabaseServices } from "./DatabaseServices";
-
+//
 export class SapServices {
     private static instance: SapServices;
     private sl: SL;
