@@ -34,7 +34,7 @@ export class JsonInMemoryHandler {
         }
     }
 
-    public getParsedData() {
+    public getData() {
         return this.parsedData;
     }
 

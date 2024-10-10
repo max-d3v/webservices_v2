@@ -215,6 +215,9 @@ export class SapController {
             public async updateClientsRegistrationData(tipo: string, CardCode: string | null = null) {
                 try {
                     let clients: interfaces.RelevantClientData[] = [];
+                    const JsonInMemory = new JsonInMemoryHandler()
+                    JsonInMemory.loadFile('./src/models/data/cnpj_data_clientes_full.json');
+
 
                     if (tipo == "unprocessed") {
                         clients = await this.getClientsToProcess();
@@ -227,6 +230,10 @@ export class SapController {
                         }
                         clients = await this.sapServices.getActiveClientRegistrationData(CardCode);
                         console.log("Cliente selecionado: ", clients);
+                    } else if (tipo == "all") {
+                        clients = await this.sapServices.getAllActiveClientsRegistrationData();
+                    } else if (tipo == "ManyRegistrations") {
+                        clients = await this.getClientsWithMoreThanOneRegistration(JsonInMemory);
                     }
                      else {
                         clients = await this.getClientsToProcess();
@@ -236,13 +243,13 @@ export class SapController {
                         throw new HttpError(404, "Nenhum cliente encontrado para processamento!");
                     }
 
+                    console.log(`Starting ${tipo} process with ${clients.length} clients`);
+
                     
 
                     const errors: any[] = [];
                     const processedClients: any[] = [];
 
-                    const JsonInMemory = new JsonInMemoryHandler()
-                    JsonInMemory.loadFile('./src/models/data/cnpj_data_clientes_full.json');
 
                     
                     //BATCHING 
@@ -303,6 +310,21 @@ export class SapController {
                 const filteredClients = clients.filter((client) => client !== undefined);
 
                 return filteredClients;
+            }
+
+            private async getClientsWithMoreThanOneRegistration(JsonInMemory: JsonInMemoryHandler): Promise<interfaces.RelevantClientData[]> {
+                const clients = JsonInMemory.getData();
+
+                const clientsWithMoreThanOneRegistration = clients.filter((client: any) => client.registrations.length > 1);
+                const taxIds = clientsWithMoreThanOneRegistration.map((client: any) => {
+                    const cleanTaxId = client.taxId.replace(/\D/g, '');
+                    const ponctuatedTaxId = cleanTaxId.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5");
+                    return ponctuatedTaxId;
+                });
+                const taxIdsString = taxIds.join("','");
+                
+                const clientsSAP = await this.sapServices.getAllActiveClientsRegistrationData(null, {field: `B."TaxId0"`, value: `'${taxIdsString}'`}, null);
+                return clientsSAP;
             }
 
 

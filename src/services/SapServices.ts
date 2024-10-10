@@ -187,7 +187,7 @@ export class SapServices {
 
     }
 
-    public async getAllActiveClientsRegistrationData( removedClients: string | null = null, filter: interfaces.GetClientsFilter | null = null ): Promise<interfaces.RelevantClientData[]> {
+    public async getAllActiveClientsRegistrationData( removedClients: string | null = null, filter: interfaces.GetClientsFilter | null = null, removeFilter: interfaces.GetClientsFilter | null = null ): Promise<interfaces.RelevantClientData[]> {
         try {
             const query = `SELECT A."Balance", B."TaxId0", B."Address", A."State1", A."CardCode", A."CardName", CAST(A."Free_Text" AS NVARCHAR) as "Free_Text"
             FROM "SBO_COPAPEL_PRD".OCRD A 
@@ -199,11 +199,11 @@ export class SapServices {
             AND B."TaxId0" <> 'null'    
             ${filter ? `AND ${filter.field} IN (${filter.value})` : ""}
             AND A."CardCode" NOT IN (${removedClients ? removedClients : "''"})
-            LIMIT 5000
-            `;            
+            ${removeFilter ? `AND ${removeFilter.field} NOT IN (${removeFilter.value})` : ""}
+            `;
 
-            console.log(query);
-
+            console.log("Query: ", query);
+            
             const clients = await this.sl.newQuerySAP(query, true);
             
             const data: interfaces.getClientDataQueryReturn[] | string = clients.data;
@@ -232,8 +232,6 @@ export class SapServices {
                 }
                 formattedData.push(newObj);
             })
-
-            console.log("Number of clients: ", formattedData.length);
 
             return formattedData;
         } catch (err: any) {

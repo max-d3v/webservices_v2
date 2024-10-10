@@ -32,6 +32,8 @@ export interface RelevantClientData {
 }
 
 
+
+
 export interface ClientUpdateData {
     FreeText: string | null;
     U_TX_SN: 1 | 2 | null;
