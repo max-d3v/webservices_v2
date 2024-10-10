@@ -218,26 +218,7 @@ export class SapController {
                     const JsonInMemory = new JsonInMemoryHandler()
                     JsonInMemory.loadFile('./src/models/data/cnpj_data_clientes_full.json');
 
-
-                    if (tipo == "unprocessed") {
-                        clients = await this.getClientsToProcess();
-                    }
-                    else if (tipo == 'inativados') {
-                        clients = await this.getInactivatedClientsSAP();
-                    } else if (tipo == "client") {
-                        if (!CardCode) {
-                            throw new HttpError(400, "CardCode não informado");
-                        }
-                        clients = await this.sapServices.getActiveClientRegistrationData(CardCode);
-                        console.log("Cliente selecionado: ", clients);
-                    } else if (tipo == "all") {
-                        clients = await this.sapServices.getAllActiveClientsRegistrationData();
-                    } else if (tipo == "ManyRegistrations") {
-                        clients = await this.getClientsWithMoreThanOneRegistration(JsonInMemory);
-                    }
-                     else {
-                        clients = await this.getClientsToProcess();
-                    }
+                    clients = await this.getFiscalClientData(tipo, CardCode, JsonInMemory);
 
                     if (clients.length === 0) {
                         throw new HttpError(404, "Nenhum cliente encontrado para processamento!");
@@ -276,6 +257,33 @@ export class SapController {
                     }
                     throw new HttpError(err.statusCode || 500, 'Erro ao atualizar clientes por CNPJ: ' + err.message);
                 }
+            }
+
+            private async getFiscalClientData(tipo: string, CardCode: string | null = null, JsonInMemory: JsonInMemoryHandler): Promise<interfaces.RelevantClientData[]> {
+                let clients: interfaces.RelevantClientData[] = [];
+
+                if (tipo == "unprocessed") {
+                    clients = await this.getClientsToProcess();
+                }
+                else if (tipo == 'inativados') {
+                    clients = await this.getInactivatedClientsSAP();
+                } else if (tipo == "client") {
+                    if (!CardCode) {
+                        throw new HttpError(400, "CardCode não informado");
+                    }
+                    clients = await this.sapServices.getActiveClientRegistrationData(CardCode);
+                    console.log("Cliente selecionado: ", clients);
+                } else if (tipo == "all") {
+                    clients = await this.sapServices.getAllActiveClientsRegistrationData();
+                } else if (tipo == "ManyRegistrations") {
+                    clients = await this.getClientsWithMoreThanOneRegistration(JsonInMemory);
+                }
+                else {
+                    clients = await this.getClientsToProcess();
+                }
+
+                return clients;
+                
             }
 
             private async getInactivatedClientsSAP(): Promise<interfaces.RelevantClientData[]> {
@@ -501,11 +509,10 @@ export class SapController {
                 } else {
                     if (registrationsInState.length > 1) {
                         console.log("Achou mais de uma inscrição estadual para o estado ", estado);
-                        const newestRegistration = registrationsInState.reduce((newest, current) => {
-                            return new Date(newest.statusDate) > new Date(current.statusDate) ? newest : current;
-                        });
-                        console.log("Inscrição estadual mais recente: ", newestRegistration);
-                        registration = newestRegistration;
+
+                        const normalRegistration = registrationsInState.find((registration) => registration.type.id === 1);
+                        console.log("Inscrição estadual normal: ", normalRegistration);
+                        registration = normalRegistration;
                     } else {
                         registration = registrationsInState[0];
                     }

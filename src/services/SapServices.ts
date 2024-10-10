@@ -178,6 +178,9 @@ export class SapServices {
 
             //console.log("Formatted data: ", formattedData);
             
+            
+            
+            
             console.log("Number of clients: ", formattedData.length);
 
             return formattedData;
