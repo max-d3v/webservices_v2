@@ -2,16 +2,16 @@ import fs from 'fs';
 import { HttpError } from '../server';
 import * as interfaces from '../types/interfaces';
 
-export class JsonInMemoryHandler {
+export class LocalFiscalDataClass {
     private parsedData: any;
-    private static instance: JsonInMemoryHandler;        
+    private static instance: LocalFiscalDataClass;        
   
 
-    public static getInstance(): JsonInMemoryHandler {
-        if (!JsonInMemoryHandler.instance) {
-            JsonInMemoryHandler.instance = new JsonInMemoryHandler();
+    public static getInstance(): LocalFiscalDataClass {
+        if (!LocalFiscalDataClass.instance) {
+            LocalFiscalDataClass.instance = new LocalFiscalDataClass();
         }
-        return JsonInMemoryHandler.instance;
+        return LocalFiscalDataClass.instance;
     }
   
     public loadFile(filename: string) {

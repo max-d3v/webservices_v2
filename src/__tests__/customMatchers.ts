@@ -1,4 +1,4 @@
-import {CnpjJa} from "../models/cnpjClass";
+import {ApiFiscalDataClass} from "../models/ApiFiscalDataClass";
 import * as interfaces from '../types/interfaces';
 
 const checkPropertyType = (obj: any, key: string, expectedType: string): boolean => {

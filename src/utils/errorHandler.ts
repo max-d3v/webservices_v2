@@ -20,6 +20,6 @@ export const ErrorHandling = (err: HttpError | HttpErrorWithDetails | Error, req
       console.log(err.message);
       return res.status(statusCode).json({ error: message, details: err.details });
     } else {
-        return res.status(statusCode).json({ error: message });
+      return res.status(statusCode).json({ error: message });
     }
 }

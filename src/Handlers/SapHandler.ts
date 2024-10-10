@@ -1,12 +1,11 @@
 import { SapServices } from "../services/SapServices";
 import { DatabaseServices } from "../services/DatabaseServices";
+import { ActivitiesController } from "../Controllers/SapControllers/ActivitiesController";
+import { BusinessPartnersController } from "../Controllers/SapControllers/BusinessPartnersController";
 
-import { ActivitiesController } from "./SapControllers/ActivitiesController";
-import { BusinessPartnersController } from "./SapControllers/BusinessPartnersController";
 
-
-export class SapController {
-    private static instance: SapController;
+export class SapHandler {
+    private static instance: SapHandler;
     private sapServices: SapServices;
     private dataBaseServices: DatabaseServices;
 
@@ -21,11 +20,11 @@ export class SapController {
         this.BusinessPartnersController = BusinessPartnersController.getInstance();
     }
 
-    public static getInstance(): SapController {
-        if (!SapController.instance) {
-            SapController.instance = new SapController();
+    public static getInstance(): SapHandler {
+        if (!SapHandler.instance) {
+            SapHandler.instance = new SapHandler();
         }
-        return SapController.instance;
+        return SapHandler.instance;
     }
 
     public async maintainServicesLogin(): Promise<void> {
@@ -63,5 +62,9 @@ export class SapController {
         return this.ActivitiesController.changeTicketsOwnerShip(originUserId, destinyUserId);
     }
 
+    
 
+    
+    
+        
 }

@@ -1,35 +1,18 @@
 import SL from "../models/ServiceLayerClass";
-import { CnpjJa } from "../models/cnpjClass";
+import { ApiFiscalDataClass } from "../models/ApiFiscalDataClass";
 import { HttpError } from "../utils/errorHandler";
 import * as interfaces from "../types/interfaces";
 import { DatabaseServices } from "./DatabaseServices";
-/*
-  run-tests:
-    runs-on: ubuntu-latest
 
-    steps:
-    - name: Check out the repository
-      uses: actions/checkout@v4
-
-    - name: Install dependencies and start jest
-      run: npm install && npx jest
-
-    - name: Run unit tests
-      run: npm test
-
-    - name: Run integration tests
-      run: npm run itest
-
-*/
 export class SapServices {
     private static instance: SapServices;
     private sl: SL;
-    private cnpjJa: CnpjJa;
+    private ApiFiscalDataClass: ApiFiscalDataClass;
     private dataBaseServices: DatabaseServices;
     
     public constructor() {
         this.sl = new SL();
-        this.cnpjJa = new CnpjJa();
+        this.ApiFiscalDataClass = new ApiFiscalDataClass();
         this.dataBaseServices = DatabaseServices.getInstance();
         this.maintainSLLogin();
     }
@@ -56,7 +39,6 @@ export class SapServices {
     }
 
 
-    //Cadastro de fornecedores
     public async getFornecedoresLeads(isoString: string): Promise<interfaces.Fornecedor[]> {
         try {
             const query = `SELECT DISTINCT A."CardCode", A."CardName", A."CardType", B."TaxId0", A."State1", B."TaxId4" 
@@ -85,10 +67,9 @@ export class SapServices {
         } catch(err: any) {
             throw new HttpError(500, 'Erro ao logar fornecedor cadastrado: ' + err.message);
         }
-        
         try {
             const data = fieldsToUpdateObject;
-            const update = await this.sl.patch("BusinessPartners", CardCode, data);
+            await this.sl.patch("BusinessPartners", CardCode, data);
             this.dataBaseServices.atualizaFornecedorCadastrado({ CardCode: CardCode, Status: "Atualizado" });
             console.log("Updated fornecedor: ", CardCode, "with data: ", data);
         } catch (err: any) {    

@@ -92,6 +92,7 @@ const runService = async (
                 timestamp: new Date().toISOString()
             });
         }
+        console.log(error)
         next(error);
     }
 };

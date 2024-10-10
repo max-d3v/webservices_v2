@@ -10,6 +10,8 @@ export interface Fornecedor {
 }
 
 
+
+
 export interface getClientDataQueryReturn {
     Address: string;
     TaxId0: string | null | "";
