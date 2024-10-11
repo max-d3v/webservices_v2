@@ -1,5 +1,5 @@
 import { setupEnv } from './config';
-import Server from "./server";
+import Server from "./Server";
 
 
 export const startServer = async () => {

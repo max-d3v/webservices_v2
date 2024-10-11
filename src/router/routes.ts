@@ -27,6 +27,7 @@ class Routes {
     private initializeRoutes() {
         this.FiscalDataRoutes();
         this.SapRoutes();
+        
     }
 
     private FiscalDataRoutes() {
@@ -36,10 +37,10 @@ class Routes {
     }
 
     private SapRoutes() {
-        this.router.patch("/SupplierData/all", (req:  Request, res: Response, next: NextFunction) => 
+        this.router.patch("/SupplierData/All", (req:  Request, res: Response, next: NextFunction) => 
             this.serviceRunner(() => this.SapHandler.AtualizaCadastroFornecedores('1989-01-01'), req, res, next)
         );
-        this.router.patch("/SupplierData/today", (req:  Request, res: Response, next: NextFunction) => {
+        this.router.patch("/SupplierData/Today", (req:  Request, res: Response, next: NextFunction) => {
             const todayIsoString = new Date().toISOString().split('T')[0];
             this.serviceRunner(() => this.SapHandler.AtualizaCadastroFornecedores(todayIsoString), req, res, next);
         });

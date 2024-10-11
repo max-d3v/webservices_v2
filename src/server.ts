@@ -2,18 +2,20 @@ import express, { Application } from "express";
 import { ErrorHandling } from "./utils/errorHandler";
 import { authMiddleware } from "./middlewares/auth";
 import routerClass from "./router/routes";
-
+import http from "http";
 export class HttpError extends Error {
   constructor(public statusCode: number, message: string) {
     super(message);
   }
 }
 
-class Server {
+export class Server {
   private app: Application;
   private PORT: number;
+  private server: http.Server | null;
   
   constructor() {
+    this.server = null;
     this.app = express();
     this.PORT = parseInt(process.env.PORT as string);
   }
@@ -33,9 +35,15 @@ class Server {
     this.applyMiddlewares();
     await this.applyRoutes();
     this.app.use(ErrorHandling);
-    this.app.listen(this.PORT, () => {
+    this.server = this.app.listen(this.PORT, () => {
       console.log(`Server is running on port ${this.PORT} in ${process.env.NODE_ENV} mode`);
     });
+  }
+
+  public async stop() {
+    if (this.server) {
+      this.server.close();
+    }
   }
 }
 

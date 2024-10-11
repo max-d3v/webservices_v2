@@ -51,7 +51,7 @@ export class SapServices {
 
             //console.log("Query: ", query);
 
-            const fornecedores = await this.sl.querySAP(query, true);
+            const fornecedores = await this.sl.querySAP(query);
 
             const data = fornecedores.data;
 
@@ -127,7 +127,7 @@ export class SapServices {
             LIMIT 5000
             `;            
 
-            const clients = await this.sl.querySAP(query, true);
+            const clients = await this.sl.querySAP(query);
             
             const data: interfaces.getClientDataQueryReturn[] | string = clients.data;
             
@@ -188,7 +188,7 @@ export class SapServices {
 
             console.log("Query: ", query);
             
-            const clients = await this.sl.newQuerySAP(query, true);
+            const clients = await this.sl.newQuerySAP(query);
             
             const data: interfaces.getClientDataQueryReturn[] | string = clients.data;
             
@@ -215,7 +215,9 @@ export class SapServices {
                     Adresses: addresses
                 }
                 formattedData.push(newObj);
-            })
+            });
+
+            console.log(formattedData);
 
             return formattedData;
         } catch (err: any) {

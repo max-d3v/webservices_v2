@@ -17,7 +17,6 @@ export class BusinessPartnersController {
     constructor() {
         this.sapServices = SapServices.getInstance();
         this.dataBaseServices = DatabaseServices.getInstance();
-        console.log("Database services: ", this.dataBaseServices)
         this.LocalFiscalDataClass = LocalFiscalDataClass.getInstance();
     }
 
@@ -46,20 +45,20 @@ export class BusinessPartnersController {
             const processedClients: any[] = [];
 
             //BATCHING 
-            
+
             const BATCH_SIZE = 200;
             const maxIterations = Math.ceil(clients.length / BATCH_SIZE);
-            for(let iteration = 0; iteration < maxIterations; iteration++) {
+            for (let iteration = 0; iteration < maxIterations; iteration++) {
                 console.log(`Starting iteration ${iteration}, of ${BATCH_SIZE} clients - total iterations: ${maxIterations}`);
-                
+
                 const firstPosition = iteration * BATCH_SIZE;
                 console.log(`Vai pegar os clientes do index ${firstPosition} ao ${firstPosition + BATCH_SIZE}`);
-                
+
                 const batch = clients.slice(firstPosition, firstPosition + BATCH_SIZE) as interfaces.RelevantClientData[];
 
                 await Promise.all(batch.map(async (client) => this.ClientProcessController(client, JsonInMemory, processedClients, errors, tipo)))
             }
-            
+
 
             //await helperFunctions.batchOperation(clients, this.ClientProcessController, 200, JsonInMemory, processedClients, errors, tipo);
 
@@ -80,8 +79,6 @@ export class BusinessPartnersController {
             const cardCode = client.CardCode;
 
             console.log("Starting client: ", cardCode);
-
-            console.log("Database services inside client process controller: ", this.dataBaseServices);
 
             const clientRegistrationLog = await this.dataBaseServices.findClientRegistrationLog(cardCode);
             if (clientRegistrationLog?.Status === "SUCCESS") {
@@ -365,18 +362,18 @@ export class BusinessPartnersController {
     private async getFiscalClientData(tipo: string, CardCode: string | null = null, JsonInMemory: LocalFiscalDataClass): Promise<interfaces.RelevantClientData[]> {
         let clients: interfaces.RelevantClientData[] = [];
 
-        if (tipo == "unprocessed") {
+        if (tipo == "Unprocessed") {
             clients = await this.getClientsToProcess();
         }
-        else if (tipo == 'inativados') {
+        else if (tipo == 'Inativados') {
             clients = await this.getInactivatedClientsSAP();
-        } else if (tipo == "client") {
+        } else if (tipo == "Client") {
             if (!CardCode) {
                 throw new HttpError(400, "CardCode não informado");
             }
             clients = await this.sapServices.getActiveClientRegistrationData(CardCode);
             console.log("Cliente selecionado: ", clients);
-        } else if (tipo == "all") {
+        } else if (tipo == "All") {
             clients = await this.sapServices.getAllActiveClientsRegistrationData();
         } else if (tipo == "ManyRegistrations") {
             clients = await this.getClientsWithMoreThanOneRegistration(JsonInMemory);
@@ -385,8 +382,8 @@ export class BusinessPartnersController {
             clients = await this.getClientsToProcess();
         }
 
+        console.log(clients)
         return clients;
-
     }
 
     private async getInactivatedClientsSAP(): Promise<interfaces.RelevantClientData[]> {
@@ -402,25 +399,45 @@ export class BusinessPartnersController {
     }
 
     private async getClientsToProcess(): Promise<interfaces.RelevantClientData[]> {
+        let clients: interfaces.RelevantClientData[] = [];
+        let tipo = "remove";
+
+        //const TURNING_POINT = 20000;
+
         const clientAlreadyProcessed = await this.dataBaseServices.getClientsAlreadyProcessed();
+        //if (clientAlreadyProcessed.length > TURNING_POINT) {
+        //    tipo = "choose";
+        //}
 
-        console.log(`Filtering ${clientAlreadyProcessed.length} Clients out of the cliens to process (Clients already processed with success)`)
+        console.log("Vai pegar os clientes para processar com o tipo: ", tipo);
 
-        const clientsProcessedCardCodesString = clientAlreadyProcessed.map((client) => `'${client.CardCode}'`).join(",");
+        if (tipo == "remove") {
+            console.log(`Filtering ${clientAlreadyProcessed.length} Clients out of the cliens to process (Clients already processed with success)`)
 
-        //Double check no client is re-processed
-        const ActiveClients = await this.sapServices.getAllActiveClientsRegistrationData(clientsProcessedCardCodesString);
-        const clients = ActiveClients.map((client) => {
-            if (clientAlreadyProcessed.find((processedClient) => processedClient.CardCode === client.CardCode)) {
-                console.log("Client already processed: ", client.CardCode);
-                return;
-            }
-            return client;
-        });
+            const clientsProcessedCardCodesString = clientAlreadyProcessed.map((client) => `'${client.CardCode}'`).join(",");
 
-        const filteredClients = clients.filter((client) => client !== undefined);
+            //Double check no client is re-processed
+            const ActiveClients = await this.sapServices.getAllActiveClientsRegistrationData(clientsProcessedCardCodesString);
+            clients = ActiveClients.map((client) => {
+                if (clientAlreadyProcessed.find((processedClient) => processedClient.CardCode === client.CardCode)) {
+                    console.log("Client already processed: ", client.CardCode);
+                    return;
+                }
+                return client;
+            }).filter((client) => client !== undefined);
+        }
+        else if (tipo == "choose") {
+            const allClients = await this.sapServices.getAllActiveClientsRegistrationData();
+            const cardCodes = allClients.map((client) => client.CardCode);
+            //get the cardcodes not in clientAlreadyProcessed
+            const cardCodesNotInClientAlreadyProcessed = cardCodes.filter((cardCode) => !clientAlreadyProcessed.find((processedClient) => processedClient.CardCode === cardCode));
+            const cardCodesString = cardCodesNotInClientAlreadyProcessed.join("','");
+            clients = await this.sapServices.getAllActiveClientsRegistrationData(null, { field: 'A."CardCode"', value: `'${cardCodesString}'` });
 
-        return filteredClients;
+            console.log(`Selecting ${clients.length} clients out of ${allClients.length} (Clients not already processed)`);
+        }
+
+        return clients;
     }
 
     private async getClientsWithMoreThanOneRegistration(JsonInMemory: LocalFiscalDataClass): Promise<interfaces.RelevantClientData[]> {
@@ -463,7 +480,7 @@ export class BusinessPartnersController {
                 const statusForSL = status === 2 || status === 4 ? "tYES" : "tNO";
                 const frozenForSL = status === 2 || status === 4 ? "tNO" : "tYES";
                 ClientData.Valid = statusForSL;
-                ClientData.Frozen = frozenForSL;    
+                ClientData.Frozen = frozenForSL;
             } else {
                 ClientData.Valid = "tYES";
                 ClientData.Frozen = "tNO";
@@ -490,7 +507,7 @@ export class BusinessPartnersController {
                     registration = registrationsInState[0];
                 }
             }
-            
+
             const BPFiscalTaxIDCollection: interfaces.TemplateFiscal[] = [];
 
             const isEnabled = registration?.enabled;
@@ -525,11 +542,18 @@ export class BusinessPartnersController {
     private async NewObservation(mainActivityText: string, cnpjStatus: number, reasonForBaixa: string | undefined, freeText: string | null, cardCode: string, ClientData: any) {
         try {
             const oldObservation = freeText || "";
+            const alreadyUpdated = oldObservation.includes("Informações da Atualiação cadastral geral");
+
             let templateString = oldObservation + " - Informações da Atualiação cadastral geral, realizada dia " + new Date().toISOString().split('T')[0] + ": ";
             templateString += "  Atividade principal: " + mainActivityText;
 
             if (cnpjStatus !== 2) {
                 templateString += "  Motivo da baixa: " + reasonForBaixa;
+            } else {
+                if (alreadyUpdated) {
+                    ClientData.FreeText = oldObservation;
+                    return;
+                }
             }
 
             ClientData.FreeText = templateString;

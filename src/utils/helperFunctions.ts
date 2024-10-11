@@ -1,4 +1,4 @@
-import { HttpError } from "../server";
+import { HttpError } from "../Server";
 import { HttpErrorWithDetails } from "./errorHandler";
 
 export const objetoVazio = (objeto: Object | null | undefined) => {
@@ -181,4 +181,6 @@ export const validaCPF = (cpf: string | null | undefined | number) => {
           throw new HttpError(err.statusCode || 500, 'Erro ao verificar se os dados do cliente estão completos: ' + err.message);
       }
   }
+
+  
 

@@ -1,5 +1,5 @@
 import fs from 'fs';
-import { HttpError } from '../server';
+import { HttpError } from '../Server';
 import * as interfaces from '../types/interfaces';
 
 export class LocalFiscalDataClass {
