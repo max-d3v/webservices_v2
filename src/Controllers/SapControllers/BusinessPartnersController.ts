@@ -401,7 +401,6 @@ export class BusinessPartnersController {
     private async getClientsToProcess(): Promise<interfaces.RelevantClientData[]> {
         let clients: interfaces.RelevantClientData[] = [];
         let tipo = "remove";
-
         //const TURNING_POINT = 20000;
 
         const clientAlreadyProcessed = await this.dataBaseServices.getClientsAlreadyProcessed();
@@ -416,7 +415,6 @@ export class BusinessPartnersController {
 
             const clientsProcessedCardCodesString = clientAlreadyProcessed.map((client) => `'${client.CardCode}'`).join(",");
 
-            //Double check no client is re-processed
             const ActiveClients = await this.sapServices.getAllActiveClientsRegistrationData(clientsProcessedCardCodesString);
             clients = ActiveClients.map((client) => {
                 if (clientAlreadyProcessed.find((processedClient) => processedClient.CardCode === client.CardCode)) {
@@ -429,7 +427,6 @@ export class BusinessPartnersController {
         else if (tipo == "choose") {
             const allClients = await this.sapServices.getAllActiveClientsRegistrationData();
             const cardCodes = allClients.map((client) => client.CardCode);
-            //get the cardcodes not in clientAlreadyProcessed
             const cardCodesNotInClientAlreadyProcessed = cardCodes.filter((cardCode) => !clientAlreadyProcessed.find((processedClient) => processedClient.CardCode === cardCode));
             const cardCodesString = cardCodesNotInClientAlreadyProcessed.join("','");
             clients = await this.sapServices.getAllActiveClientsRegistrationData(null, { field: 'A."CardCode"', value: `'${cardCodesString}'` });
@@ -492,22 +489,9 @@ export class BusinessPartnersController {
 
     private async ProcessIE(registrations: interfaces.Registration[] | [], estado: string, cardCode: string, clientAdresses: interfaces.RelevantClientData["Adresses"], ClientData: any): Promise<void> {
         try {
-            const registrationsInState = registrations?.filter((registration) => registration?.state === estado);
-            let registration;
-            if (!registrationsInState || registrationsInState.length === 0) {
-                registration = undefined;
-            } else {
-                if (registrationsInState.length > 1) {
-                    console.log("Achou mais de uma inscrição estadual para o estado ", estado);
-
-                    const normalRegistration = registrationsInState.find((registration) => registration.type.id === 1);
-                    console.log("Inscrição estadual normal: ", normalRegistration);
-                    registration = normalRegistration;
-                } else {
-                    registration = registrationsInState[0];
-                }
-            }
-
+            //IE normal e do estado.
+            const registration = registrations?.find((registration) => registration?.state === estado && registration?.type?.id === 1);
+            
             const BPFiscalTaxIDCollection: interfaces.TemplateFiscal[] = [];
 
             const isEnabled = registration?.enabled;

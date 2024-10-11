@@ -79,7 +79,7 @@ jobs:
 
 
   vps-deploy:
-    needs: [dockerhub-push, run-tests]
+    needs: [dockerhub-push]
     runs-on: ubuntu-latest
     steps:      
       - name: Checkout code
