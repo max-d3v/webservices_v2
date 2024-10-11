@@ -14,6 +14,11 @@ jobs:
     - name: Check out the repository
       uses: actions/checkout@v4
 
+    - name: Get tst secrets
+      run: |
+        echo ${{ secrets.ENV_TST }} | base64 --decode > .env.tst
+
+
     - name: Install dependencies and start jest
       run: npm install && npx jest
 
