@@ -1,7 +1,7 @@
-import { ErrorHandling } from "../utils/errorHandler";
-import { HttpError, HttpErrorWithDetails } from "../utils/errorHandler";
+import { ErrorHandling } from "../../utils/errorHandler";
+import { HttpError, HttpErrorWithDetails } from "../../utils/errorHandler";
 import { Request, Response, NextFunction } from "express";
-import * as helperFunctions from "../utils/helperFunctions";
+import * as helperFunctions from "../../utils/helperFunctions";
 
 
 describe("Error Handling", () => {
