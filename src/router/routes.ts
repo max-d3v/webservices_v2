@@ -50,7 +50,7 @@ class Routes {
         })
 
         this.router.patch("/FiscalData/Client/:CardCode", (req:  Request, res: Response, next: NextFunction) => {
-            this.serviceRunner(() => this.SapHandler.updateClientsRegistrationData("client", req.params.CardCode), req, res, next)
+            this.serviceRunner(() => this.SapHandler.updateClientsRegistrationData("Client", req.params.CardCode), req, res, next)
         })
 
         this.router.post("/Activities/DesativarTodosTicketsVendedor/:userId", (req:  Request, res: Response, next: NextFunction) => {
