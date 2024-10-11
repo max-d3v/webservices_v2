@@ -24,7 +24,7 @@ jobs:
         openssl enc -aes-256-cbc -d -in src/models/data/encrypted_cnpj_data/cnpj_fornecedores.bin -out src/models/data/cnpj_data_fornecedores_full.json -k ${{ secrets.DECRYPTION_KEY }}
 
     - name: Install dependencies and start jest
-      run: npm install && npx jest
+      run: npm install
 
     - name: Run unit tests
       run: npm test
