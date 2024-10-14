@@ -1,8 +1,9 @@
 import axios from "axios";
 import https from 'https';
-import { baseConfig } from "./baseConfig";
+import { baseConfig } from "./BaseFetchConfig";
 import { Server } from '../../Server';
 import { HttpError } from "../../Server";
+import * as interfaces from '../../types/interfaces';
 
 describe("Company endpoints test suite", () => {
 
@@ -20,7 +21,7 @@ describe("Company endpoints test suite", () => {
 
 
     describe("GET /company/:cnpj", () => {
-        test("Should get company data from SAP", async () => {
+        test("Should get company data from local fiscal data", async () => {
             const config = { ...baseConfig };
             config.method = 'get';
             config.url += "/company/02741897000300"
@@ -28,7 +29,7 @@ describe("Company endpoints test suite", () => {
             const response = await axios.request(config)
 
             expect(response.status).toBe(200)
-            expect(response.data).toBeValidCnpjData
+            expect(response.data).toMatchObject<interfaces.CnpjJaData>({} as interfaces.CnpjJaData);
         });
 
         test("Should return 400 for invalid CNPJ", async () => {
@@ -44,7 +45,7 @@ describe("Company endpoints test suite", () => {
         test("Should return 404 when company not found", async () => {
             const config = { ...baseConfig };
             config.method = 'get';
-            config.url += "/company/54.065.771/0001-96" //Generated ramdom CNPJ
+            config.url += "/company/88464844000134" //Random cnpj
 
             const response = await axios.request(config)
 

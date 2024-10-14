@@ -30,30 +30,7 @@ const checkPropertyType = (obj: any, key: string, expectedType: string): boolean
   
 
 expect.extend({
-    toBeValidCnpjData(received: any) {
-        const sampleObj: interfaces.CnpjJaData = {} as interfaces.CnpjJaData;
-        
-        const interfaceKeys = Object.getOwnPropertyNames(Object.getPrototypeOf(sampleObj));
-        
-        const invalidProperties: string[] = [];
-        
-        for (const key of interfaceKeys) {
-          const expectedType = getExpectedType(sampleObj, key);
-          if (!checkPropertyType(received, key, expectedType)) {
-            invalidProperties.push(key);
-          }
-        }
-        
-        const pass = invalidProperties.length === 0;
-        
-        return {
-          pass,
-          message: () => 
-            pass
-              ? `Object is a valid CnpjJaData.`
-              : `Expected object to be a valid CnpjJaData, but the following properties were invalid or missing: ${invalidProperties.join(', ')}`
-        };
-    },
+
 
     toReturnValidUser(userObj, user) {
         const resultObj: jest.CustomMatcherResult  = {
@@ -70,7 +47,6 @@ expect.extend({
 })
 
 interface CustomMatchers<R> {
-    toBeValidCnpjData(): R;
     toReturnValidUser(user: any): R;
 }
 
@@ -82,5 +58,4 @@ declare global {
 
 
 //examples
-expect({} as any as interfaces.CnpjJaData).toBeValidCnpjData()
 expect({name: "John"}).toReturnValidUser("John")

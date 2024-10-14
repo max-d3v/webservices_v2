@@ -12,7 +12,7 @@ export class HttpError extends Error {
     }
   }
 export const ErrorHandling = (err: HttpError | HttpErrorWithDetails | Error, req: Request, res: Response, next: NextFunction): Response => {
-    console.error(err.message);
+    //console.error(err.message);
     const statusCode = (err as HttpError).statusCode || 500;
     const message = err.message || 'An unexpected error occurred';
     

@@ -1,3 +1,2 @@
 import dotenv from 'dotenv';
-process.env.NODE_ENV = 'tst';
-dotenv.config({path: ".env.tst"});
+dotenv.config({path: `.env.${process.env.NODE_ENV}`});
