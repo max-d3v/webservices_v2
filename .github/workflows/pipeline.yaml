@@ -18,6 +18,12 @@ jobs:
       run: |
         echo ${{ secrets.ENV_TST }} | base64 --decode > .env.tst
 
+    - name: mask secrets in case of console log
+      run: |
+        while IFS= read -r line; do
+          echo "::add-mask::$line"
+        done < .env.tst
+    
     - name: Get client data
       run: |
         openssl enc -aes-256-cbc -d -in src/models/data/encrypted_cnpj_data/cnpj_clientes.bin -out src/models/data/cnpj_data_clientes_full.json -k ${{ secrets.DECRYPTION_KEY }}
