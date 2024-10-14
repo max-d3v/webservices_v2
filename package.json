@@ -5,8 +5,8 @@
   "main": "src/index.js",
   "scripts": {
     "build": "npx tsc",
-    "start-dev": "node dist/primary-cluster.js",
-    "start": "node dist/src/primary-cluster.js",
+    "start-dev": "cross-env NODE_ENV=prd node dist/src/main.js",
+    "start": "cross-env NODE_ENV=prd node dist/src/primary-cluster.js",
     "dev": "cross-env NODE_ENV=dev nodemon src/main.ts",
     "test": "jest",
     "itest-dev": "cross-env NODE_ENV=tst.local jest --config itest.config.ts",

@@ -8,7 +8,7 @@ on:
 
 jobs:
   run-tests:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     steps:
     - name: Check out the repository
@@ -30,7 +30,7 @@ jobs:
       run: npm run ${{ matrix.test-type }}
     strategy:
       matrix:
-        test-type: [test, itest]    
+        test-type: [test, itest]
 
   dockerhub-push:
     runs-on: ubuntu-latest
