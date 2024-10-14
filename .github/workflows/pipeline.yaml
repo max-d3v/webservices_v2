@@ -28,10 +28,10 @@ jobs:
 
     - name: Run tests
       run: npm run ${{ matrix.test-type }}
+    strategy:
       matrix:
-        test-type: [test, itest]
-    
-    
+        test-type: [test, itest]    
+
   dockerhub-push:
     runs-on: ubuntu-latest
 
