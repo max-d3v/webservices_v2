@@ -490,7 +490,7 @@ export class BusinessPartnersController {
     private async ProcessIE(registrations: interfaces.Registration[] | [], estado: string, cardCode: string, clientAdresses: interfaces.RelevantClientData["Adresses"], ClientData: any): Promise<void> {
         try {
             //IE normal e do estado.
-            const registration = registrations?.find((registration) => registration?.state === estado && registration?.type?.id === 1);
+            const registration = registrations?.find((registration) => registration?.state === estado && registration?.type?.id === 1 || registration?.type?.id === 4);
             
             const BPFiscalTaxIDCollection: interfaces.TemplateFiscal[] = [];
 
