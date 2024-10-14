@@ -5,6 +5,8 @@ import { Server } from '../../Server';
 import { HttpError } from "../../Server";
 import * as interfaces from '../../types/interfaces';
 
+//env update
+
 describe("Company endpoints test suite", () => {
 
     let server: Server;
