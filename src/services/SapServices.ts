@@ -14,7 +14,6 @@ export class SapServices {
         this.sl = new SL();
         this.ApiFiscalDataClass = new ApiFiscalDataClass();
         this.dataBaseServices = DatabaseServices.getInstance();
-        this.maintainSLLogin();
     }
 
     public static getInstance(): SapServices {
@@ -28,10 +27,11 @@ export class SapServices {
         try {
             console.log("Loggin in to SAP SL in mode: ", process.env.NODE_ENV);
             await this.sl.login();
-            setInterval(() => {
+            const maintainer = setInterval(() => {
                 console.log('Maintining SAP login, current time: ', new Date().toLocaleTimeString());
                 this.sl.login();
             }, 20 * 60 * 1000);
+            return maintainer
         } catch (error) {
             console.error(error);
             throw new HttpError(500, 'Error with SAP login');

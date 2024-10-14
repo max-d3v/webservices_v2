@@ -13,11 +13,11 @@ class Routes {
     private serviceRunner: typeof runService;
 
 
-    constructor() {
+    constructor(SapHandler: SapHandler, FiscalHandler: FiscalDataHandler) {
         this.router = Router();
 
-        this.SapHandler = SapHandler.getInstance();
-        this.FiscalDataHandler = FiscalDataHandler.getInstance();
+        this.SapHandler = SapHandler;
+        this.FiscalDataHandler = FiscalHandler;
 
         this.serviceRunner = runService;
 
@@ -73,7 +73,7 @@ class Routes {
     }
     
 
-    public getRouter() {
+    public getRoutes() {
         return this.router;
     }
 }

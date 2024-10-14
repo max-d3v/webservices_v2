@@ -12,12 +12,15 @@ export class SapHandler {
     private ActivitiesController: ActivitiesController;
     private BusinessPartnersController: BusinessPartnersController;
 
+    private loginMaintainer: NodeJS.Timeout | null;
+
     constructor() {
         this.sapServices = SapServices.getInstance();
         this.dataBaseServices = DatabaseServices.getInstance();
 
         this.ActivitiesController = ActivitiesController.getInstance();
         this.BusinessPartnersController = BusinessPartnersController.getInstance();
+        this.loginMaintainer = null;
     }
 
     public static getInstance(): SapHandler {
@@ -28,8 +31,15 @@ export class SapHandler {
     }
 
     public async maintainServicesLogin(): Promise<void> {
-        await this.sapServices.maintainSLLogin();
+       this.loginMaintainer = await this.sapServices.maintainSLLogin();
     }
+
+    public async stopServiceLayerLoginMaintainer() {
+        if (this.loginMaintainer) {
+            clearInterval(this.loginMaintainer);
+            this.loginMaintainer = null;
+        }
+    } 
 
     //Business partners
 
@@ -61,10 +71,4 @@ export class SapHandler {
     public async changeTicketsOwnerShip(originUserId: string, destinyUserId: string): Promise<any> {
         return this.ActivitiesController.changeTicketsOwnerShip(originUserId, destinyUserId);
     }
-
-    
-
-    
-    
-        
 }
