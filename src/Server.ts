@@ -5,7 +5,6 @@ import { SapHandler } from "./Handlers/SapHandler";
 import { FiscalDataHandler } from "./Handlers/FiscalDataHandler";
 import routerClass from "./router/routes";
 import http from "http";
-import { FiscalDataController } from "./Controllers/FiscalDataController";
 
 export class HttpError extends Error {
   constructor(public statusCode: number, message: string) {
