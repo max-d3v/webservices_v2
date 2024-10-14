@@ -10,7 +10,7 @@
     "dev": "cross-env NODE_ENV=dev nodemon src/main.ts",
     "test": "jest",
     "itest-dev": "cross-env NODE_ENV=tst.local jest --config itest.config.ts",
-    "itest": "cross-env NODE_ENV=tst jest --config itest.config.ts"
+    "itest": "cross-env NODE_ENV=tst jest --config itest.config.ts --detectOpenHandles"
   },
   "dependencies": {
     "@prisma/client": "^5.19.1",
