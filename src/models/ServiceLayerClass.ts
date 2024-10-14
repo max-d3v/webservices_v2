@@ -84,6 +84,7 @@ export default class SL {
 
     async login(): Promise<any> {
         try {
+            console.log('config: ', this.config);
             const response = await axios.request(this.config);
             this.SessionId = response.data.SessionId;
             this.config.headers!['Cookie'] = `B1SESSION=${this.SessionId}; ROUTEID=.node3`;
