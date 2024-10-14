@@ -20,10 +20,12 @@ jobs:
 
     - name: mask secrets in case of console log
       run: |
-        while IFS= read -r line; do
-          echo "::add-mask::$line"
+        while IFS='=' read -r key value; do
+          # Remove leading/trailing quotes if present
+          value=$(echo $value | sed -e 's/^"//' -e 's/"$//')
+          echo "::add-mask::$value"
         done < .env.tst
-    
+          
     - name: Get client data
       run: |
         openssl enc -aes-256-cbc -d -in src/models/data/encrypted_cnpj_data/cnpj_clientes.bin -out src/models/data/cnpj_data_clientes_full.json -k ${{ secrets.DECRYPTION_KEY }}
