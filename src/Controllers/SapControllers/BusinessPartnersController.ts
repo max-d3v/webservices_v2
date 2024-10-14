@@ -112,7 +112,7 @@ export class BusinessPartnersController {
             }
 
             console.log("Finished client with error: ", cardCode);
-            console.log("Error: ", err);
+            console.log("Error: ", err.message);
 
             try {
                 await this.dataBaseServices.updateClientRegistrationLog(cardCode, {
