@@ -182,5 +182,3 @@ export const validaCPF = (cpf: string | null | undefined | number) => {
       }
   }
 
-  /////
-
