@@ -158,14 +158,14 @@ export const validaCPF = (cpf: string | null | undefined | number) => {
 
 
     export const handleMultipleProcessesResult = async ( errors: any[], processedEntities: any[] ) => {
-      if (processedEntities.length === 0) {
+      if (processedEntities.length === 0 && errors.length > 0) {
           throw new HttpErrorWithDetails(400, "Erro ao executar todas as operações", errors);
-      } else if (errors.length > 0) {
+      } else if (errors.length > 0 && processedEntities.length > 0) {
           throw new HttpErrorWithDetails(206, "Erro ao atualizar parte das operações", { ObjetosComErro: errors, ObjetosProcessados:processedEntities })
-      } else if (errors.length === 0) {
+      } else if (errors.length === 0 && processedEntities.length > 0) {
           return processedEntities;
       } else {
-          throw new HttpError(500, 'Erro inesperado');
+          throw new HttpError(500, 'Erro ao processar resultados');
       }
     }
 
