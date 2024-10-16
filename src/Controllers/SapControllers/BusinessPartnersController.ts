@@ -33,13 +33,17 @@ export class BusinessPartnersController {
             const JsonInMemory = new LocalFiscalDataClass()
             JsonInMemory.loadFile('./src/models/data/cnpj_data_clientes_full.json');
 
+            if (tipo == "Client" && !CardCode) {
+                throw new HttpError(400, "No CardCode was given");
+            }
+
             clients = await this.getFiscalClientData(tipo, CardCode, JsonInMemory);
+
+            console.log(`Começando processo de clientes de tipo ${tipo} com ${clients.length}`);
 
             if (clients.length === 0) {
                 throw new HttpError(404, "Nenhum cliente encontrado para processamento!");
             }
-
-            console.log(`Starting ${tipo} process with ${clients.length} clients`);
 
             const errors: any[] = [];
             const processedClients: any[] = [];
@@ -62,10 +66,10 @@ export class BusinessPartnersController {
 
             //await helperFunctions.batchOperation(clients, this.ClientProcessController, 200, JsonInMemory, processedClients, errors, tipo);
 
+            console.log("Chegou aqui")
             JsonInMemory.quit()
-            const apiReturn = helperFunctions.handleMultipleProcessesResult(errors, processedClients)
+            const apiReturn = await helperFunctions.handleMultipleProcessesResult(errors, processedClients)
             return apiReturn;
-
         } catch (err: any) {
             if (err instanceof HttpErrorWithDetails) {
                 throw new HttpErrorWithDetails(err.statusCode, "Erro na atualizacao de clientes por CNPJ: " + err.message, err.details);
@@ -82,7 +86,6 @@ export class BusinessPartnersController {
 
             const clientRegistrationLog = await this.dataBaseServices.findClientRegistrationLog(cardCode);
             if (clientRegistrationLog?.Status === "SUCCESS") {
-                console.log("Found client that already has been processed with success: (se estiver no unprocessed está errado)", cardCode);
                 if (type == "unprocessed") {
                     return;
                 }
@@ -112,7 +115,7 @@ export class BusinessPartnersController {
             }
 
             console.log("Finished client with error: ", cardCode);
-            console.log("Error: ", err.message);
+            // console.log("Error: ", err.message);
 
             try {
                 await this.dataBaseServices.updateClientRegistrationLog(cardCode, {
@@ -359,85 +362,86 @@ export class BusinessPartnersController {
         }
     }
 
-    private async getFiscalClientData(tipo: string, CardCode: string | null = null, JsonInMemory: LocalFiscalDataClass): Promise<interfaces.RelevantClientData[]> {
+    public async getFiscalClientData(tipo: string, CardCode: string | null = null, JsonInMemory: LocalFiscalDataClass): Promise<interfaces.RelevantClientData[]> {
         let clients: interfaces.RelevantClientData[] = [];
 
+        let selectedClients: string[] = [];
+        let removedClients: string[] = [];
+        let getInactiveClients = false;
+
+
         if (tipo == "Unprocessed") {
-            clients = await this.getClientsToProcess();
+            [selectedClients, removedClients] = await this.getClientsToProcess();
         }
         else if (tipo == 'Inativados') {
-            clients = await this.getInactivatedClientsSAP();
+            selectedClients = await this.getInactivatedClientsSAP();
+            getInactiveClients = true;
         } else if (tipo == "Client") {
-            if (!CardCode) {
-                throw new HttpError(400, "CardCode não informado");
-            }
-            clients = await this.sapServices.getActiveClientRegistrationData(CardCode);
-            console.log("Cliente selecionado: ", clients);
-        } else if (tipo == "All") {
-            clients = await this.sapServices.getAllActiveClientsRegistrationData();
+            selectedClients = [CardCode!];
         } else if (tipo == "ManyRegistrations") {
-            clients = await this.getClientsWithMoreThanOneRegistration(JsonInMemory);
-        }
-        else {
-            clients = await this.getClientsToProcess();
+            selectedClients = await this.getClientsWithMoreThanOneRegistration(JsonInMemory);
+        } else {
+            //Nothing, will get all active clients.
         }
 
-        console.log(clients)
+        const filter = selectedClients.length > 0 ? {
+            field: 'A."CardCode"',
+            value: "'" + selectedClients.join(`','`) + "'"
+        } : null;
+        const exceptions = removedClients.length > 0 ? {
+            field: 'A."CardCode"',
+            value: "'" + removedClients.join(`','`) + "'"
+        } : null;
+
+        clients = await this.sapServices.getAllActiveClientsRegistrationData(filter, exceptions);
         return clients;
     }
 
-    private async getInactivatedClientsSAP(): Promise<interfaces.RelevantClientData[]> {
+    private async getInactivatedClientsSAP(): Promise<string[]> {
         try {
             const inactivatedClients = await this.dataBaseServices.getInactivatedClients();
-            const inactivatedClientsCardCodes = inactivatedClients.map((client) => `'${client.CardCode}'`).join(",");
-
-            const inactivatedClientsSAP = await this.sapServices.getClientsRegistrationData(null, { field: `A."CardCode"`, value: inactivatedClientsCardCodes });
-            return inactivatedClientsSAP;
+            const CardCodesArray = inactivatedClients
+                .filter((client) => client.CardCode)
+                .map((client) => client.CardCode as string);
+            return CardCodesArray;
         } catch (err: any) {
             throw new HttpError(err.statusCode || 500, 'Erro ao buscar clientes inativos: ' + err.message);
         }
     }
 
-    private async getClientsToProcess(): Promise<interfaces.RelevantClientData[]> {
-        let clients: interfaces.RelevantClientData[] = [];
+    private async getClientsToProcess(): Promise<string[][]> {
+        let clientsToSearch: string[] = [];
+        let clientsToRemove: string[] = [];
+
         let tipo = "remove";
-        //const TURNING_POINT = 20000;
+        const TURNING_POINT = 30000;
 
         const clientAlreadyProcessed = await this.dataBaseServices.getClientsAlreadyProcessed();
-        //if (clientAlreadyProcessed.length > TURNING_POINT) {
-        //    tipo = "choose";
-        //}
+        if (clientAlreadyProcessed.length > TURNING_POINT) {
+            tipo = "choose";
+        }
 
         console.log("Vai pegar os clientes para processar com o tipo: ", tipo);
 
         if (tipo == "remove") {
-            console.log(`Filtering ${clientAlreadyProcessed.length} Clients out of the cliens to process (Clients already processed with success)`)
+            const cardCodes: string[] = clientAlreadyProcessed
+                .filter((client) => client.CardCode)
+                .map((client) => client.CardCode as string);
 
-            const clientsProcessedCardCodesString = clientAlreadyProcessed.map((client) => `'${client.CardCode}'`).join(",");
-
-            const ActiveClients = await this.sapServices.getAllActiveClientsRegistrationData(clientsProcessedCardCodesString);
-            clients = ActiveClients.map((client) => {
-                if (clientAlreadyProcessed.find((processedClient) => processedClient.CardCode === client.CardCode)) {
-                    console.log("Client already processed: ", client.CardCode);
-                    return;
-                }
-                return client;
-            }).filter((client) => client !== undefined);
+            clientsToRemove = cardCodes;
         }
         else if (tipo == "choose") {
-            const allClients = await this.sapServices.getAllActiveClientsRegistrationData();
-            const cardCodes = allClients.map((client) => client.CardCode);
-            const cardCodesNotInClientAlreadyProcessed = cardCodes.filter((cardCode) => !clientAlreadyProcessed.find((processedClient) => processedClient.CardCode === cardCode));
-            const cardCodesString = cardCodesNotInClientAlreadyProcessed.join("','");
-            clients = await this.sapServices.getAllActiveClientsRegistrationData(null, { field: 'A."CardCode"', value: `'${cardCodesString}'` });
-
-            console.log(`Selecting ${clients.length} clients out of ${allClients.length} (Clients not already processed)`);
+            const allClientsCardCodes = await this.sapServices.getAllActiveClientsCardCodes();
+            const cardCodesNotInClientAlreadyProcessed: string[] = allClientsCardCodes
+                .map(client => client.CardCode)
+                .filter(cardCode => !clientAlreadyProcessed.find(processedClient => processedClient.CardCode === cardCode));
+            clientsToSearch = cardCodesNotInClientAlreadyProcessed;
         }
 
-        return clients;
+        return [clientsToSearch, clientsToRemove]
     }
 
-    private async getClientsWithMoreThanOneRegistration(JsonInMemory: LocalFiscalDataClass): Promise<interfaces.RelevantClientData[]> {
+    private async getClientsWithMoreThanOneRegistration(JsonInMemory: LocalFiscalDataClass): Promise<string[]> {
         const clients = JsonInMemory.getData();
 
         const clientsWithMoreThanOneRegistration = clients.filter((client: any) => client.registrations.length > 1);
@@ -446,10 +450,9 @@ export class BusinessPartnersController {
             const ponctuatedTaxId = cleanTaxId.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5");
             return ponctuatedTaxId;
         });
-        const taxIdsString = taxIds.join("','");
 
-        const clientsSAP = await this.sapServices.getAllActiveClientsRegistrationData(null, { field: `B."TaxId0"`, value: `'${taxIdsString}'` }, null);
-        return clientsSAP;
+        const CardCodesWithGivenTaxIds = this.sapServices.getCardCodesBasedOnTaxId(taxIds);
+        return CardCodesWithGivenTaxIds;
     }
 
     public async getAllClientsCnpjClear() {
@@ -491,7 +494,7 @@ export class BusinessPartnersController {
         try {
             //IE normal e do estado.
             const registration = registrations?.find((registration) => registration?.state === estado && registration?.type?.id === 1 || registration?.type?.id === 4);
-            
+
             const BPFiscalTaxIDCollection: interfaces.TemplateFiscal[] = [];
 
             const isEnabled = registration?.enabled;

@@ -10,7 +10,7 @@ module.exports = {
   },
   //collectCoverage: true,
   collectCoverageFrom: [`${baseDir}/**/*.ts`],
-  //testMatch: [`${baseTestDir}/IntegrationTests/**/*.test.ts`],
-  testMatch: [`${baseTestDir}/IntegrationTests/FiscalData.test.ts`],
-  setupFiles: [`${baseTestDir}/config.ts`],
+  testMatch: [`${baseTestDir}/IntegrationTests/**/*.test.ts`],
+  //testMatch: [`${baseTestDir}/IntegrationTests/FIscalData.test.ts`],
+  setupFiles: [`${baseTestDir}/setup.ts`],
 };

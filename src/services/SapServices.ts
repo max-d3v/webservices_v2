@@ -168,22 +168,43 @@ export class SapServices {
         } catch (err: any) {
             throw new HttpError(500, 'Erro ao buscar dados relevantes dos clientes: ' + err.message);
         }
-
     }
 
-    public async getAllActiveClientsRegistrationData( removedClients: string | null = null, filter: interfaces.GetClientsFilter | null = null, removeFilter: interfaces.GetClientsFilter | null = null ): Promise<interfaces.RelevantClientData[]> {
+    public async getAllActiveClientsCardCodes() {
+        const query = `SELECT A."CardCode"
+        FROM "SBO_COPAPEL_PRD".OCRD A 
+        LEFT JOIN "SBO_COPAPEL_PRD".CRD7 B ON A."CardCode" = B."CardCode" 
+        WHERE A."CardType" = 'C' 
+        AND A."validFor" = 'Y' 
+        AND B."TaxId0" <> ''
+        AND B."TaxId0" IS NOT NULL 
+        AND B."TaxId0" <> 'null'    
+        GROUP BY A."CardCode"
+        `;
+
+        console.log(query);
+
+        const response = await this.sl.newQuerySAP(query);
+        const data = response.data;
+        if (data.length === 0 ){
+            throw new HttpError(404, "Nenhum cliente encontrado!");
+        }
+
+        return data;
+    }
+
+    public async getAllActiveClientsRegistrationData( filter: interfaces.GetClientsFilter | null = null, exceptions: interfaces.GetClientsFilter | null = null, getInactiveClients: boolean = false ): Promise<interfaces.RelevantClientData[]> {
         try {
             const query = `SELECT A."Balance", B."TaxId0", B."Address", A."State1", A."CardCode", A."CardName", CAST(A."Free_Text" AS NVARCHAR) as "Free_Text"
             FROM "SBO_COPAPEL_PRD".OCRD A 
             LEFT JOIN "SBO_COPAPEL_PRD".CRD7 B ON A."CardCode" = B."CardCode" 
             WHERE A."CardType" = 'C' 
-            AND A."validFor" = 'Y' 
+            ${getInactiveClients ? "" : `AND A."validFor" = 'Y'`} 
             AND B."TaxId0" <> ''
             AND B."TaxId0" IS NOT NULL 
             AND B."TaxId0" <> 'null'    
             ${filter ? `AND ${filter.field} IN (${filter.value})` : ""}
-            AND A."CardCode" NOT IN (${removedClients ? removedClients : "''"})
-            ${removeFilter ? `AND ${removeFilter.field} NOT IN (${removeFilter.value})` : ""}
+            ${exceptions ? `AND ${exceptions.field} NOT IN (${exceptions.value})` : ""}
             `;
 
             console.log("Query: ", query);
@@ -224,6 +245,18 @@ export class SapServices {
             throw new HttpError(500, 'Erro ao buscar dados relevantes dos clientes: ' + err.message);
         }
     }
+
+    public async getCardCodesBasedOnTaxId(taxIds: string[]): Promise<string[]> {
+        const query = `SELECT A."CardCode" FROM "SBO_COPAPEL_PRD".OCRD A INNER JOIN "SBO_COPAPEL_PRD".CRD7 B ON A."CardCode" = B."TaxId0" WHERE B."TaxId0" IN (${taxIds.map(id => `'${id}'`).join(", ")}) GROUP BY A."CardCOde"`;
+        try {
+            const response = await this.sl.querySAP(query);
+            return response.data;
+        } catch(err) {
+            throw new HttpError(500, "Erro ao pegar CardCodes com base nos cnpjs");
+        }
+    }
+
+
 
     public async getObservationFromSAP(cardCode: string): Promise<Array<interfaces.Observations>> {
         try {

@@ -37,26 +37,26 @@ class Routes {
     }
 
     private SapRoutes() {
-        this.router.patch("/SupplierData/All", (req:  Request, res: Response, next: NextFunction) => 
+        this.router.patch("/BusinessPartners/SupplierData/All", (req:  Request, res: Response, next: NextFunction) => 
             this.serviceRunner(() => this.SapHandler.AtualizaCadastroFornecedores('1989-01-01'), req, res, next)
         );
-        this.router.patch("/SupplierData/Today", (req:  Request, res: Response, next: NextFunction) => {
+        this.router.patch("/BusinessPartners/SupplierData/Today", (req:  Request, res: Response, next: NextFunction) => {
             const todayIsoString = new Date().toISOString().split('T')[0];
             this.serviceRunner(() => this.SapHandler.AtualizaCadastroFornecedores(todayIsoString), req, res, next);
         });
 
-        this.router.patch("/FiscalData/:entityType", (req:  Request, res: Response, next: NextFunction) => {
+        this.router.patch("/BusinessPartners/FiscalData/:entityType", (req:  Request, res: Response, next: NextFunction) => {
             this.serviceRunner(() => this.SapHandler.updateClientsRegistrationData(req.params.entityType), req, res, next)
         })
 
-        this.router.patch("/FiscalData/Client/:CardCode", (req:  Request, res: Response, next: NextFunction) => {
+        this.router.patch("/BusinessPartners/FiscalData/Client/:CardCode", (req:  Request, res: Response, next: NextFunction) => {
             this.serviceRunner(() => this.SapHandler.updateClientsRegistrationData("Client", req.params.CardCode), req, res, next)
         })
 
-        this.router.post("/Activities/DesativarTodosTicketsVendedor/:userId", (req:  Request, res: Response, next: NextFunction) => {
+        this.router.post("/Activities/Deactivate/:userId", (req:  Request, res: Response, next: NextFunction) => {
             this.serviceRunner(() => this.SapHandler.deactiveAllTicketsFromVendor(req.params.userId), req, res, next);
         })
-        this.router.patch("/Activities/MudarProprietarioTickets", (req:  Request, res: Response, next: NextFunction) => {
+        this.router.patch("/Activities/ChangeOwnership", (req:  Request, res: Response, next: NextFunction) => {
             this.serviceRunner(() => this.SapHandler.changeTicketsOwnerShip(req.body.originUserId, req.body.destinyUserId), req, res, next);
         })
 

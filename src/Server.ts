@@ -16,6 +16,7 @@ export class Server {
   private app: Application;
   private PORT: number;
   private server: http.Server | null;
+  public static instance: Server;
 
   private SapHandler: SapHandler | null;
   private FiscalDataInstance: FiscalDataHandler | null;
@@ -27,6 +28,13 @@ export class Server {
     this.SapHandler = null;
     this.FiscalDataInstance = null;
   }
+
+  public static getInstance(): Server {
+    if (!Server.instance) {
+        Server.instance = new Server();
+    }
+    return Server.instance;
+}
 
   private async getHandlers() {
     this.SapHandler = SapHandler.getInstance();
@@ -53,10 +61,11 @@ export class Server {
 
   public async start() {
     this.applyMiddlewares();
-    this.app.use(ErrorHandling);
     
     await this.getHandlers();
     await this.applyRoutes();
+
+    this.app.use(ErrorHandling);
     
     this.server = this.app.listen(this.PORT, () => {
       console.log(`Server is running on port ${this.PORT} in ${process.env.NODE_ENV} mode`);

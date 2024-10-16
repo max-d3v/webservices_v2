@@ -34,16 +34,14 @@ export class ActivitiesController {
                 throw new HttpError(400, 'Id de usuário inválido');
             }
             const tickets: interfaces.TicketNumber[] = await this.sapServices.getOpenTicketsFromVendor(parsedUserId);
-            if (helperFunctions.objetoVazio(tickets[0])) {
-                throw new HttpError(404, 'Nenhum ticket encontrado para o vendedor');
-            }
+
             const ticketsProcessados: interfaces.TicketNumber[] = [];
             const ticketsErros: any[] = [];
 
             await Promise.all(tickets.map(async (ticket) => {
                 try {
                     this.sapServices.deactivateTicket(ticket.ClgCode),
-                        ticketsProcessados.push({ ClgCode: ticket.ClgCode });
+                    ticketsProcessados.push({ ClgCode: ticket.ClgCode });
                 } catch (err: any) {
                     ticketsErros.push({ ClgCode: ticket.ClgCode, error: err.message });
                 }
@@ -99,7 +97,9 @@ export class ActivitiesController {
             const ticketsProcessados: any[] = [];
             const ticketsErros: any[] = [];
 
-            await Promise.all(getTickets.map((ticket) => { this.ChangeTicketOwner(ticket, parsedDestinyUserId, ticketsProcessados, ticketsErros) }))
+            
+            await Promise.all(getTickets.map(async (ticket) => { await this.ChangeTicketOwner(ticket, parsedDestinyUserId, ticketsProcessados, ticketsErros) }))
+            
 
             const apiReturn = helperFunctions.handleMultipleProcessesResult(ticketsErros, ticketsProcessados);
             return apiReturn;
@@ -108,15 +108,14 @@ export class ActivitiesController {
                 throw err;
             }
             throw new HttpError(err.statusCode || 500, 'Erro ao mudar proprietário dos tickets: ' + err.message);
-        }
+        }   
     }
 
     private async ChangeTicketOwner(ticket: interfaces.ActivitiesCode, destinyUserId: number, ticketsProcessados: any[], ticketErrors: any[]) {
         try {
             const attObj = {
                 HandledBy: destinyUserId
-            }
-
+            }       
             await this.sapServices.updateActivity(ticket.ClgCode, attObj);
             ticketsProcessados.push({ ClgCode: ticket.ClgCode });
         } catch (err: any) {

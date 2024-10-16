@@ -9,7 +9,9 @@ export interface Fornecedor {
     U_TX_SN?: 1 | 2;
 }
 
-
+export interface CardCode {
+    CardCode: string;
+}
 
 
 export interface getClientDataQueryReturn {
