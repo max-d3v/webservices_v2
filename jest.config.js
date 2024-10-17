@@ -13,5 +13,5 @@ module.exports = {
   testMatch: [
     `${baseTestDir}/UnitTests/**/*.test.ts`,
   ],
-  setupFiles: [`${baseTestDir}/config.ts`],
+  setupFiles: [`${baseTestDir}/setup.ts`],
 };
