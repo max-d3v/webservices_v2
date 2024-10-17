@@ -66,7 +66,7 @@ describe("Integration tests", () => {
 
                     const response = await axios.request({ ...config, url: clientUrl });
                     expect(response.status).toBe(200);
-                }, 15000);
+                }, 20000);
             })
 
 

@@ -34,7 +34,7 @@ export class BusinessPartnersController {
             JsonInMemory.loadFile('./src/models/data/cnpj_data_clientes_full.json');
 
             if (tipo == "Client" && !CardCode) {
-                throw new HttpError(400, "No CardCode was given");
+                throw new HttpError(400, "No CardCode was given!");
             }
 
             clients = await this.getFiscalClientData(tipo, CardCode, JsonInMemory);
@@ -97,7 +97,7 @@ export class BusinessPartnersController {
                 });
             }
 
-            const [processedClient, processedData] = await this.processClient(client, JsonInMemory);
+            const [processedClient, processedData] = await this.ProcessClientFiscalData(client, JsonInMemory);
             processedClients.push(processedClient);
 
             console.log("Finished client with success: ", cardCode);
@@ -132,7 +132,7 @@ export class BusinessPartnersController {
 
     }
 
-    private async processClient(client: interfaces.RelevantClientData, JsonInMemory: LocalFiscalDataClass): Promise<(interfaces.ClientUpdateData | { CardCode: string; data: interfaces.ClientUpdateData; })[]> {
+    private async ProcessClientFiscalData(client: interfaces.RelevantClientData, JsonInMemory: LocalFiscalDataClass): Promise<(interfaces.ClientUpdateData | { CardCode: string; data: interfaces.ClientUpdateData; })[]> {
         const cardCode = client.CardCode
 
         const cnpj = client.TaxId0?.replace(/\D/g, '') ?? null;
