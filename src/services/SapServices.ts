@@ -246,8 +246,9 @@ export class SapServices {
     }
 
     public async getCardCodesBasedOnTaxId(taxIds: string[]): Promise<string[]> {
-        const query = `SELECT A."CardCode" FROM "SBO_COPAPEL_PRD".OCRD A INNER JOIN "SBO_COPAPEL_PRD".CRD7 B ON A."CardCode" = B."TaxId0" WHERE B."TaxId0" IN (${taxIds.map(id => `'${id}'`).join(", ")}) GROUP BY A."CardCOde"`;
+        const query = `SELECT A."CardCode" FROM "SBO_COPAPEL_PRD".OCRD A INNER JOIN "SBO_COPAPEL_PRD".CRD7 B ON A."CardCode" = B."TaxId0" WHERE B."TaxId0" IN (${taxIds.map(id => `'${id.replace(/\D/g, '')}'`).join(", ")}) GROUP BY A."CardCode"`;
         try {
+            console.log(query);
             const response = await this.sl.querySAP(query);
             return response.data;
         } catch(err) {
