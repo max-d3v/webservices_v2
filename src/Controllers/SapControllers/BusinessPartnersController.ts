@@ -189,6 +189,219 @@ export class BusinessPartnersController {
         }
     }
 
+    
+
+    public async getFiscalClientData(tipo: string, CardCode: string | null = null, JsonInMemory: LocalFiscalDataClass): Promise<interfaces.RelevantClientData[]> {
+        let clients: interfaces.RelevantClientData[] = [];
+
+        let selectedClients: string[] = [];
+        let removedClients: string[] = [];
+        let getInactiveClients = false;
+
+
+        if (tipo == "Unprocessed") {
+            [selectedClients, removedClients] = await this.getClientsToProcess();
+        }
+        else if (tipo == 'Inativados') {
+            selectedClients = await this.getInactivatedClientsSAP();
+            getInactiveClients = true;
+        } else if (tipo == "Client") {
+            selectedClients = [CardCode!];
+        } else if (tipo == "ManyRegistrations") {
+            selectedClients = await this.getClientsWithMoreThanOneRegistration(JsonInMemory);
+        } else if (tipo == "SelectedClients") {
+          //  selectedClients = await this.getSelectedClients();
+        } else {
+            //Nothing, will get all active clients.
+        }
+
+        const filter = selectedClients.length > 0 ? {
+            field: 'A."CardCode"',
+            value: "'" + selectedClients.join(`','`) + "'"
+        } : null;
+        const exceptions = removedClients.length > 0 ? {
+            field: 'A."CardCode"',
+            value: "'" + removedClients.join(`','`) + "'"
+        } : null;
+        
+        console.log("Chegou antes de pegar os cliente");
+
+        clients = await this.sapServices.getAllActiveClientsRegistrationData(filter, exceptions, getInactiveClients);
+        return clients;
+    }
+
+    private async getSelectedClients() {
+        const clients = this.dataBaseServices
+
+
+    }
+
+    private async getInactivatedClientsSAP(): Promise<string[]> {
+        try {
+            const inactivatedClients = await this.dataBaseServices.getInactivatedClients();
+            const CardCodesArray = inactivatedClients
+                .filter((client) => client.CardCode)
+                .map((client) => client.CardCode as string);
+            return CardCodesArray;
+        } catch (err: any) {
+            throw new HttpError(err.statusCode || 500, 'Erro ao buscar clientes inativos: ' + err.message);
+        }
+    }
+
+    private async getClientsToProcess(): Promise<string[][]> {
+        let clientsToSearch: string[] = [];
+        let clientsToRemove: string[] = [];
+
+        let tipo = "remove";
+        const TURNING_POINT = 30000;
+
+        const clientAlreadyProcessed = await this.dataBaseServices.getClientsAlreadyProcessed();
+        if (clientAlreadyProcessed.length > TURNING_POINT) {
+            tipo = "choose";
+        }
+
+        console.log("Vai pegar os clientes para processar com o tipo: ", tipo);
+
+        if (tipo == "remove") {
+            const cardCodes: string[] = clientAlreadyProcessed
+                .filter((client) => client.CardCode)
+                .map((client) => client.CardCode as string);
+
+            clientsToRemove = cardCodes;
+        }
+        else if (tipo == "choose") {
+            const allClientsCardCodes = await this.sapServices.getAllActiveClientsCardCodes();
+            const cardCodesNotInClientAlreadyProcessed: string[] = allClientsCardCodes
+                .map(client => client.CardCode)
+                .filter(cardCode => !clientAlreadyProcessed.find(processedClient => processedClient.CardCode === cardCode));
+            clientsToSearch = cardCodesNotInClientAlreadyProcessed;
+        }
+
+        return [clientsToSearch, clientsToRemove]
+    }
+
+    private async getClientsWithMoreThanOneRegistration(JsonInMemory: LocalFiscalDataClass): Promise<string[]> {
+        const clients = JsonInMemory.getData();
+
+        const clientsWithMoreThanOneRegistration = clients.filter((client: any) => client.registrations.length > 1);
+        const taxIds = clientsWithMoreThanOneRegistration.map((client: any) => {
+            const cleanTaxId = client.taxId.replace(/\D/g, '');
+            const ponctuatedTaxId = cleanTaxId.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5");
+            return ponctuatedTaxId;
+        });
+
+        const CardCodesWithGivenTaxIds = this.sapServices.getCardCodesBasedOnTaxId(taxIds);
+        return CardCodesWithGivenTaxIds;
+    }
+
+    public async getAllClientsCnpjClear() {
+        const clients = await this.sapServices.getAllActiveClientsRegistrationData();
+        let string = "";
+        clients.map((client: any) => string += client.TaxId0 + ",");
+        return string;
+    }
+
+    public async getAllFornecedoresCnpjClear() {
+        const isoStringAllTime = '1900-01-01';
+        const fornecedores = await this.sapServices.getFornecedoresLeads(isoStringAllTime);
+        let string = "";
+        fornecedores.map((fornecedor: any) => string += fornecedor.TaxId0 + ",");
+        return string;
+    }
+
+    public async getMysqlSapClients() {
+        return await this.dataBaseServices.getMysqlSapClients();
+    }
+
+    private ProcessCnpjStatus(status: number, balance: number, ClientData: any): void {
+        try {
+            if (balance === 0) {
+                const statusForSL = status === 2 || status === 4 ? "tYES" : "tNO";
+                const frozenForSL = status === 2 || status === 4 ? "tNO" : "tYES";
+                ClientData.Valid = statusForSL;
+                ClientData.Frozen = frozenForSL;
+            } else {
+                ClientData.Valid = "tYES";
+                ClientData.Frozen = "tNO";
+            }
+        } catch (err: any) {
+            throw new HttpError(err.statusCode || 500, 'Erro ao processar CNPJ baixado do cliente: ' + err.message);
+        }
+    }
+
+    private async ProcessIE(registrations: interfaces.Registration[] | [], estado: string, cardCode: string, clientAdresses: interfaces.RelevantClientData["Adresses"], ClientData: any): Promise<void> {
+        try {
+            //IE normal e do estado.
+            let foundRegistrations = registrations?.filter((registration) => registration?.state === estado && registration?.type?.id === 1 || registration?.type?.id === 4);
+            let registration: null | interfaces.Registration = null;
+            if (foundRegistrations.length == 1) {
+                registration = foundRegistrations[0]
+            } else if (foundRegistrations.length > 1) {
+                console.log("Cliente tem mais de uma IE normal para o estado, selecionando a ativa (se tiver!)")
+                const activatedRegistration = foundRegistrations.find((registration) => registration.enabled == true)
+                if (activatedRegistration) {
+                    registration = activatedRegistration
+                    console.log(`Selecionou a registration`)
+                    console.log(registration)
+                }
+            }
+
+            const BPFiscalTaxIDCollection: interfaces.TemplateFiscal[] = [];
+
+            const isEnabled = registration?.enabled;
+            const InscricaoEstadual = isEnabled ? (registration?.number || "Isento") : "Isento";
+            const isIsento = !isEnabled;
+
+            for (const adress of clientAdresses) {
+                const templateFiscal: interfaces.TemplateFiscal = {
+                    Address: adress,
+                    BPCode: cardCode,
+                    AddrType: "bo_ShipTo",
+                    TaxId1: InscricaoEstadual,
+                }
+                BPFiscalTaxIDCollection.push(templateFiscal);
+            }
+
+            ClientData.BPFiscalTaxIDCollection = BPFiscalTaxIDCollection;
+            ClientData.U_TX_IndIEDest = isIsento ? "9" : "1";
+        } catch (err: any) {
+            throw new HttpError(err.statusCode || 500, 'Erro ao processar inscrição estadual do cliente: ' + err.message);
+        }
+    }
+
+    private ProcessSimplesOptant(simplesOptant: boolean, ClientData: any): void {
+        try {
+            ClientData.U_TX_SN = simplesOptant ? 1 : 2;
+        } catch (err: any) {
+            throw new HttpError(err.statusCode || 500, 'Erro ao processar inscrição simples do cliente: ' + err.message);
+        }
+    }
+
+    private async NewObservation(mainActivityText: string, cnpjStatus: number, reasonForBaixa: string | undefined, freeText: string | null, cardCode: string, ClientData: any) {
+        try {
+            const oldObservation = freeText || "";
+            const alreadyUpdated = oldObservation.includes("Informações da Atualiação cadastral geral");
+
+            let templateString = oldObservation + " - Informações da Atualiação cadastral geral, realizada dia " + new Date().toISOString().split('T')[0] + ": ";
+            templateString += "  Atividade principal: " + mainActivityText;
+
+            if (cnpjStatus !== 2) {
+                templateString += "  Motivo da baixa: " + reasonForBaixa;
+            } else {
+                if (alreadyUpdated) {
+                    ClientData.FreeText = oldObservation;
+                    return;
+                }
+            }
+
+            ClientData.FreeText = templateString;
+
+        } catch (err: any) {
+            throw new HttpError(err.statusCode || 500, 'Erro ao processar observação do cliente: ' + err.message);
+        }
+    }
+
+
     public async AtualizaCadastroFornecedores(isoString: string): Promise<any> {
         try {
             const isIsoString = helperFunctions.isIsoString(isoString);
@@ -364,215 +577,4 @@ export class BusinessPartnersController {
             throw new HttpError(err.statusCode || 500, 'Erro ao cadastrar fornecedores: ' + err.message);
         }
     }
-
-    public async getFiscalClientData(tipo: string, CardCode: string | null = null, JsonInMemory: LocalFiscalDataClass): Promise<interfaces.RelevantClientData[]> {
-        let clients: interfaces.RelevantClientData[] = [];
-
-        let selectedClients: string[] = [];
-        let removedClients: string[] = [];
-        let getInactiveClients = false;
-
-
-        if (tipo == "Unprocessed") {
-            [selectedClients, removedClients] = await this.getClientsToProcess();
-        }
-        else if (tipo == 'Inativados') {
-            selectedClients = await this.getInactivatedClientsSAP();
-            getInactiveClients = true;
-        } else if (tipo == "Client") {
-            selectedClients = [CardCode!];
-        } else if (tipo == "ManyRegistrations") {
-            selectedClients = await this.getClientsWithMoreThanOneRegistration(JsonInMemory);
-        } else if (tipo == "SelectedClients") {
-          //  selectedClients = await this.getSelectedClients();
-        } else {
-            //Nothing, will get all active clients.
-        }
-
-        const filter = selectedClients.length > 0 ? {
-            field: 'A."CardCode"',
-            value: "'" + selectedClients.join(`','`) + "'"
-        } : null;
-        const exceptions = removedClients.length > 0 ? {
-            field: 'A."CardCode"',
-            value: "'" + removedClients.join(`','`) + "'"
-        } : null;
-        
-        console.log("Chegou antes de pegar os cliente");
-
-        clients = await this.sapServices.getAllActiveClientsRegistrationData(filter, exceptions);
-        return clients;
-    }
-
-    private async getSelectedClients() {
-        const clients = this.dataBaseServices
-
-
-    }
-
-    private async getInactivatedClientsSAP(): Promise<string[]> {
-        try {
-            const inactivatedClients = await this.dataBaseServices.getInactivatedClients();
-            const CardCodesArray = inactivatedClients
-                .filter((client) => client.CardCode)
-                .map((client) => client.CardCode as string);
-            return CardCodesArray;
-        } catch (err: any) {
-            throw new HttpError(err.statusCode || 500, 'Erro ao buscar clientes inativos: ' + err.message);
-        }
-    }
-
-    private async getClientsToProcess(): Promise<string[][]> {
-        let clientsToSearch: string[] = [];
-        let clientsToRemove: string[] = [];
-
-        let tipo = "remove";
-        const TURNING_POINT = 30000;
-
-        const clientAlreadyProcessed = await this.dataBaseServices.getClientsAlreadyProcessed();
-        if (clientAlreadyProcessed.length > TURNING_POINT) {
-            tipo = "choose";
-        }
-
-        console.log("Vai pegar os clientes para processar com o tipo: ", tipo);
-
-        if (tipo == "remove") {
-            const cardCodes: string[] = clientAlreadyProcessed
-                .filter((client) => client.CardCode)
-                .map((client) => client.CardCode as string);
-
-            clientsToRemove = cardCodes;
-        }
-        else if (tipo == "choose") {
-            const allClientsCardCodes = await this.sapServices.getAllActiveClientsCardCodes();
-            const cardCodesNotInClientAlreadyProcessed: string[] = allClientsCardCodes
-                .map(client => client.CardCode)
-                .filter(cardCode => !clientAlreadyProcessed.find(processedClient => processedClient.CardCode === cardCode));
-            clientsToSearch = cardCodesNotInClientAlreadyProcessed;
-        }
-
-        return [clientsToSearch, clientsToRemove]
-    }
-
-    private async getClientsWithMoreThanOneRegistration(JsonInMemory: LocalFiscalDataClass): Promise<string[]> {
-        const clients = JsonInMemory.getData();
-
-        const clientsWithMoreThanOneRegistration = clients.filter((client: any) => client.registrations.length > 1);
-        const taxIds = clientsWithMoreThanOneRegistration.map((client: any) => {
-            const cleanTaxId = client.taxId.replace(/\D/g, '');
-            const ponctuatedTaxId = cleanTaxId.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5");
-            return ponctuatedTaxId;
-        });
-
-        const CardCodesWithGivenTaxIds = this.sapServices.getCardCodesBasedOnTaxId(taxIds);
-        return CardCodesWithGivenTaxIds;
-    }
-
-    public async getAllClientsCnpjClear() {
-        const clients = await this.sapServices.getAllActiveClientsRegistrationData();
-        let string = "";
-        clients.map((client: any) => string += client.TaxId0 + ",");
-        return string;
-    }
-
-    public async getAllFornecedoresCnpjClear() {
-        const isoStringAllTime = '1900-01-01';
-        const fornecedores = await this.sapServices.getFornecedoresLeads(isoStringAllTime);
-        let string = "";
-        fornecedores.map((fornecedor: any) => string += fornecedor.TaxId0 + ",");
-        return string;
-    }
-
-    public async getMysqlSapClients() {
-        return await this.dataBaseServices.getMysqlSapClients();
-    }
-
-    private ProcessCnpjStatus(status: number, balance: number, ClientData: any): void {
-        try {
-            if (balance === 0) {
-                const statusForSL = status === 2 || status === 4 ? "tYES" : "tNO";
-                const frozenForSL = status === 2 || status === 4 ? "tNO" : "tYES";
-                ClientData.Valid = statusForSL;
-                ClientData.Frozen = frozenForSL;
-            } else {
-                ClientData.Valid = "tYES";
-                ClientData.Frozen = "tNO";
-            }
-        } catch (err: any) {
-            throw new HttpError(err.statusCode || 500, 'Erro ao processar CNPJ baixado do cliente: ' + err.message);
-        }
-    }
-
-    private async ProcessIE(registrations: interfaces.Registration[] | [], estado: string, cardCode: string, clientAdresses: interfaces.RelevantClientData["Adresses"], ClientData: any): Promise<void> {
-        try {
-            //IE normal e do estado.
-            let foundRegistrations = registrations?.filter((registration) => registration?.state === estado && registration?.type?.id === 1 || registration?.type?.id === 4);
-            let registration: null | interfaces.Registration = null;
-            if (foundRegistrations.length == 1) {
-                registration = foundRegistrations[0]
-            } else if (foundRegistrations.length > 1) {
-                console.log("Cliente tem mais de uma IE normal para o estado, selecionando a ativa (se tiver!)")
-                const activatedRegistration = foundRegistrations.find((registration) => registration.enabled == true)
-                if (activatedRegistration) {
-                    registration = activatedRegistration
-                    console.log(`Selecionou a registration`)
-                    console.log(registration)
-                }
-            }
-
-            const BPFiscalTaxIDCollection: interfaces.TemplateFiscal[] = [];
-
-            const isEnabled = registration?.enabled;
-            const InscricaoEstadual = isEnabled ? (registration?.number || "Isento") : "Isento";
-            const isIsento = !isEnabled;
-
-            for (const adress of clientAdresses) {
-                const templateFiscal: interfaces.TemplateFiscal = {
-                    Address: adress,
-                    BPCode: cardCode,
-                    AddrType: "bo_ShipTo",
-                    TaxId1: InscricaoEstadual,
-                }
-                BPFiscalTaxIDCollection.push(templateFiscal);
-            }
-
-            ClientData.BPFiscalTaxIDCollection = BPFiscalTaxIDCollection;
-            ClientData.U_TX_IndIEDest = isIsento ? "9" : "1";
-        } catch (err: any) {
-            throw new HttpError(err.statusCode || 500, 'Erro ao processar inscrição estadual do cliente: ' + err.message);
-        }
-    }
-
-    private ProcessSimplesOptant(simplesOptant: boolean, ClientData: any): void {
-        try {
-            ClientData.U_TX_SN = simplesOptant ? 1 : 2;
-        } catch (err: any) {
-            throw new HttpError(err.statusCode || 500, 'Erro ao processar inscrição simples do cliente: ' + err.message);
-        }
-    }
-
-    private async NewObservation(mainActivityText: string, cnpjStatus: number, reasonForBaixa: string | undefined, freeText: string | null, cardCode: string, ClientData: any) {
-        try {
-            const oldObservation = freeText || "";
-            const alreadyUpdated = oldObservation.includes("Informações da Atualiação cadastral geral");
-
-            let templateString = oldObservation + " - Informações da Atualiação cadastral geral, realizada dia " + new Date().toISOString().split('T')[0] + ": ";
-            templateString += "  Atividade principal: " + mainActivityText;
-
-            if (cnpjStatus !== 2) {
-                templateString += "  Motivo da baixa: " + reasonForBaixa;
-            } else {
-                if (alreadyUpdated) {
-                    ClientData.FreeText = oldObservation;
-                    return;
-                }
-            }
-
-            ClientData.FreeText = templateString;
-
-        } catch (err: any) {
-            throw new HttpError(err.statusCode || 500, 'Erro ao processar observação do cliente: ' + err.message);
-        }
-    }
-
 }
