@@ -45,6 +45,17 @@ export class DatabaseServices {
         }
     }
 
+    /*
+    public async getSelectedClients(): Promise<PrismaTypes.clientes_para_processar> {
+        try {
+            const clients = await this.prisma.clientes_para_processar.findMany();
+            return clients;
+        } catch(err: any) {
+            throw new HttpError(500, 'Erro ao buscar clientes selecionados pra processamento: ' + err.message);
+        }
+    }
+    */
+
     public async getClientsAlreadyProcessed(): Promise<PrismaTypes.log_atualizacao_cadastral_clientes[]> {
         try {
             const clients = await this.prisma.log_atualizacao_cadastral_clientes.findMany({

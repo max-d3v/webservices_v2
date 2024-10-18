@@ -18,7 +18,7 @@ export interface getClientDataQueryReturn {
     Address: string;
     TaxId0: string | null | "";
     TaxId4: string | null | "";
-    State1: string | null | "";
+    State: string | null | "";
     CardCode: string;
     CardName: string;
     Balance: number;

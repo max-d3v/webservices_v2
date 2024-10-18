@@ -4,7 +4,7 @@ import * as helperFunctions from "../../utils/helperFunctions";
 import * as interfaces from "../../types/interfaces";
 import { DatabaseServices } from "../../services/DatabaseServices";
 import { LocalFiscalDataClass } from "../../models/LocalFiscalDataClass";
-
+import { LocalFiscalDataServices } from "../../services/LocalFiscalDataServices";
 //Updating sap controller file name
 
 export class BusinessPartnersController {
@@ -12,12 +12,14 @@ export class BusinessPartnersController {
     private sapServices: SapServices;
     private dataBaseServices: DatabaseServices;
     private LocalFiscalDataClass: LocalFiscalDataClass;
-
+    private LocalFiscalDataServices: LocalFiscalDataServices;
 
     constructor() {
+        console.log(SapServices);
         this.sapServices = SapServices.getInstance();
         this.dataBaseServices = DatabaseServices.getInstance();
         this.LocalFiscalDataClass = LocalFiscalDataClass.getInstance();
+        this.LocalFiscalDataServices = LocalFiscalDataServices.getInstance();
     }
 
     public static getInstance(): BusinessPartnersController {
@@ -85,19 +87,18 @@ export class BusinessPartnersController {
             console.log("Starting client: ", cardCode);
 
             const clientRegistrationLog = await this.dataBaseServices.findClientRegistrationLog(cardCode);
-            if (clientRegistrationLog?.Status === "SUCCESS") {
-                if (type == "unprocessed") {
-                    return;
-                }
-            }
 
             if (!clientRegistrationLog) {
                 await this.dataBaseServices.logClientRegistration({
                     CardCode: cardCode, Status: "PENDING"
                 });
+            } else {
+                await this.dataBaseServices.updateClientRegistrationLog(cardCode, {Status: "PENDING"})
             }
 
             const [processedClient, processedData] = await this.ProcessClientFiscalData(client, JsonInMemory);
+            await this.sapServices.updateClient(processedData, cardCode);
+
             processedClients.push(processedClient);
 
             console.log("Finished client with success: ", cardCode);
@@ -133,57 +134,59 @@ export class BusinessPartnersController {
     }
 
     private async ProcessClientFiscalData(client: interfaces.RelevantClientData, JsonInMemory: LocalFiscalDataClass): Promise<(interfaces.ClientUpdateData | { CardCode: string; data: interfaces.ClientUpdateData; })[]> {
-        const cardCode = client.CardCode
+        try {
+            const cardCode = client.CardCode
 
-        const cnpj = client.TaxId0?.replace(/\D/g, '') ?? null;
-        const estado = client.State1 ?? null;
-        const cardName = client.CardName;
-        const freeText = client.Free_Text ?? null;
-        const balance = client.Balance;
-
-        if (!cnpj || cnpj === "") {
-            throw new HttpError(400, 'CNPJ inválido da query ao SAP');
+            const cnpj = client.TaxId0?.replace(/\D/g, '') ?? null;
+            const estado = client.State1 ?? null;
+            const cardName = client.CardName;
+            const freeText = client.Free_Text ?? null;
+            const balance = client.Balance;
+    
+            if (!cnpj || cnpj === "") {
+                throw new HttpError(400, 'CNPJ inválido da query ao SAP');
+            }
+            if (!estado || estado === "") {
+                throw new HttpError(400, 'Estado inválido da query ao SAP');
+            }
+    
+    
+            const cnpjInformation = this.LocalFiscalDataServices.getObjectByValue('taxId', cnpj, JsonInMemory);
+            if (!cnpjInformation) {
+                throw new HttpError(404, `CNPJ não encontrado no cache`);
+            }
+    
+            const ClientData: interfaces.ClientUpdateData = {
+                U_TX_IndIEDest: null,
+                U_TX_SN: null,
+                BPFiscalTaxIDCollection: null,
+                FreeText: null,
+                Valid: null,
+                Frozen: null
+            }
+    
+            const simplesOptant = cnpjInformation.company.simples.optant;
+            this.ProcessSimplesOptant(simplesOptant, ClientData);
+    
+    
+            const registrations = cnpjInformation.registrations;
+            const adresses = client.Adresses;
+            await this.ProcessIE(registrations, estado, cardCode, adresses, ClientData);
+    
+            const status = cnpjInformation.status.id;
+            this.ProcessCnpjStatus(status, balance, ClientData)
+    
+            const mainActivityText = cnpjInformation.mainActivity.text;
+            const reason = cnpjInformation.reason?.text;
+            await this.NewObservation(mainActivityText, status, reason, freeText, cardCode, ClientData);
+    
+            helperFunctions.checkAllFields(ClientData);
+        
+            return [{ CardCode: cardCode, data: ClientData }, ClientData];
+    
+        }catch(err: any) {
+            throw new HttpError(err.statusCode ? err.statusCode : 500 , `Error when processing client fiscal data: ` + err.message);
         }
-        if (!estado || estado === "") {
-            throw new HttpError(400, 'Estado inválido da query ao SAP');
-        }
-
-
-        const cnpjInformation = JsonInMemory.getObjectByValue('taxId', cnpj);
-        if (!cnpjInformation) {
-            throw new HttpError(404, `CNPJ não encontrado no cache`);
-        }
-
-        const ClientData: interfaces.ClientUpdateData = {
-            U_TX_IndIEDest: null,
-            U_TX_SN: null,
-            BPFiscalTaxIDCollection: null,
-            FreeText: null,
-            Valid: null,
-            Frozen: null
-        }
-
-        const simplesOptant = cnpjInformation.company.simples.optant;
-        this.ProcessSimplesOptant(simplesOptant, ClientData);
-
-
-        const registrations = cnpjInformation.registrations;
-        const adresses = client.Adresses;
-        await this.ProcessIE(registrations, estado, cardCode, adresses, ClientData);
-
-        const status = cnpjInformation.status.id;
-        this.ProcessCnpjStatus(status, balance, ClientData)
-
-        const mainActivityText = cnpjInformation.mainActivity.text;
-        const reason = cnpjInformation.reason?.text;
-        await this.NewObservation(mainActivityText, status, reason, freeText, cardCode, ClientData);
-
-        helperFunctions.checkAllFields(ClientData);
-
-        await this.sapServices.updateClient(ClientData, cardCode);
-
-        return [{ CardCode: cardCode, data: ClientData }, ClientData];
-
     }
 
     public async AtualizaCadastroFornecedores(isoString: string): Promise<any> {
@@ -380,6 +383,8 @@ export class BusinessPartnersController {
             selectedClients = [CardCode!];
         } else if (tipo == "ManyRegistrations") {
             selectedClients = await this.getClientsWithMoreThanOneRegistration(JsonInMemory);
+        } else if (tipo == "SelectedClients") {
+          //  selectedClients = await this.getSelectedClients();
         } else {
             //Nothing, will get all active clients.
         }
@@ -392,9 +397,17 @@ export class BusinessPartnersController {
             field: 'A."CardCode"',
             value: "'" + removedClients.join(`','`) + "'"
         } : null;
+        
+        console.log("Chegou antes de pegar os cliente");
 
         clients = await this.sapServices.getAllActiveClientsRegistrationData(filter, exceptions);
         return clients;
+    }
+
+    private async getSelectedClients() {
+        const clients = this.dataBaseServices
+
+
     }
 
     private async getInactivatedClientsSAP(): Promise<string[]> {
@@ -493,7 +506,19 @@ export class BusinessPartnersController {
     private async ProcessIE(registrations: interfaces.Registration[] | [], estado: string, cardCode: string, clientAdresses: interfaces.RelevantClientData["Adresses"], ClientData: any): Promise<void> {
         try {
             //IE normal e do estado.
-            const registration = registrations?.find((registration) => registration?.state === estado && registration?.type?.id === 1 || registration?.type?.id === 4);
+            let foundRegistrations = registrations?.filter((registration) => registration?.state === estado && registration?.type?.id === 1 || registration?.type?.id === 4);
+            let registration: null | interfaces.Registration = null;
+            if (foundRegistrations.length == 1) {
+                registration = foundRegistrations[0]
+            } else if (foundRegistrations.length > 1) {
+                console.log("Cliente tem mais de uma IE normal para o estado, selecionando a ativa (se tiver!)")
+                const activatedRegistration = foundRegistrations.find((registration) => registration.enabled == true)
+                if (activatedRegistration) {
+                    registration = activatedRegistration
+                    console.log(`Selecionou a registration`)
+                    console.log(registration)
+                }
+            }
 
             const BPFiscalTaxIDCollection: interfaces.TemplateFiscal[] = [];
 
