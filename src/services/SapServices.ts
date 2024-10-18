@@ -239,9 +239,6 @@ export class SapServices {
                 }
                 formattedData.push(newObj);
             });
-
-            console.log(formattedData);
-
             return formattedData;
         } catch (err: any) {
             throw new HttpError(500, 'Erro ao buscar dados relevantes dos clientes: ' + err.message);

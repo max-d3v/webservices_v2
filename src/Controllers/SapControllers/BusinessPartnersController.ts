@@ -32,7 +32,7 @@ export class BusinessPartnersController {
     public async updateClientsRegistrationData(tipo: string, CardCode: string | null = null) {
         try {
             let clients: interfaces.RelevantClientData[] = [];
-            const JsonInMemory = new LocalFiscalDataClass()
+            const JsonInMemory = new LocalFiscalDataClass();
             JsonInMemory.loadFile('./src/models/data/cnpj_data_clientes_full.json');
 
             if (tipo == "Client" && !CardCode) {
@@ -99,14 +99,14 @@ export class BusinessPartnersController {
             const [processedClient, processedData] = await this.ProcessClientFiscalData(client, JsonInMemory);
             await this.sapServices.updateClient(processedData, cardCode);
 
-            processedClients.push(processedClient);
-
-            console.log("Finished client with success: ", cardCode);
 
             await this.dataBaseServices.updateClientRegistrationLog(cardCode, {
                 Status: "SUCCESS",
                 data_updated: JSON.stringify(processedData),
             });
+
+            processedClients.push(processedClient);
+            console.log("Finished client and updated db with success: ", cardCode);
 
             return true;
         } catch (err: any) {
