@@ -62,6 +62,10 @@ export class SapHandler {
         return this.BusinessPartnersController.getMysqlSapClients();
     }
 
+    public async DeactivateVendors(type: string): Promise<any> {
+        return this.BusinessPartnersController.DeactivateChosenVendors(type);
+    }
+
     //Activities
 
     public async deactiveAllTicketsFromVendor(userId: string): Promise<any> {

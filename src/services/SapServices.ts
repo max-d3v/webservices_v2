@@ -113,6 +113,16 @@ export class SapServices {
         }
     }
 
+    public async deactivateVendor(CardCode: string) {
+        try {
+            const data = { Valid: "tYES", Frozen: "tNO" }
+            const response = await this.sl.patch('BusinessPartners', CardCode, data);
+            return response;
+        } catch(err: any) {
+            throw new HttpError(500, "Erro ao desativar vendedor: " + err.message);
+        }   
+    }
+
     public async getClientsRegistrationData(removedClients: string | null = null, filter: interfaces.GetClientsFilter | null = null): Promise<interfaces.RelevantClientData[]> {
         try {
             const query = `SELECT A."Balance", B."TaxId0", B."Address", C."State", A."CardCode", A."CardName", CAST(A."Free_Text" AS NVARCHAR) as "Free_Text"

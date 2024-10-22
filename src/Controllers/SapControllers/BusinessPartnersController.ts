@@ -15,7 +15,6 @@ export class BusinessPartnersController {
     private LocalFiscalDataServices: LocalFiscalDataServices;
 
     constructor() {
-        console.log(SapServices);
         this.sapServices = SapServices.getInstance();
         this.dataBaseServices = DatabaseServices.getInstance();
         this.LocalFiscalDataClass = LocalFiscalDataClass.getInstance();
@@ -575,6 +574,75 @@ export class BusinessPartnersController {
                 throw new HttpErrorWithDetails(err.statusCode, "Erro na atualizacao de fornecedores: " + err.message, err.details);
             }
             throw new HttpError(err.statusCode || 500, 'Erro ao cadastrar fornecedores: ' + err.message);
+        }
+    }
+
+    public async DeactivateChosenVendors(type: string) {
+        const vendors = [
+            { CardCode: "C032644" },
+            { CardCode: "C022627" },
+            { CardCode: "C029304" },
+            { CardCode: "C021749" },
+            { CardCode: "C022985" },
+            { CardCode: "C029467" },
+            { CardCode: "C029374" },
+            { CardCode: "C022798" },
+            { CardCode: "C029016" },
+            { CardCode: "C029014" },
+            { CardCode: "C025843" },
+            { CardCode: "C024531" },
+            { CardCode: "C022630" },
+            { CardCode: "C023946" },
+            { CardCode: "C024809" },
+            { CardCode: "C024659" },
+            { CardCode: "C024327" },
+            { CardCode: "C039235" },
+            { CardCode: "C023886" },
+            { CardCode: "C022818" },
+            { CardCode: "C023706" },
+            { CardCode: "C024225" },
+            { CardCode: "C022715" },
+            { CardCode: "C024049" },
+            { CardCode: "C025536" },
+            { CardCode: "C045662" },
+            { CardCode: "C023462" },
+            { CardCode: "C024930" },
+            { CardCode: "C023906" },
+            { CardCode: "C025546" }
+        ];
+
+        return await this.DeactivateVendors(vendors)
+
+    }
+
+    public async DeactivateVendors(vendors: interfaces.Vendor[]) {
+        try {
+            const deactivatedVendors: interfaces.Vendor[] = [];
+            const errorVendors: interfaces.Vendor[] = [];
+            await Promise.all(vendors.map( async (vendor: interfaces.Vendor) => { await this.DeactivateVendor(vendor, deactivatedVendors, errorVendors) }) );
+
+
+            console.log(deactivatedVendors)
+            console.log(errorVendors)
+
+            const response = helperFunctions.handleMultipleProcessesResult(errorVendors, deactivatedVendors);
+            return response;
+        } catch(err: any) {
+            if (err instanceof HttpErrorWithDetails) {
+                throw err;
+            }
+            throw new HttpError(err.statusCode ?? 500, "Erro ao Desativar vendedores: " + err.message)
+        }
+    }
+
+    private async DeactivateVendor(vendor: interfaces.Vendor, processedVendors: interfaces.Vendor[] , errorVendors: interfaces.Vendor[]) {
+        try {
+            await this.sapServices.deactivateVendor(vendor.CardCode)
+            console.log("deactivated successfully")
+            processedVendors.push(vendor)
+        } catch(err: any) {
+            console.log("Error when deactivating")
+            errorVendors.push(vendor)
         }
     }
 }

@@ -13,6 +13,9 @@ export interface CardCode {
     CardCode: string;
 }
 
+export interface Vendor {
+    CardCode: string;
+} 
 
 export interface getClientDataQueryReturn {
     Address: string;

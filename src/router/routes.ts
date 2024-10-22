@@ -51,7 +51,11 @@ class Routes {
 
         this.router.patch("/BusinessPartners/FiscalData/Client/:CardCode", (req:  Request, res: Response, next: NextFunction) => {
             this.serviceRunner(() => this.SapHandler.updateClientsRegistrationData("Client", req.params.CardCode), req, res, next)
-        })
+        });
+
+        this.router.patch("/BusinessPartners/DeactivatePartners/:type", (req:  Request, res: Response, next: NextFunction) => {
+            this.serviceRunner(() => this.SapHandler.DeactivateVendors(req.params.type), req, res, next)
+        });
 
         this.router.post("/Activities/Deactivate/:userId", (req:  Request, res: Response, next: NextFunction) => {
             this.serviceRunner(() => this.SapHandler.deactiveAllTicketsFromVendor(req.params.userId), req, res, next);
