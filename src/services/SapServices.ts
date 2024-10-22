@@ -61,6 +61,24 @@ export class SapServices {
         }
     }
 
+    public async getOpportunities(SlpCode: number): Promise<interfaces.Opportunity[]>  {
+        try {
+            const query = `SELECT * FROM "SBO_COPAPEL_PRD"."OOPR" WHERE "SlpCode" = ${SlpCode} AND "Status" = 'O'`;
+            const response = await this.sl.querySAP(query, true);
+            return response.data;    
+        } catch(err: any) {
+            throw new HttpError(err.statusCode ?? 500, "Erro ao pegar oportunidades: " + err.message)
+        }
+    }
+
+    public async changeOpprOwner(OpprId: number, SlpCode: number) {
+        try {
+            return this.sl.patch("SalesOpportunities", OpprId, { "SalesPerson": SlpCode });
+        } catch(err: any) {
+            throw new HttpError(err.statusCode ?? 500, "Erro ao pegar oportunidades" + err.message)
+        }
+    }
+
     public async updateFornecedor(fieldsToUpdateObject: interfaces.DadosPessoaJuridica | interfaces.DadosPessoaFisica | interfaces.DadosMicroempresa | any, CardCode: string) {
         try {
             await this.dataBaseServices.logFornecedorCadastrado({ CardCode: CardCode, Status: "Pendente", Erro: null });

@@ -17,6 +17,11 @@ export interface Vendor {
     CardCode: string;
 } 
 
+export interface Opportunity {
+    OpprId: number;
+}
+
+
 export interface getClientDataQueryReturn {
     Address: string;
     TaxId0: string | null | "";

@@ -2,8 +2,8 @@ import { SapServices } from "../services/SapServices";
 import { DatabaseServices } from "../services/DatabaseServices";
 import { ActivitiesController } from "../Controllers/SapControllers/ActivitiesController";
 import { BusinessPartnersController } from "../Controllers/SapControllers/BusinessPartnersController";
-
-
+import { OpportunitiesController } from "../Controllers/SapControllers/OpportunitiesController";
+import { HttpError } from "../Server";
 export class SapHandler {
     private static instance: SapHandler;
     private sapServices: SapServices;
@@ -11,6 +11,8 @@ export class SapHandler {
 
     private ActivitiesController: ActivitiesController;
     private BusinessPartnersController: BusinessPartnersController;
+    private OpportunitiesController: OpportunitiesController;
+
 
     private loginMaintainer: NodeJS.Timeout | null;
 
@@ -20,6 +22,8 @@ export class SapHandler {
 
         this.ActivitiesController = ActivitiesController.getInstance();
         this.BusinessPartnersController = BusinessPartnersController.getInstance();
+        this.OpportunitiesController = OpportunitiesController.getInstance();
+
         this.loginMaintainer = null;
     }
 
@@ -75,4 +79,14 @@ export class SapHandler {
     public async changeTicketsOwnerShip(originUserId: string, destinyUserId: string): Promise<any> {
         return this.ActivitiesController.changeTicketsOwnerShip(originUserId, destinyUserId);
     }
+
+    //Opportunities
+
+    public async changeOpportunitiesOwnerShip(originUserId: number | undefined | string | null, destinyUserId: number | undefined | string | null): Promise<any> {
+        if (typeof originUserId !== "number" || typeof destinyUserId !== "number") {
+            throw new HttpError(400, "Invalid Ids given")
+        }
+        return this.OpportunitiesController.ChangeOpportunitiesOwnerShip(originUserId, destinyUserId);
+    }
+
 }

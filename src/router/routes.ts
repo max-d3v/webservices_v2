@@ -64,6 +64,10 @@ class Routes {
             this.serviceRunner(() => this.SapHandler.changeTicketsOwnerShip(req.body.originUserId, req.body.destinyUserId), req, res, next);
         })
 
+        this.router.patch("/Opportunities/ChangeOwnership", (req:  Request, res: Response, next: NextFunction) => {
+            this.serviceRunner(() => this.SapHandler.changeOpportunitiesOwnerShip(req.body.OriginSlpCode, req.body.DestinySlpCode), req, res, next);
+        })
+
         this.router.get("/BuscarCnpjTodosClientes", (req:  Request, res: Response, next: NextFunction) => {
             this.serviceRunner(() => this.SapHandler.getAllClientsCnpjClear(), req, res, next);
         })

@@ -1,16 +1,20 @@
 import { LocalFiscalDataClass } from "../models/LocalFiscalDataClass";
 import { ApiFiscalDataClass } from "../models/ApiFiscalDataClass";
 import { HttpError } from "../utils/errorHandler";
+import { LocalFiscalDataServices } from "../services/LocalFiscalDataServices";
 import * as helperFunctions from "../utils/helperFunctions";
 
 export class FiscalDataController {
     private static instance: FiscalDataController;
     private LocalFiscalDataClass: LocalFiscalDataClass;
+    private LocalFiscalDataServices: LocalFiscalDataServices;
     private ApiFiscalDataClass: ApiFiscalDataClass;
 
     constructor() {
+        this.LocalFiscalDataServices = LocalFiscalDataServices.getInstance();
         this.LocalFiscalDataClass = LocalFiscalDataClass.getInstance();
         this.ApiFiscalDataClass = ApiFiscalDataClass.getInstance();
+        this.LocalFiscalDataClass.loadFile('./src/models/data/cnpj_data_clientes_full.json');
     }
 
     public static getInstance(): FiscalDataController {
@@ -25,11 +29,8 @@ export class FiscalDataController {
             if (!taxid || !helperFunctions.validCNPJ(taxid)) {
                 throw new HttpError(400, 'CNPJ inválido');
             }
-            this.LocalFiscalDataClass.loadFile('./src/models/data/cnpj_data_clientes_full.json');
-            const company = this.LocalFiscalDataClass.getObjectByValue('taxId', taxid);
+            const company = this.LocalFiscalDataServices.getObjectByValue('taxId', taxid, this.LocalFiscalDataClass);
     
-            this.LocalFiscalDataClass.quit();
-
             if (!company) {
                 throw new HttpError(404, 'Empresa não encontrada');
             }
