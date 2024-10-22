@@ -115,7 +115,7 @@ export class SapServices {
 
     public async deactivateVendor(CardCode: string) {
         try {
-            const data = { Valid: "tYES", Frozen: "tNO" }
+            const data = { Valid: "tNO", Frozen: "tYES" }
             const response = await this.sl.patch('BusinessPartners', CardCode, data);
             return response;
         } catch(err: any) {
