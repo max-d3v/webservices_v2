@@ -47,11 +47,17 @@ export class SapHandler {
 
     //Business partners
 
-    public async AtualizaCadastroFornecedores(isoString: string): Promise<any> {
-        return this.BusinessPartnersController.AtualizaCadastroFornecedores(isoString);
+    public async AtualizaCadastroFornecedores(type: string): Promise<any> {
+        return this.BusinessPartnersController.AtualizaCadastroFornecedores(type);
     }
 
-    public async updateClientsRegistrationData(entityType: string, CardCode?: string): Promise<any> {
+    public async updateClientsRegistrationData(entityType: string | null | undefined | number, CardCode?: string | null | undefined | number): Promise<any> {
+        if (typeof entityType !== "string") {
+            throw new HttpError(400, "Invalid type given");
+        }
+        if (CardCode !== undefined && CardCode !== null && typeof CardCode !== "string") {
+            throw new HttpError(400, "Invalid CardCode given");
+        }
         return this.BusinessPartnersController.updateClientsRegistrationData(entityType, CardCode);
     }
     public async getAllClientsCnpjClear(): Promise<string> {
@@ -66,17 +72,25 @@ export class SapHandler {
         return this.BusinessPartnersController.getMysqlSapClients();
     }
 
-    public async DeactivateVendors(type: string): Promise<any> {
+    public async DeactivateVendors(type: string | null | undefined | number): Promise<any> {
+        if (typeof type !== "string") {
+            throw new HttpError(400, "Invalid type given")
+        }
         return this.BusinessPartnersController.DeactivateChosenVendors(type);
     }
 
     //Activities
-
-    public async deactiveAllTicketsFromVendor(userId: string): Promise<any> {
+    public async deactiveAllTicketsFromVendor(userId: string | null | undefined | number): Promise<any> {
+        if (typeof userId !== "string") {
+            throw new HttpError(400, "Invalid id given")
+        }
         return this.ActivitiesController.deactiveAllTicketsFromVendor(userId);
     }
 
-    public async changeTicketsOwnerShip(originUserId: string, destinyUserId: string): Promise<any> {
+    public async changeTicketsOwnerShip(originUserId: string | null | undefined | number, destinyUserId: string | null | undefined| number): Promise<any> {
+        if (typeof originUserId !== "string" || typeof destinyUserId !== "string") {
+            throw new HttpError(400, "Invalid Ids given")
+        }
         return this.ActivitiesController.changeTicketsOwnerShip(originUserId, destinyUserId);
     }
 

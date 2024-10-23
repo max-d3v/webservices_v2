@@ -5,6 +5,7 @@ import * as interfaces from "../../types/interfaces";
 import { DatabaseServices } from "../../services/DatabaseServices";
 import { LocalFiscalDataClass } from "../../models/LocalFiscalDataClass";
 import { LocalFiscalDataServices } from "../../services/LocalFiscalDataServices";
+import { ApiFiscalDataClass } from "../../models/ApiFiscalDataClass";
 //Updating sap controller file name
 
 export class BusinessPartnersController {
@@ -13,12 +14,14 @@ export class BusinessPartnersController {
     private dataBaseServices: DatabaseServices;
     private LocalFiscalDataClass: LocalFiscalDataClass;
     private LocalFiscalDataServices: LocalFiscalDataServices;
+    private ApiFiscalDataClass: ApiFiscalDataClass;
 
     constructor() {
         this.sapServices = SapServices.getInstance();
         this.dataBaseServices = DatabaseServices.getInstance();
         this.LocalFiscalDataClass = LocalFiscalDataClass.getInstance();
         this.LocalFiscalDataServices = LocalFiscalDataServices.getInstance();
+        this.ApiFiscalDataClass = ApiFiscalDataClass.getInstance();
     }
 
     public static getInstance(): BusinessPartnersController {
@@ -28,7 +31,7 @@ export class BusinessPartnersController {
         return BusinessPartnersController.instance;
     }
 
-    public async updateClientsRegistrationData(tipo: string, CardCode: string | null = null) {
+    public async updateClientsRegistrationData(tipo: string, CardCode: string | undefined | null = null) {
         try {
             let clients: interfaces.RelevantClientData[] = [];
             const JsonInMemory = new LocalFiscalDataClass();
@@ -401,8 +404,12 @@ export class BusinessPartnersController {
     }
 
 
-    public async AtualizaCadastroFornecedores(isoString: string): Promise<any> {
+    public async AtualizaCadastroFornecedores(type: string): Promise<any> {
         try {
+            let isoString = '1890-01-01';
+            if (type == "Today") {
+                isoString = new Date().toISOString().split('T')[0];
+            }
             const isIsoString = helperFunctions.isIsoString(isoString);
             if (!isIsoString) {
                 throw new HttpError(400, 'Data inválida (deve ser uma data no formato ISO ("yyyy-mm-dd"))');
@@ -413,11 +420,15 @@ export class BusinessPartnersController {
                 throw new HttpError(404, 'Nenhum fornecedor encontrado');
             }
 
+            console.log(`Staerting process with ${fornecedores.length} fornecedores`)
+
             const processErrors: any[] = [];
             const fornecedoresProcessados: any[] = [];
 
             const JsonInMemory = new LocalFiscalDataClass();
             JsonInMemory.loadFile('./src/models/data/cnpj_data_fornecedores_full.json');
+
+            
 
             for (let i = 0; i < fornecedores.length; i += 50) {
                 const batch = fornecedores.slice(i, i + 50);
@@ -455,14 +466,37 @@ export class BusinessPartnersController {
 
                         if (cnpj && isValidCnpj) {
                             const cleanedCnpj = cnpj.replace(/\D/g, '');
-                            const fornecedorData = JsonInMemory.getObjectByValue('taxId', cleanedCnpj);
+                            let fornecedorData: interfaces.CnpjJaData | null | undefined = null;
+                            if (type == "Today") {
+                                fornecedorData = await this.ApiFiscalDataClass.searchCnpj(cleanedCnpj);
+                            } else {
+                                fornecedorData = this.LocalFiscalDataServices.getObjectByValue("taxId", cleanedCnpj, JsonInMemory)
+                            }
+
+
                             if (!fornecedorData) {
                                 throw new HttpError(404, `CNPJ não encontrado no cache`);
                             }
 
                             const isMEI = fornecedorData.company.simei.optant;
                             const registrations = fornecedorData.registrations;
-                            const stateRegistration = registrations?.find((registration: any) => registration?.state === estado);
+                            
+                            let foundRegistrations = registrations?.filter((registration) => registration?.state === estado && registration?.type?.id === 1 || registration?.type?.id === 4);
+                            let stateRegistration: null | interfaces.Registration = null;
+                            if (foundRegistrations.length == 1) {
+                                stateRegistration = foundRegistrations[0]
+                            } else if (foundRegistrations.length > 1) {
+                                console.log("Cliente tem mais de uma IE normal para o estado, selecionando a ativa (se tiver!)")
+                                const activatedRegistration = foundRegistrations.find((registration) => registration.enabled == true)
+                                if (activatedRegistration) {
+                                    stateRegistration = activatedRegistration
+                                    console.log(`Selecionou a registration`)
+                                    console.log(stateRegistration)
+                                }
+                            }
+                
+                            
+                            
                             const isContribuinteICMS = stateRegistration?.enabled
 
                             const fornecedorAdresses: interfaces.FornecedorAdress[] = await this.sapServices.getClientAdresses(CardCode);
