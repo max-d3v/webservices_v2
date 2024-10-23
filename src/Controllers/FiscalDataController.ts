@@ -14,7 +14,6 @@ export class FiscalDataController {
         this.LocalFiscalDataServices = LocalFiscalDataServices.getInstance();
         this.LocalFiscalDataClass = LocalFiscalDataClass.getInstance();
         this.ApiFiscalDataClass = ApiFiscalDataClass.getInstance();
-        this.LocalFiscalDataClass.loadFile('./src/models/data/cnpj_data_clientes_full.json');
     }
 
     public static getInstance(): FiscalDataController {
@@ -22,6 +21,10 @@ export class FiscalDataController {
             FiscalDataController.instance = new FiscalDataController();
         }
         return FiscalDataController.instance;
+    }
+
+    public loadLocalFiscalData() {
+        this.LocalFiscalDataClass.loadFile('./src/models/data/cnpj_data_clientes_full.json');
     }
     
     public async getCompanyByTaxId(taxid: string) {
