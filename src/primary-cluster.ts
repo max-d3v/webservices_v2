@@ -20,6 +20,7 @@ console.log("Number of cores used: ", USABLE_CORES);
     
     cluster.on("exit", (worker, code, signal) => {
         console.log(`Worker ${worker.id} died`);
+        console.log(`Signal for closing: ${signal}, code: ${code}`)
         cluster.fork();
     });
 } catch(err: any) {
