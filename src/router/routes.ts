@@ -37,12 +37,11 @@ class Routes {
     }
 
     private SapRoutes() {
-        this.router.patch("/BusinessPartners/SupplierData/All", (req:  Request, res: Response, next: NextFunction) => 
-            this.serviceRunner(() => this.SapHandler.AtualizaCadastroFornecedores('1989-01-01'), req, res, next)
-        );
+        this.router.patch("/BusinessPartners/SupplierData/All", (req:  Request, res: Response, next: NextFunction) => {
+            this.serviceRunner(() => this.SapHandler.AtualizaCadastroFornecedores("All"), req, res, next)
+        });
         this.router.patch("/BusinessPartners/SupplierData/Today", (req:  Request, res: Response, next: NextFunction) => {
-            const todayIsoString = new Date().toISOString().split('T')[0];
-            this.serviceRunner(() => this.SapHandler.AtualizaCadastroFornecedores(todayIsoString), req, res, next);
+            this.serviceRunner(() => this.SapHandler.AtualizaCadastroFornecedores("Today"), req, res, next);
         });
 
         this.router.patch("/BusinessPartners/FiscalData/:entityType", (req:  Request, res: Response, next: NextFunction) => {
