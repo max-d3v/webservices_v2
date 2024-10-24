@@ -13,13 +13,15 @@ export interface CardCode {
     CardCode: string;
 }
 
-export interface Vendor {
-    CardCode: string;
-} 
+export interface DeactivationClientsData extends CardCode {
+    Free_Text: string;
+}
 
 export interface Opportunity {
     OpprId: number;
 }
+
+
 
 
 export interface getClientDataQueryReturn {
@@ -120,7 +122,11 @@ export interface GetClientsFilter {
     value: string;
 }
 
-
+export interface generalFilter {
+    field: string;
+    value: string;
+    operator: string;
+}
 
 
 export interface CnpjJaData {

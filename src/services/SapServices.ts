@@ -39,6 +39,18 @@ export class SapServices {
     }
 
 
+    public async getClientsWithNoOrders(filter: interfaces.generalFilter | null = null): Promise<interfaces.DeactivationClientsData[]> {
+        try {
+            const query = `SELECT A."CardCode", CAST(A."Free_Text" AS NVARCHAR) as "Free_Text" FROM "SBO_COPAPEL_PRD"."OCRD" A LEFT JOIN "SBO_COPAPEL_PRD"."OINV" B ON A."CardCode" = B."CardCode" WHERE B."DocNum" IS NULL AND A."validFor" = 'Y' ${ filter ? `AND ${filter.field} ${filter.operator} ${filter.value}` : "" }`;
+            console.log(query)
+            const result = await this.sl.querySAP(query, true);
+            return result.data;
+        } catch(err: any) {
+            throw new HttpError(err.statusCode ?? 500, "Erro ao pegar clientes sem ordens: " + err.message);
+        }
+    }
+
+
     public async getFornecedoresLeads(isoString: string): Promise<interfaces.Fornecedor[]> {
         try {
             const query = `SELECT DISTINCT A."CardCode", A."CardName", A."CardType", B."TaxId0", A."State1", B."TaxId4" 
@@ -131,7 +143,7 @@ export class SapServices {
         }
     }
 
-    public async deactivateVendor(CardCode: string) {
+    public async deactivateClient(CardCode: string) {
         try {
             const data = { Valid: "tNO", Frozen: "tYES" }
             const response = await this.sl.patch('BusinessPartners', CardCode, data);
@@ -313,6 +325,8 @@ export class SapServices {
             throw new HttpError(500, 'Erro ao atualizar atividade no SAP: ' + err.message);
         }
     }
+
+    
 
     public async getClient(CardCode: string): Promise<Array<any>> {
         try {

@@ -76,7 +76,7 @@ export class SapHandler {
         if (typeof type !== "string") {
             throw new HttpError(400, "Invalid type given")
         }
-        return this.BusinessPartnersController.DeactivateChosenVendors(type);
+        return this.BusinessPartnersController.DeactivateChosenClients(type);
     }
 
     //Activities

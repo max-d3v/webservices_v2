@@ -611,49 +611,36 @@ export class BusinessPartnersController {
         }
     }
 
-    public async DeactivateChosenVendors(type: string) {
-        const vendors = [
-            { CardCode: "C032644" },
-            { CardCode: "C022627" },
-            { CardCode: "C029304" },
-            { CardCode: "C021749" },
-            { CardCode: "C022985" },
-            { CardCode: "C029467" },
-            { CardCode: "C029374" },
-            { CardCode: "C022798" },
-            { CardCode: "C029016" },
-            { CardCode: "C029014" },
-            { CardCode: "C025843" },
-            { CardCode: "C024531" },
-            { CardCode: "C022630" },
-            { CardCode: "C023946" },
-            { CardCode: "C024809" },
-            { CardCode: "C024659" },
-            { CardCode: "C024327" },
-            { CardCode: "C039235" },
-            { CardCode: "C023886" },
-            { CardCode: "C022818" },
-            { CardCode: "C023706" },
-            { CardCode: "C024225" },
-            { CardCode: "C022715" },
-            { CardCode: "C024049" },
-            { CardCode: "C025536" },
-            { CardCode: "C045662" },
-            { CardCode: "C023462" },
-            { CardCode: "C024930" },
-            { CardCode: "C023906" },
-            { CardCode: "C025546" }
-        ];
+    public async DeactivateChosenClients(type: string) {
+        const clients = await this.getClients(type);
 
-        return await this.DeactivateVendors(vendors)
+        console.log(`Starting Deactivation process with ${clients.length} clients!`);
 
+        return await this.DeactivateClients(clients, type)
     }
 
-    public async DeactivateVendors(vendors: interfaces.Vendor[]) {
+    private async getClients(type: string): Promise<interfaces.DeactivationClientsData[]> {
         try {
-            const deactivatedVendors: interfaces.Vendor[] = [];
-            const errorVendors: interfaces.Vendor[] = [];
-            await Promise.all(vendors.map( async (vendor: interfaces.Vendor) => { await this.DeactivateVendor(vendor, deactivatedVendors, errorVendors) }) );
+            let clients: interfaces.DeactivationClientsData[] = [];
+
+            if (type == "BrunoProcess") {
+                const filter = { field: 'A."CreateDate"', operator: "<", value: "'2024-05-01'"}
+                clients = await this.sapServices.getClientsWithNoOrders(filter);
+            } else {
+                clients = []
+            }
+    
+            return clients    
+        } catch(err: any) {
+            throw new HttpError(err.statusCode ?? 500, `Erro ao pegar clientes do tipo ${type}: ` + err.message);
+        }
+    }
+
+    public async DeactivateClients(vendors: interfaces.DeactivationClientsData[], type: string) {
+        try {
+            const deactivatedVendors: interfaces.CardCode[] = [];
+            const errorVendors: interfaces.CardCode[] = [];
+            await Promise.all(vendors.map( async (vendor: interfaces.DeactivationClientsData) => { await this.DeactivateProcess(vendor, deactivatedVendors, errorVendors, type) }) );
 
 
             console.log(deactivatedVendors)
@@ -669,14 +656,46 @@ export class BusinessPartnersController {
         }
     }
 
-    private async DeactivateVendor(vendor: interfaces.Vendor, processedVendors: interfaces.Vendor[] , errorVendors: interfaces.Vendor[]) {
+    private async DeactivateProcess(vendor: interfaces.DeactivationClientsData, processedVendors: interfaces.CardCode[] , errorVendors: interfaces.CardCode[], type: string) {
         try {
-            await this.sapServices.deactivateVendor(vendor.CardCode)
-            console.log("deactivated successfully")
+            await this.updateObservationWithReason(vendor.Free_Text, vendor.CardCode, type);
+            await this.DeactivateClient(vendor.CardCode);
+            
+        
+            console.log(`deactivated client ${vendor.CardCode} successfully`)
             processedVendors.push(vendor)
         } catch(err: any) {
             console.log("Error when deactivating")
             errorVendors.push(vendor)
+        }
+    }
+
+    private async updateObservationWithReason(oldObs: string, CardCode: string, type: string) {
+        try {
+            const todayDate = new Date().toLocaleString('pt-BR');
+            let motivo = "Não especificado";
+            let newObs = "";
+            if (type = "BrunoProcess") {
+                motivo = "Cliente foi criado antes do dia 01/05/2024 e nunca comprou com a copapel."
+            }
+    
+            newObs = oldObs + ` - Cliente desativado dia ${todayDate} via integração, Motivo: ` + motivo;
+
+            console.log(`Obs antiga: ${oldObs} -- NOVA: ${newObs}`)
+    
+            const data = { "FreeText": newObs }
+    
+            await this.sapServices.updateClient(data, CardCode);    
+        } catch(err: any) {
+            throw new HttpError(err.statusCode ?? 500, "Erro ao atualizar as Observações")
+        }
+    }
+
+    private async DeactivateClient(CardCode: string) {
+        try {
+            await this.sapServices.deactivateClient(CardCode)
+        } catch(err: any) {
+            throw new HttpError(err.statusCode ?? 500, "Erro ao desativar cliente: " + err.message);
         }
     }
 }
