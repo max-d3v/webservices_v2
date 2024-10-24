@@ -41,7 +41,7 @@ export class SapServices {
 
     public async getClientsWithNoOrders(filter: interfaces.generalFilter | null = null): Promise<interfaces.DeactivationClientsData[]> {
         try {
-            const query = `SELECT A."CardCode", CAST(A."Free_Text" AS NVARCHAR) as "Free_Text" FROM "SBO_COPAPEL_PRD"."OCRD" A LEFT JOIN "SBO_COPAPEL_PRD"."OINV" B ON A."CardCode" = B."CardCode" WHERE B."DocNum" IS NULL AND A."validFor" = 'Y' ${ filter ? `AND ${filter.field} ${filter.operator} ${filter.value}` : "" }`;
+            const query = `SELECT A."CardCode", CAST(A."Free_Text" AS NVARCHAR) as "Free_Text" FROM "SBO_COPAPEL_PRD"."OCRD" A LEFT JOIN "SBO_COPAPEL_PRD"."OINV" B ON A."CardCode" = B."CardCode" WHERE B."DocNum" IS NULL AND A."validFor" = 'Y' AND (A."CardType" = 'C' OR A."CardType" = 'L')  ${ filter ? `AND ${filter.field} ${filter.operator} ${filter.value}` : "" }`;
             console.log(query)
             const result = await this.sl.querySAP(query, true);
             return result.data;
@@ -59,11 +59,12 @@ export class SapServices {
             WHERE "CardType" = 'S' 
             AND "CreateDate" >= '${isoString}'  
             AND (B."TaxId0" <> '' OR B."TaxId4" <> '') 
+            AND A."CardCode" = 'F03007'
             ORDER BY "CardCode"`;
 
-            //console.log("Query: ", query);
+            console.log("Query: ", query);
 
-            const fornecedores = await this.sl.querySAP(query);
+            const fornecedores = await this.sl.querySAP(query, true);
 
             const data = fornecedores.data;
 
@@ -113,7 +114,7 @@ export class SapServices {
     public async getClientAdresses(CardCode: string): Promise<interfaces.FornecedorAdress[]> {
         try {
             const query = `SELECT "Address" FROM "SBO_COPAPEL_PRD".CRD7 WHERE "CardCode" = '${CardCode}' AND "AddrType" = 'S'`;
-            const fornecedorAdresses = await this.sl.querySAP(query);
+            const fornecedorAdresses = await this.sl.querySAP(query, true);
 
             const data = fornecedorAdresses.data;
 

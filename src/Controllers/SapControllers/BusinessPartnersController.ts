@@ -35,7 +35,7 @@ export class BusinessPartnersController {
         try {
             let clients: interfaces.RelevantClientData[] = [];
             const JsonInMemory = new LocalFiscalDataClass();
-            JsonInMemory.loadFile('./src/models/data/cnpj_data_clientes_full.json');
+            await JsonInMemory.loadFile('./src/models/data/cnpj_data_clientes_full.json');
 
             if (tipo == "Client" && !CardCode) {
                 throw new HttpError(400, "No CardCode was given!");
@@ -426,7 +426,7 @@ export class BusinessPartnersController {
             const fornecedoresProcessados: any[] = [];
 
             const JsonInMemory = new LocalFiscalDataClass();
-            JsonInMemory.loadFile('./src/models/data/cnpj_data_fornecedores_full.json');
+            await JsonInMemory.loadFile('./src/models/data/cnpj_data_fornecedores_full.json');
 
             
 
@@ -471,13 +471,20 @@ export class BusinessPartnersController {
                                 fornecedorData = await this.ApiFiscalDataClass.searchCnpj(cleanedCnpj);
                             } else {
                                 fornecedorData = this.LocalFiscalDataServices.getObjectByValue("taxId", cleanedCnpj, JsonInMemory)
+                                if (!fornecedorData) {
+                                    console.log(`Não achou fornecedor no local e vai buscar via api`)
+                                    fornecedorData = await this.ApiFiscalDataClass.searchCnpj(cleanedCnpj);
+                                    console.log(`retorno api: `, fornecedorData)
+                                    if (!fornecedorData) {
+                                        throw new HttpError(404, `CNPJ não encontrado no cache e na API`);
+                                    }
+                                }
+                                console.log("Found data in cache")
+    
                             }
 
 
-                            if (!fornecedorData) {
-                                throw new HttpError(404, `CNPJ não encontrado no cache`);
-                            }
-
+                            
                             const isMEI = fornecedorData.company.simei.optant;
                             const registrations = fornecedorData.registrations;
                             

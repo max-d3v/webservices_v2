@@ -74,7 +74,7 @@ export class DatabaseServices {
             }
             const fornecedorExists = await this.findFornecedorCadastrado(fornecedorObj.CardCode);
             if (fornecedorExists) {
-                console.log("Tried to update fornecedor that already exists: ", fornecedorObj.CardCode);
+                console.log("Tried to create fornecedor log that already exists: ", fornecedorObj.CardCode);
                 return false;
             }
             const fornecedorLog = await this.prisma.fornecedores_cadastro_geral_log.create({

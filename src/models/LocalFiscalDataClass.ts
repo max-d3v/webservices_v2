@@ -14,9 +14,9 @@ export class LocalFiscalDataClass {
         return LocalFiscalDataClass.instance;
     }
   
-    public loadFile(filename: string) {
+    public async loadFile(filename: string) {
       try {
-        const data = fs.readFileSync(filename, 'utf8');
+        const data = await fs.promises.readFile(filename, { encoding: 'utf8' });
         this.parsedData = JSON.parse(data);
         return this.parsedData;
       } catch (error: any) {

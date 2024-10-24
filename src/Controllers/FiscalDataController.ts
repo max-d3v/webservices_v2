@@ -23,8 +23,8 @@ export class FiscalDataController {
         return FiscalDataController.instance;
     }
 
-    public loadLocalFiscalData() {
-        this.LocalFiscalDataClass.loadFile('./src/models/data/cnpj_data_clientes_full.json');
+    public async loadLocalFiscalData() {
+        await this.LocalFiscalDataClass.loadFile('./src/models/data/cnpj_data_clientes_full.json');
     }
     
     public async getCompanyByTaxId(taxid: string) {
