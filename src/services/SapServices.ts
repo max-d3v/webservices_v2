@@ -59,7 +59,6 @@ export class SapServices {
             WHERE "CardType" = 'S' 
             AND "CreateDate" >= '${isoString}'  
             AND (B."TaxId0" <> '' OR B."TaxId4" <> '') 
-            AND A."CardCode" = 'F03007'
             ORDER BY "CardCode"`;
 
             console.log("Query: ", query);
