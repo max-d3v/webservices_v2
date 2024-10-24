@@ -1,9 +1,9 @@
 import axios, { AxiosRequestConfig } from 'axios';
 import https from 'https';
-import { HttpError } from '../utils/ErrorHandler';
-import { llm_api } from './LLMApi';
-import * as helperFunctions from '../utils/HelperFunctions';
-
+import { HttpError } from '../utils/errorHandler';
+import { llm_api } from './llmApi';
+import * as helperFunctions from '../utils/helperFunctions';
+//
 const agent = new https.Agent({
     rejectUnauthorized: false
 });
@@ -57,6 +57,7 @@ export default class SL {
                 companyName: process.env.WEB_SERVICE_COMPANY_NAME!
             }
         };
+        
         this.host = this.slConfig.serviceLayers.url!;
         this.port = this.slConfig.serviceLayers.port!;
 
@@ -82,10 +83,17 @@ export default class SL {
     }
 
     async login(): Promise<any> {
-        const response = await axios.request(this.config);
-        this.SessionId = response.data.SessionId;
-        this.config.headers!['Cookie'] = `B1SESSION=${this.SessionId}; ROUTEID=.node3`;
-        return response.data;
+        try {
+           // console.log('config: ', this.config);
+            const response = await axios.request(this.config);
+            this.SessionId = response.data.SessionId;
+            this.config.headers!['Cookie'] = `B1SESSION=${this.SessionId}; ROUTEID=.node3`;
+            return response.data;    
+        } catch(err: any) {
+            console.log('config: ', this.config);
+            //console.log(err)
+            throw new HttpError(500, "Error with SL login" + err.message);
+        }
     }
 
     async get(tipo: string, parametro?: string | number, skip = 0, select?: string): Promise<{ data?: any; }> {

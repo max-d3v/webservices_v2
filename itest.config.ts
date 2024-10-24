@@ -8,8 +8,9 @@ module.exports = {
   transform: {
     "^.+.tsx?$": ["ts-jest",{}],
   },
-  collectCoverage: true,
+  //collectCoverage: true,
   collectCoverageFrom: [`${baseDir}/**/*.ts`],
-  testMatch: [`${baseTestDir}/integrationTests/**/*.test.ts`],
-  setupFiles: [`${baseTestDir}/config.ts`],
+  testMatch: [`${baseTestDir}/IntegrationTests/**/*.test.ts`],
+  //testMatch: [`${baseTestDir}/IntegrationTests/FIscalData.test.ts`],
+  setupFiles: [`${baseTestDir}/setup.ts`],
 };

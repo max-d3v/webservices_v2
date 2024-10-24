@@ -1,21 +1,19 @@
 import SL from "../models/ServiceLayerClass";
-import { CnpjJa } from "../models/CnpjClass";
-import { HttpError, HttpErrorWithDetails } from "../utils/ErrorHandler";
-import * as helperFunctions from "../utils/HelperFunctions";
+import { ApiFiscalDataClass } from "../models/ApiFiscalDataClass";
+import { HttpError } from "../utils/errorHandler";
 import * as interfaces from "../types/interfaces";
 import { DatabaseServices } from "./DatabaseServices";
 
 export class SapServices {
     private static instance: SapServices;
     private sl: SL;
-    private cnpjJa: CnpjJa;
+    private ApiFiscalDataClass: ApiFiscalDataClass;
     private dataBaseServices: DatabaseServices;
     
     public constructor() {
         this.sl = new SL();
-        this.cnpjJa = new CnpjJa();
+        this.ApiFiscalDataClass = new ApiFiscalDataClass();
         this.dataBaseServices = DatabaseServices.getInstance();
-        this.maintainSLLogin();
     }
 
     public static getInstance(): SapServices {
@@ -29,10 +27,11 @@ export class SapServices {
         try {
             console.log("Loggin in to SAP SL in mode: ", process.env.NODE_ENV);
             await this.sl.login();
-            setInterval(() => {
+            const maintainer = setInterval(() => {
                 console.log('Maintining SAP login, current time: ', new Date().toLocaleTimeString());
                 this.sl.login();
             }, 20 * 60 * 1000);
+            return maintainer
         } catch (error) {
             console.error(error);
             throw new HttpError(500, 'Error with SAP login');
@@ -40,7 +39,18 @@ export class SapServices {
     }
 
 
-    //Cadastro de fornecedores
+    public async getClientsWithNoOrders(filter: interfaces.generalFilter | null = null): Promise<interfaces.DeactivationClientsData[]> {
+        try {
+            const query = `SELECT A."CardCode", CAST(A."Free_Text" AS NVARCHAR) as "Free_Text" FROM "SBO_COPAPEL_PRD"."OCRD" A LEFT JOIN "SBO_COPAPEL_PRD"."OINV" B ON A."CardCode" = B."CardCode" WHERE B."DocNum" IS NULL AND A."validFor" = 'Y' AND (A."CardType" = 'C' OR A."CardType" = 'L')  ${ filter ? `AND ${filter.field} ${filter.operator} ${filter.value}` : "" }`;
+            console.log(query)
+            const result = await this.sl.querySAP(query, true);
+            return result.data;
+        } catch(err: any) {
+            throw new HttpError(err.statusCode ?? 500, "Erro ao pegar clientes sem ordens: " + err.message);
+        }
+    }
+
+
     public async getFornecedoresLeads(isoString: string): Promise<interfaces.Fornecedor[]> {
         try {
             const query = `SELECT DISTINCT A."CardCode", A."CardName", A."CardType", B."TaxId0", A."State1", B."TaxId4" 
@@ -51,7 +61,7 @@ export class SapServices {
             AND (B."TaxId0" <> '' OR B."TaxId4" <> '') 
             ORDER BY "CardCode"`;
 
-            //console.log("Query: ", query);
+            console.log("Query: ", query);
 
             const fornecedores = await this.sl.querySAP(query, true);
 
@@ -63,16 +73,33 @@ export class SapServices {
         }
     }
 
+    public async getOpportunities(SlpCode: number): Promise<interfaces.Opportunity[]>  {
+        try {
+            const query = `SELECT * FROM "SBO_COPAPEL_PRD"."OOPR" WHERE "SlpCode" = ${SlpCode} AND "Status" = 'O'`;
+            const response = await this.sl.querySAP(query, true);
+            return response.data;    
+        } catch(err: any) {
+            throw new HttpError(err.statusCode ?? 500, "Erro ao pegar oportunidades: " + err.message)
+        }
+    }
+
+    public async changeOpprOwner(OpprId: number, SlpCode: number) {
+        try {
+            return this.sl.patch("SalesOpportunities", OpprId, { "SalesPerson": SlpCode });
+        } catch(err: any) {
+            throw new HttpError(err.statusCode ?? 500, "Erro ao pegar oportunidades" + err.message)
+        }
+    }
+
     public async updateFornecedor(fieldsToUpdateObject: interfaces.DadosPessoaJuridica | interfaces.DadosPessoaFisica | interfaces.DadosMicroempresa | any, CardCode: string) {
         try {
             await this.dataBaseServices.logFornecedorCadastrado({ CardCode: CardCode, Status: "Pendente", Erro: null });
         } catch(err: any) {
             throw new HttpError(500, 'Erro ao logar fornecedor cadastrado: ' + err.message);
         }
-        
         try {
             const data = fieldsToUpdateObject;
-            const update = await this.sl.patch("BusinessPartners", CardCode, data);
+            await this.sl.patch("BusinessPartners", CardCode, data);
             this.dataBaseServices.atualizaFornecedorCadastrado({ CardCode: CardCode, Status: "Atualizado" });
             console.log("Updated fornecedor: ", CardCode, "with data: ", data);
         } catch (err: any) {    
@@ -86,7 +113,7 @@ export class SapServices {
     public async getClientAdresses(CardCode: string): Promise<interfaces.FornecedorAdress[]> {
         try {
             const query = `SELECT "Address" FROM "SBO_COPAPEL_PRD".CRD7 WHERE "CardCode" = '${CardCode}' AND "AddrType" = 'S'`;
-            const fornecedorAdresses = await this.sl.querySAP(query);
+            const fornecedorAdresses = await this.sl.querySAP(query, true);
 
             const data = fornecedorAdresses.data;
 
@@ -116,11 +143,22 @@ export class SapServices {
         }
     }
 
+    public async deactivateClient(CardCode: string) {
+        try {
+            const data = { Valid: "tNO", Frozen: "tYES" }
+            const response = await this.sl.patch('BusinessPartners', CardCode, data);
+            return response;
+        } catch(err: any) {
+            throw new HttpError(500, "Erro ao desativar vendedor: " + err.message);
+        }   
+    }
+
     public async getClientsRegistrationData(removedClients: string | null = null, filter: interfaces.GetClientsFilter | null = null): Promise<interfaces.RelevantClientData[]> {
         try {
-            const query = `SELECT A."Balance", B."TaxId0", B."Address", A."State1", A."CardCode", A."CardName", CAST(A."Free_Text" AS NVARCHAR) as "Free_Text"
+            const query = `SELECT A."Balance", B."TaxId0", B."Address", C."State", A."CardCode", A."CardName", CAST(A."Free_Text" AS NVARCHAR) as "Free_Text"
             FROM "SBO_COPAPEL_PRD".OCRD A 
             LEFT JOIN "SBO_COPAPEL_PRD".CRD7 B ON A."CardCode" = B."CardCode" 
+            INNER JOIN "SBO_COPAPEL_PRD".CRD1 C ON C."CardCode" = A."CardCode" AND A."ShipToDef" = C."Address" AND C."AdresType" = 'S'
             WHERE A."CardType" = 'C' 
             AND B."TaxId0" <> ''
             AND B."TaxId0" IS NOT NULL 
@@ -130,7 +168,7 @@ export class SapServices {
             LIMIT 5000
             `;            
 
-            const clients = await this.sl.querySAP(query, true);
+            const clients = await this.sl.querySAP(query);
             
             const data: interfaces.getClientDataQueryReturn[] | string = clients.data;
             
@@ -151,7 +189,7 @@ export class SapServices {
                 const newObj: interfaces.RelevantClientData = {
                     CardCode: firstRecord.CardCode,
                     CardName: firstRecord.CardName,
-                    State1: firstRecord.State1,
+                    State1: firstRecord.State,
                     TaxId0: firstRecord.TaxId0,
                     Free_Text: firstRecord.Free_Text,
                     Balance: firstRecord.Balance,
@@ -162,32 +200,57 @@ export class SapServices {
 
             //console.log("Formatted data: ", formattedData);
             
+            
+            
+            
             console.log("Number of clients: ", formattedData.length);
 
             return formattedData;
         } catch (err: any) {
             throw new HttpError(500, 'Erro ao buscar dados relevantes dos clientes: ' + err.message);
         }
-
     }
 
-    public async getAllActiveClientsRegistrationData( removedClients: string | null = null, filter: interfaces.GetClientsFilter | null = null ): Promise<interfaces.RelevantClientData[]> {
+    public async getAllActiveClientsCardCodes() {
+        const query = `SELECT A."CardCode"
+        FROM "SBO_COPAPEL_PRD".OCRD A 
+        LEFT JOIN "SBO_COPAPEL_PRD".CRD7 B ON A."CardCode" = B."CardCode" 
+        WHERE A."CardType" = 'C' 
+        AND A."validFor" = 'Y' 
+        AND B."TaxId0" <> ''
+        AND B."TaxId0" IS NOT NULL 
+        AND B."TaxId0" <> 'null'    
+        GROUP BY A."CardCode"
+        `;
+
+        console.log(query);
+
+        const response = await this.sl.newQuerySAP(query);
+        const data = response.data;
+        if (data.length === 0 ){
+            throw new HttpError(404, "Nenhum cliente encontrado!");
+        }
+
+        return data;
+    }
+
+    public async getAllActiveClientsRegistrationData( filter: interfaces.GetClientsFilter | null = null, exceptions: interfaces.GetClientsFilter | null = null, getInactiveClients: boolean = false ): Promise<interfaces.RelevantClientData[]> {
         try {
-            const query = `SELECT A."Balance", B."TaxId0", B."Address", A."State1", A."CardCode", A."CardName", CAST(A."Free_Text" AS NVARCHAR) as "Free_Text"
+            const query = `SELECT A."Balance", B."TaxId0", B."Address", C."State", A."CardCode", A."CardName", CAST(A."Free_Text" AS NVARCHAR) as "Free_Text"
             FROM "SBO_COPAPEL_PRD".OCRD A 
             LEFT JOIN "SBO_COPAPEL_PRD".CRD7 B ON A."CardCode" = B."CardCode" 
+            INNER JOIN "SBO_COPAPEL_PRD".CRD1 C ON C."CardCode" = A."CardCode" AND A."ShipToDef" = C."Address" AND C."AdresType" = 'S'
             WHERE A."CardType" = 'C' 
-            AND A."validFor" = 'Y' 
+            ${getInactiveClients ? "" : `AND A."validFor" = 'Y'`} 
             AND B."TaxId0" <> ''
             AND B."TaxId0" IS NOT NULL 
             AND B."TaxId0" <> 'null'    
             ${filter ? `AND ${filter.field} IN (${filter.value})` : ""}
-            AND A."CardCode" NOT IN (${removedClients ? removedClients : "''"})
-            LIMIT 5000
-            `;            
+            ${exceptions ? `AND ${exceptions.field} NOT IN (${exceptions.value})` : ""}
+            `;
 
-            console.log(query);
-
+            console.log("Query: ", query);
+            
             const clients = await this.sl.newQuerySAP(query, true);
             
             const data: interfaces.getClientDataQueryReturn[] | string = clients.data;
@@ -208,22 +271,32 @@ export class SapServices {
                 const newObj: interfaces.RelevantClientData = {
                     CardCode: firstRecord.CardCode,
                     CardName: firstRecord.CardName,
-                    State1: firstRecord.State1,
+                    State1: firstRecord.State,
                     TaxId0: firstRecord.TaxId0,
                     Free_Text: firstRecord.Free_Text,
                     Balance: firstRecord.Balance,
                     Adresses: addresses
                 }
                 formattedData.push(newObj);
-            })
-
-            console.log("Number of clients: ", formattedData.length);
-
+            });
             return formattedData;
         } catch (err: any) {
             throw new HttpError(500, 'Erro ao buscar dados relevantes dos clientes: ' + err.message);
         }
     }
+
+    public async getCardCodesBasedOnTaxId(taxIds: string[]): Promise<string[]> {
+        const query = `SELECT A."CardCode" FROM "SBO_COPAPEL_PRD".OCRD A INNER JOIN "SBO_COPAPEL_PRD".CRD7 B ON A."CardCode" = B."TaxId0" WHERE B."TaxId0" IN (${taxIds.map(id => `'${id.replace(/\D/g, '')}'`).join(", ")}) GROUP BY A."CardCode"`;
+        try {
+            console.log(query);
+            const response = await this.sl.querySAP(query);
+            return response.data;
+        } catch(err) {
+            throw new HttpError(500, "Erro ao pegar CardCodes com base nos cnpjs");
+        }
+    }
+
+
 
     public async getObservationFromSAP(cardCode: string): Promise<Array<interfaces.Observations>> {
         try {
@@ -253,7 +326,16 @@ export class SapServices {
         }
     }
 
+    
 
-
+    public async getClient(CardCode: string): Promise<Array<any>> {
+        try {
+            const clientQuery = `SELECT * FROM "SBO_COPAPEL_PRD"."OCRD" WHERE "CardCode" = '${CardCode}'`;
+            const result = await this.sl.querySAP(clientQuery);
+            return result.data;    
+        } catch(err: any) {
+            throw new HttpError(500, 'Erro ao buscar cliente no SAP: ' + err.message);
+        }
+    }
 
 }

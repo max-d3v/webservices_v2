@@ -1,4 +1,4 @@
-import { HttpError } from "../utils/ErrorHandler";
+import { HttpError } from "../utils/errorHandler";
 import {ExtendedRequest} from "../Handlers/ServicesHandler";
 import { PrismaClient } from "@prisma/client";
 import * as PrismaTypes from "@prisma/client";
@@ -45,6 +45,17 @@ export class DatabaseServices {
         }
     }
 
+    /*
+    public async getSelectedClients(): Promise<PrismaTypes.clientes_para_processar> {
+        try {
+            const clients = await this.prisma.clientes_para_processar.findMany();
+            return clients;
+        } catch(err: any) {
+            throw new HttpError(500, 'Erro ao buscar clientes selecionados pra processamento: ' + err.message);
+        }
+    }
+    */
+
     public async getClientsAlreadyProcessed(): Promise<PrismaTypes.log_atualizacao_cadastral_clientes[]> {
         try {
             const clients = await this.prisma.log_atualizacao_cadastral_clientes.findMany({
@@ -63,7 +74,7 @@ export class DatabaseServices {
             }
             const fornecedorExists = await this.findFornecedorCadastrado(fornecedorObj.CardCode);
             if (fornecedorExists) {
-                console.log("Tried to update fornecedor that already exists: ", fornecedorObj.CardCode);
+                console.log("Tried to create fornecedor log that already exists: ", fornecedorObj.CardCode);
                 return false;
             }
             const fornecedorLog = await this.prisma.fornecedores_cadastro_geral_log.create({

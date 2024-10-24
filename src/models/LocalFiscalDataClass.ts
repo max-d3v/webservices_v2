@@ -1,22 +1,22 @@
 import fs from 'fs';
-import { HttpError } from '../server';
+import { HttpError } from '../Server';
 import * as interfaces from '../types/interfaces';
 
-export class JsonInMemoryHandler {
+export class LocalFiscalDataClass {
     private parsedData: any;
-    private static instance: JsonInMemoryHandler;        
+    private static instance: LocalFiscalDataClass;        
   
 
-    public static getInstance(): JsonInMemoryHandler {
-        if (!JsonInMemoryHandler.instance) {
-            JsonInMemoryHandler.instance = new JsonInMemoryHandler();
+    public static getInstance(): LocalFiscalDataClass {
+        if (!LocalFiscalDataClass.instance) {
+            LocalFiscalDataClass.instance = new LocalFiscalDataClass();
         }
-        return JsonInMemoryHandler.instance;
+        return LocalFiscalDataClass.instance;
     }
   
-    public loadFile(filename: string) {
+    public async loadFile(filename: string) {
       try {
-        const data = fs.readFileSync(filename, 'utf8');
+        const data = await fs.promises.readFile(filename, { encoding: 'utf8' });
         this.parsedData = JSON.parse(data);
         return this.parsedData;
       } catch (error: any) {
@@ -34,7 +34,7 @@ export class JsonInMemoryHandler {
         }
     }
 
-    public getParsedData() {
+    public getData() {
         return this.parsedData;
     }
 

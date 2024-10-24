@@ -3,7 +3,7 @@ import os from "os";
 
 try {
 const CORE_COUNT = os.cpus().length;
-let USABLE_CORES = CORE_COUNT - 2;
+let USABLE_CORES = 1;
 if (USABLE_CORES < 1) {
     USABLE_CORES = 1;
 }
@@ -20,6 +20,7 @@ console.log("Number of cores used: ", USABLE_CORES);
     
     cluster.on("exit", (worker, code, signal) => {
         console.log(`Worker ${worker.id} died`);
+        console.log(`Signal for closing: ${signal}, code: ${code}`)
         cluster.fork();
     });
 } catch(err: any) {

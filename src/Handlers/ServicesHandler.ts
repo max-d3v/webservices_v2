@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { DatabaseServices } from "../services/DatabaseServices";
 import { logger } from "../middlewares/logger";
 import { v4 as uuidv4 } from 'uuid';
-import { HttpError } from "../server"; 
+import { HttpError } from "../Server"; 
 export interface ExtendedRequest extends Request {
     executionTime?: number;
 }
@@ -92,6 +92,7 @@ const runService = async (
                 timestamp: new Date().toISOString()
             });
         }
+        console.log(error.message)
         next(error);
     }
 };

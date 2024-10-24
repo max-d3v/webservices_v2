@@ -9,16 +9,6 @@ const agent = new https.Agent({
 //DEPLOY
 
 class DeployPortainer {
-    private portainerUrl: string | undefined;
-    private dockerAuth: string | undefined;
-    private Username: string | undefined;
-    private Password: string | undefined;
-    private Imagem: string | undefined;
-    private NomeImagem: string | undefined;
-    private ExposedPorts: string | undefined;
-
-    private idContainer: string;
-    private token: string;
     
     constructor() {
         dotenv.config({ path: '.env.deploy' });
@@ -45,7 +35,7 @@ class DeployPortainer {
             await this.criarContainer();
             await this.rodarContainer();
             await this.deletarImagensParadas();
-        } catch (err: any) {
+        } catch (err) {
             console.error("Erro ao executar GitOps:", err.message);
             process.exit(1);
         }
@@ -75,7 +65,7 @@ class DeployPortainer {
         const response = await axios(config);
         const token = response.data.jwt;
         this.token = token;  
-        } catch(err: any) {
+        } catch(err) {
             throw new Error("Erro ao fazer login no Portainer")
         }
     }
@@ -115,7 +105,7 @@ class DeployPortainer {
             const response = await axios(listContainersConfig);
             const containers = response.data;
             
-            const targetContainer = containers.find((container: any) => container.Image === this.Imagem);
+            const targetContainer = containers.find((container) => container.Image === this.Imagem);
             if (targetContainer) {
                 const stopContainerConfig = {
                     method: "post",

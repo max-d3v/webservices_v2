@@ -1,3 +1,6 @@
+import { HttpError } from "../Server";
+import { HttpErrorWithDetails } from "./errorHandler";
+
 export const objetoVazio = (objeto: Object | null | undefined) => {
   console.log(typeof objeto)
   if (typeof objeto !== 'object' || objeto === null || Array.isArray(objeto)) {
@@ -141,3 +144,41 @@ export const validaCPF = (cpf: string | null | undefined | number) => {
     }
     return value.length === 0;
   }
+
+  export const batchOperation = async (entities: any[], cb: Function, batchSize: number, ...parameters: any[]) => {
+    const maxIterations = Math.ceil(entities.length / batchSize);
+    for(let iteration = 0; iteration < maxIterations; iteration++) {
+        console.log(`Starting iteration ${iteration}, of ${batchSize} clients - total iterations: ${maxIterations}`);
+        
+        const firstPosition = iteration * batchSize;
+        const batch = entities.slice(firstPosition, firstPosition + batchSize);
+        await Promise.all(batch.map(async (entity) => await cb(entity, ...parameters)));
+    }
+  }
+
+
+    export const handleMultipleProcessesResult = async ( errors: any[], processedEntities: any[] ) => {
+      if (processedEntities.length === 0 && errors.length > 0) {
+          throw new HttpErrorWithDetails(400, "Erro ao executar todas as operações", errors);
+      } else if (errors.length > 0 && processedEntities.length > 0) {
+          throw new HttpErrorWithDetails(206, "Erro ao atualizar parte das operações", { ObjetosComErro: errors, ObjetosProcessados:processedEntities })
+      } else if (errors.length === 0 && processedEntities.length > 0) {
+          return processedEntities;
+      } else {
+          throw new HttpError(500, 'Erro ao processar resultados');
+      }
+    }
+
+  export const checkAllFields = (Data: any): void => {
+      try {
+          const fields = Object.keys(Data);
+          for (const field of fields) {
+              if (Data[field] === null || Data[field] === undefined || Data[field] === "") {
+                  throw new HttpError(400, `Dado: ${field} inválido: (null undefined ou empty str)`);
+              }
+          }
+      } catch (err: any) {
+          throw new HttpError(err.statusCode || 500, 'Erro ao verificar se os dados do cliente estão completos: ' + err.message);
+      }
+  }
+

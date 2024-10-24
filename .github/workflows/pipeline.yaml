@@ -1,5 +1,5 @@
 name: Build and Deploy webservices
-
+#
 on:
   push:
     branches:
@@ -7,13 +7,21 @@ on:
       - main
 
 jobs:
-          
+
   dockerhub-push:
     runs-on: ubuntu-latest
 
     steps:
     - name: Check out the repository
       uses: actions/checkout@v4
+
+    - name: echo files
+      run: |
+        cd src/Controllers
+        ls -la
+        cd ../services
+        ls -la
+
 
     - name: Get secrets
       run: |
@@ -47,8 +55,8 @@ jobs:
 
 
   vps-deploy:
-    needs: dockerhub-push
-    runs-on: ubuntu-latest
+    needs: [dockerhub-push]
+    runs-on: self-hosted
     steps:      
       - name: Checkout code
         uses: actions/checkout@v4

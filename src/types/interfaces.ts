@@ -9,12 +9,26 @@ export interface Fornecedor {
     U_TX_SN?: 1 | 2;
 }
 
+export interface CardCode {
+    CardCode: string;
+}
+
+export interface DeactivationClientsData extends CardCode {
+    Free_Text: string;
+}
+
+export interface Opportunity {
+    OpprId: number;
+}
+
+
+
 
 export interface getClientDataQueryReturn {
     Address: string;
     TaxId0: string | null | "";
     TaxId4: string | null | "";
-    State1: string | null | "";
+    State: string | null | "";
     CardCode: string;
     CardName: string;
     Balance: number;
@@ -30,6 +44,8 @@ export interface RelevantClientData {
     Balance: number;
     Free_Text?: string | null | "";
 }
+
+
 
 
 export interface ClientUpdateData {
@@ -106,7 +122,11 @@ export interface GetClientsFilter {
     value: string;
 }
 
-
+export interface generalFilter {
+    field: string;
+    value: string;
+    operator: string;
+}
 
 
 export interface CnpjJaData {
