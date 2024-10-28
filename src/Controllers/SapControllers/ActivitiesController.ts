@@ -24,16 +24,12 @@ export class ActivitiesController {
         return ActivitiesController.instance;
     }
 
-    public async deactiveAllTicketsFromVendor(userId: string) {
-        try {
-            if (!userId) {
-                throw new HttpError(400, 'Nenhum Id de usuário encontrado');
-            }
-            const parsedUserId = parseInt(userId);
-            if (isNaN(parsedUserId)) {
-                throw new HttpError(400, 'Id de usuário inválido');
-            }
-            const tickets: interfaces.TicketNumber[] = await this.sapServices.getOpenTicketsFromVendor(parsedUserId);
+    public async deactiveTickets(type: string, userId: string | null) {
+        try {            
+            const tickets: interfaces.TicketNumber[] = await this.getTickets(type, userId);
+            
+            console.log(`Starting deactivation of ${tickets.length} tickets!`);
+
 
             const ticketsProcessados: interfaces.TicketNumber[] = [];
             const ticketsErros: any[] = [];
@@ -41,40 +37,40 @@ export class ActivitiesController {
             await Promise.all(tickets.map(async (ticket) => {
                 try {
                     this.sapServices.deactivateTicket(ticket.ClgCode),
+                    console.log(`ticket ${ticket.ClgCode} desativado com sucesso`)
                     ticketsProcessados.push({ ClgCode: ticket.ClgCode });
                 } catch (err: any) {
                     ticketsErros.push({ ClgCode: ticket.ClgCode, error: err.message });
                 }
             }))
 
-            if (ticketsErros.length > 0 && ticketsProcessados.length === 0) {
-                const errorDetails = ticketsErros.map(err => ({
-                    ClgCode: err.ClgCode || 'Não foi possível obter o ClgCode do ticket',
-                    error: err.error || 'Erro desconhecido'
-                }));
-                throw new HttpErrorWithDetails(500, 'Erros dos tickets:', errorDetails)
-            }
-            else if (ticketsErros.length > 0 && ticketsProcessados.length > 0) {
-                return {
-                    customStatusCode: 206,
-                    ticketsProcessados: ticketsProcessados,
-                    errors: ticketsErros.map(err => ({
-                        ClgCode: err.ClgCode || 'Não foi possível obter o ClgCode do ticket',
-                        error: err.error || 'Erro desconhecido'
-                    }))
-                }
-            }
-            else if (ticketsProcessados.length > 0 && ticketsErros.length === 0) {
-                return {
-                    customStatusCode: 200,
-                    ticketsProcessados: ticketsProcessados,
-                }
-            } else {
-                throw new HttpError(500, 'Erro inesperado');
-            }
+            const retorno = helperFunctions.handleMultipleProcessesResult(ticketsErros, ticketsProcessados);
+
+            return retorno
         } catch (err: any) {
             throw new HttpError(err.statusCode || 500, 'Erro ao desativar todos os tickets do vendedor: ' + err.message);
         }
+    }
+
+    private async getTickets(type: string, userId: string | null): Promise<interfaces.TicketNumber[]> {
+        let tickets: interfaces.TicketNumber[] = [];
+        if (type == "Vendor") {
+            if (userId == null) {
+                throw new HttpError(400, "Id de usuario não recebido ao procurar por vendedor")
+            }
+            const parsedUserId = parseInt(userId);
+            if (isNaN(parsedUserId)) {
+                throw new HttpError(400, 'Id de usuário inválido');
+            }
+            tickets = await this.sapServices.getOpenTicketsFromVendor(parsedUserId);
+        } else if (type == "OldTickets") {
+            const date = new Date(new Date().getFullYear(), 9, 17); 
+            tickets = await this.sapServices.getOpenTicketsFromBefore(date);
+        }
+
+
+
+        return tickets;
     }
 
     public async changeTicketsOwnerShip(originUserId: string, destinyUserId: string) {

@@ -3,6 +3,7 @@ import { DatabaseServices } from "../services/DatabaseServices";
 import { ActivitiesController } from "../Controllers/SapControllers/ActivitiesController";
 import { BusinessPartnersController } from "../Controllers/SapControllers/BusinessPartnersController";
 import { OpportunitiesController } from "../Controllers/SapControllers/OpportunitiesController";
+import { QuotationsController } from "../Controllers/SapControllers/QuotationsController";
 import { HttpError } from "../Server";
 export class SapHandler {
     private static instance: SapHandler;
@@ -12,7 +13,7 @@ export class SapHandler {
     private ActivitiesController: ActivitiesController;
     private BusinessPartnersController: BusinessPartnersController;
     private OpportunitiesController: OpportunitiesController;
-
+    private QuotationsController: QuotationsController;
 
     private loginMaintainer: NodeJS.Timeout | null;
 
@@ -23,6 +24,7 @@ export class SapHandler {
         this.ActivitiesController = ActivitiesController.getInstance();
         this.BusinessPartnersController = BusinessPartnersController.getInstance();
         this.OpportunitiesController = OpportunitiesController.getInstance();
+        this.QuotationsController = QuotationsController.getInstance();
 
         this.loginMaintainer = null;
     }
@@ -80,11 +82,15 @@ export class SapHandler {
     }
 
     //Activities
-    public async deactiveAllTicketsFromVendor(userId: string | null | undefined | number): Promise<any> {
-        if (typeof userId !== "string") {
+    public async deactiveTickets(type: string | null | undefined, userId: string | null | undefined = null): Promise<any> {
+        if (typeof type !== "string" || type == "") {
+            throw new HttpError(400, "Invalid Type given")
+        }
+
+        if (type == "Vendor" && (typeof userId !== "string" || userId == "")) {
             throw new HttpError(400, "Invalid id given")
         }
-        return this.ActivitiesController.deactiveAllTicketsFromVendor(userId);
+        return this.ActivitiesController.deactiveTickets(type, userId);
     }
 
     public async changeTicketsOwnerShip(originUserId: string | null | undefined | number, destinyUserId: string | null | undefined| number): Promise<any> {
@@ -101,6 +107,13 @@ export class SapHandler {
             throw new HttpError(400, "Invalid Ids given")
         }
         return this.OpportunitiesController.ChangeOpportunitiesOwnerShip(originUserId, destinyUserId);
+    }
+
+
+    //Quotations
+
+    public async CreateQuotationsForOldEcommerceCarts() {
+        return this.QuotationsController.CreateQuotationsForOldEcommerceCarts();
     }
 
 }
