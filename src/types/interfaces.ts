@@ -21,8 +21,65 @@ export interface Opportunity {
     OpprId: number;
 }
 
+export interface CrmOneCredentials {
+    EmailUsuario: string;
+    SenhaUsuario: string;
+}
 
+export interface Cart {
+    Items: CartItem[]
+}
 
+export interface CrmOneResponse {
+    Retorno: {
+        Dados: null | any,
+        MensagemErro: null | string,
+        Status: number;
+    }
+}
+
+export interface CartItem {
+    id_produto: string;
+    nome_produto: string; // Name of the product
+    preco_normal: number; // Normal price
+    qtd: number; // Quantity
+    subtotal: number; // Subtotal
+    WhsCode: number; // Warehouse code
+    faturamento: string | null; // Billing information
+    entrega: string | null; // Delivery information
+    data: string; // Date
+}
+
+export interface ItemCarrinho {
+    id: string; // ID do item
+    id_usuario: string; // ID do usuário
+    data: string; // Data do item (formato: YYYY-MM-DD)
+    id_produto: string; // ID do produto
+    id_grupo: string | null | undefined; // ID do grupo
+    nome_produto: string; // Nome do produto
+    preco_normal: number; // Preço normal (pode ser convertido para número)
+    qtd: number; // Quantidade (pode ser convertida para número)
+    subtotal: number; // Subtotal (pode ser convertido para número)
+    faturamento: string | null | undefined; // Faturamento (pode ser convertido para número)
+    entrega: string | null | undefined; // Informações de entrega
+    WhsCode: number | null | undefined; // Código do armazém
+}
+
+export interface BaseOrderClientData {
+    SlpCode: number;
+    ShipType: string;
+    State: string;
+    BPLId: number;
+    empID: number
+}
+
+export interface LinhaDocumento {
+    ItemCode: string;
+    Quantity: number;
+    PriceBefDi: number;
+    WhsCode: number;
+    Usage: number;
+}
 
 export interface getClientDataQueryReturn {
     Address: string;

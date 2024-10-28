@@ -50,6 +50,45 @@ export class SapServices {
         }
     }
 
+    public async getOpenTicketsFromBefore(date: Date): Promise<interfaces.ActivitiesCode[]> {
+        const isoStringDate = date.toISOString().split("T")[0];
+        const query = `SELECT "ClgCode" FROM "SBO_COPAPEL_PRD".OCLG WHERE "CntctDate" <= '${isoStringDate}' AND "Closed" = 'N'`;
+        console.log(query)
+
+        const response = await this.sl.querySAP(query);
+        const data = response.data;
+
+        if (data.length == 0) {
+            throw new HttpError(404, "No tickets were found for deactivation")
+        }
+        return data;
+}
+
+    public async getOrderClientData(CardCode: string): Promise<interfaces.BaseOrderClientData> {
+        try {
+            const query = `
+            SELECT A."SlpCode", A."ShipType", C."State", B."BPLId", D."empID"
+            FROM "SBO_COPAPEL_PRD".OCRD A 
+            INNER JOIN "SBO_COPAPEL_PRD".OINV B ON A."CardCode" = B."CardCode"
+            INNER JOIN "SBO_COPAPEL_PRD".CRD1 C ON C."CardCode" = A."CardCode" AND A."ShipToDef" = C."Address" AND C."AdresType" = 'S'
+            INNER JOIN "SBO_COPAPEL_PRD".OHEM D ON A."SlpCode" = D."salesPrson"
+            WHERE A."CardCode" = '${CardCode}' LIMIT 1`;
+
+            const response = await this.sl.querySAP(query);
+            const data = response.data;
+            
+            if (response.data.length === 0) {
+                throw new Error("Nenhum dado foi encontrado para o cliente.");
+            }
+
+            const clientData = data[0];
+
+            return clientData;
+        } catch(err: any) {
+            throw new HttpError(err.statusCode ?? 500, "Erro ao pegar dados de compra do cliente: " + err.message);
+        }
+    }
+
 
     public async getFornecedoresLeads(isoString: string): Promise<interfaces.Fornecedor[]> {
         try {
@@ -135,7 +174,6 @@ export class SapServices {
 
     public async deactivateTicket(ticketNumber: number) {
         try {
-            console.log("Desativando ticket: ", ticketNumber);
             const tickets = await this.sl.patch("Activities", ticketNumber, { "Closed": "tYES" });
             return tickets.data;
         } catch (err: any) {

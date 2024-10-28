@@ -56,9 +56,13 @@ class Routes {
             this.serviceRunner(() => this.SapHandler.DeactivateVendors(req.params.type), req, res, next)
         });
 
-        this.router.post("/Activities/Deactivate/:userId", (req:  Request, res: Response, next: NextFunction) => {
-            this.serviceRunner(() => this.SapHandler.deactiveAllTicketsFromVendor(req.params.userId), req, res, next);
+        this.router.post("/Activities/Deactivate/Vendor/:userId", (req:  Request, res: Response, next: NextFunction) => {
+            this.serviceRunner(() => this.SapHandler.deactiveTickets("Vendor", req.params.userId), req, res, next);
         })
+        this.router.post("/Activities/Deactivate/:type", (req:  Request, res: Response, next: NextFunction) => {
+            this.serviceRunner(() => this.SapHandler.deactiveTickets(req.params.type), req, res, next);
+        })
+
         this.router.patch("/Activities/ChangeOwnership", (req:  Request, res: Response, next: NextFunction) => {
             this.serviceRunner(() => this.SapHandler.changeTicketsOwnerShip(req.body.originUserId, req.body.destinyUserId), req, res, next);
         })
@@ -66,6 +70,12 @@ class Routes {
         this.router.patch("/Opportunities/ChangeOwnership", (req:  Request, res: Response, next: NextFunction) => {
             this.serviceRunner(() => this.SapHandler.changeOpportunitiesOwnerShip(req.body.OriginSlpCode, req.body.DestinySlpCode), req, res, next);
         })
+
+
+        this.router.post("/Quotations/CreateForOldEcommerceCarts", (req:  Request, res: Response, next: NextFunction) => {
+            this.serviceRunner(() => this.SapHandler.CreateQuotationsForOldEcommerceCarts(), req, res, next);
+        })
+
 
         this.router.get("/BuscarCnpjTodosClientes", (req:  Request, res: Response, next: NextFunction) => {
             this.serviceRunner(() => this.SapHandler.getAllClientsCnpjClear(), req, res, next);

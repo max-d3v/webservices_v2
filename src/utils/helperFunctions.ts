@@ -1,5 +1,6 @@
 import { HttpError } from "../Server";
 import { HttpErrorWithDetails } from "./errorHandler";
+import { v4 as uuidv4 } from 'uuid';
 
 export const objetoVazio = (objeto: Object | null | undefined) => {
   console.log(typeof objeto)
@@ -164,8 +165,10 @@ export const validaCPF = (cpf: string | null | undefined | number) => {
           throw new HttpErrorWithDetails(206, "Erro ao atualizar parte das operações", { ObjetosComErro: errors, ObjetosProcessados:processedEntities })
       } else if (errors.length === 0 && processedEntities.length > 0) {
           return processedEntities;
+      } else if (errors.length == 0 && processedEntities.length == 0) {
+        throw new HttpError(500, 'Erro ao processar resultados, nenhum dado passado.');
       } else {
-          throw new HttpError(500, 'Erro ao processar resultados');
+        throw new HttpError(500, 'Erro ao processar resultados');
       }
     }
 
@@ -180,5 +183,31 @@ export const validaCPF = (cpf: string | null | undefined | number) => {
       } catch (err: any) {
           throw new HttpError(err.statusCode || 500, 'Erro ao verificar se os dados do cliente estão completos: ' + err.message);
       }
+  }
+
+
+  export const generateReferenceNum = (CardCode: string | null) => {
+    let ref = "";
+
+    const firstPart = CardCode || "";
+    const dateIsoString = new Date().toISOString();
+    const id = uuidv4();
+
+    ref = firstPart + "-" + dateIsoString + "-" + id;
+
+    return ref
+  }
+
+  export const addWorkDays = (date: Date, days: number): Date => {
+    const result = new Date(date);
+    result.setDate(date.getDate() + days);
+
+    if (result.getDay() === 0) { 
+      result.setDate(result.getDate() + 1); 
+    } else if (result.getDay() === 6) { 
+      result.setDate(result.getDate() + 2);
+    }
+
+    return result;
   }
 
