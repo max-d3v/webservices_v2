@@ -1,7 +1,6 @@
 import { HttpError } from "../Server";
 import { HttpErrorWithDetails } from "./errorHandler";
-import { v4 as uuidv4 } from 'uuid';
-
+import shortUUID from "short-uuid";
 export const objetoVazio = (objeto: Object | null | undefined) => {
   console.log(typeof objeto)
   if (typeof objeto !== 'object' || objeto === null || Array.isArray(objeto)) {
@@ -189,11 +188,9 @@ export const validaCPF = (cpf: string | null | undefined | number) => {
   export const generateReferenceNum = (CardCode: string | null) => {
     let ref = "";
 
-    const firstPart = CardCode || "";
-    const dateIsoString = new Date().toISOString();
-    const id = uuidv4();
-
-    ref = firstPart + "-" + dateIsoString + "-" + id;
+    const id = shortUUID.generate();
+    const date = new Date().toISOString().split("T")[0];
+    ref = `${id}`;
 
     return ref
   }

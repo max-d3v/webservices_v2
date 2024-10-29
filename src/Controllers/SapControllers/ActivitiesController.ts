@@ -7,12 +7,12 @@ import { LocalFiscalDataClass } from "../../models/LocalFiscalDataClass";
 
 export class ActivitiesController {
     private static instance: ActivitiesController;
-    private sapServices: SapServices;
+    private SapServices: SapServices;
     private dataBaseServices: DatabaseServices;
     private LocalFiscalDataClass: LocalFiscalDataClass;
 
     constructor() {
-        this.sapServices = SapServices.getInstance();
+        this.SapServices = SapServices.getInstance();
         this.dataBaseServices = DatabaseServices.getInstance();
         this.LocalFiscalDataClass = LocalFiscalDataClass.getInstance();
     }
@@ -36,7 +36,7 @@ export class ActivitiesController {
 
             await Promise.all(tickets.map(async (ticket) => {
                 try {
-                    this.sapServices.deactivateTicket(ticket.ClgCode),
+                    this.SapServices.deactivateTicket(ticket.ClgCode),
                     console.log(`ticket ${ticket.ClgCode} desativado com sucesso`)
                     ticketsProcessados.push({ ClgCode: ticket.ClgCode });
                 } catch (err: any) {
@@ -52,6 +52,87 @@ export class ActivitiesController {
         }
     }
 
+    public async createFollowUpActivities(documents: interfaces.Document[]) {
+        const createdTickets: any = [];
+        const errorTickets: any = [];
+
+        await Promise.all( documents.map( async (doc) => await this.createTicketController(doc, createdTickets, errorTickets)) )
+
+        return [createdTickets, errorTickets];
+    }
+
+    private async createTicketController(Document: interfaces.Document, createdTickets: any[], errorTickets: any[]) {
+        const DocNum = Document.DocNum;
+        try {
+            const { CardCode, ActivityCode } = await this.createFollowUpTicket(Document);
+            console.log(`Created ticket ${ActivityCode} successfully`);
+            createdTickets.push({DocNum, CardCode, ActivityCode});
+        } catch(err: any) {
+            errorTickets.push({DocNum, Error: err.message})
+        }
+    }
+
+
+    private async createFollowUpTicket(Document: interfaces.Document) {
+        try {
+        const { DocNum, DocType } = Document;
+
+        const FieldsWanted = [{field: 'A."CardCode"'}, {field: 'C."userId"'}];
+        const { CardCode, userId } = await this.SapServices.getDataFromDoc(DocNum, FieldsWanted);
+        if (!CardCode || !userId || typeof CardCode !== "string" || typeof userId !== "number") {
+            throw new HttpError(500, "No Valid CardCode or userId was found for Document.");
+        }
+        //Se for user id 173 (vago) não criar? - Vou deixar criando, não vai atrapalhar ninguem e depois podemos mover não sei
+
+        
+        const date = new Date();
+        const nextWorkDay = helperFunctions.addWorkDays(date, 1).toISOString().split("T")[0];
+
+        const Notes = `Ticket de acompanhamento para o(a) ${DocType} ${DocNum}`;
+        const ActivityDate = nextWorkDay; 
+        const ActivityTime = '08:00:00';
+        const EndDueDate = nextWorkDay;
+        const EndTime = '08:05:00';
+        const Duration = '5';
+        const DurationType = 'du_Minuts';
+        const ReminderPeriod = '15';
+        const ReminderType = 'du_Minuts';
+        const StartDate = nextWorkDay;
+        const StartTime = ActivityTime;
+        const ActivityType = 10;
+        const Subject = DocType == "Orçamento" ? 90 : 98 
+        const HandledBy = userId; 
+        
+
+        const Activity = {
+            ActivityDate,
+            ActivityTime,
+            CardCode,
+            Duration,
+            DurationType,
+            EndDueDate,
+            EndTime,
+            Closed: "tNO" as "tNO" | "tYES",
+            Reminder: 'tYES' as "tNO" | "tYES",
+            ReminderPeriod,
+            ReminderType,
+            StartDate,
+            StartTime,
+            Notes,
+            Activity: "cn_Other",
+            ActivityType,
+            Subject,
+            HandledBy
+        }
+
+        const ticket = await this.SapServices.createTicket(Activity);
+        //if nothing is throw, data is suposed to be instanciated 100%
+        return ticket.data;
+        } catch(err: any) {
+            throw new HttpError(err.statusCode ?? 500, "Erro ao criar ticket: " + err.message);
+        }
+    }
+
     private async getTickets(type: string, userId: string | null): Promise<interfaces.TicketNumber[]> {
         let tickets: interfaces.TicketNumber[] = [];
         if (type == "Vendor") {
@@ -62,10 +143,10 @@ export class ActivitiesController {
             if (isNaN(parsedUserId)) {
                 throw new HttpError(400, 'Id de usuário inválido');
             }
-            tickets = await this.sapServices.getOpenTicketsFromVendor(parsedUserId);
+            tickets = await this.SapServices.getOpenTicketsFromVendor(parsedUserId);
         } else if (type == "OldTickets") {
             const date = new Date(new Date().getFullYear(), 9, 17); 
-            tickets = await this.sapServices.getOpenTicketsFromBefore(date);
+            tickets = await this.SapServices.getOpenTicketsFromBefore(date);
         }
 
 
@@ -85,7 +166,7 @@ export class ActivitiesController {
                 throw new HttpError(400, 'Id de usuário inválido');
             }
 
-            const getTickets = await this.sapServices.getOpenTicketsFromVendor(parsedOriginUserId);
+            const getTickets = await this.SapServices.getOpenTicketsFromVendor(parsedOriginUserId);
             if (getTickets.length === 0) {
                 throw new HttpError(404, 'Nenhum ticket encontrado para o vendedor');
             }
@@ -112,7 +193,7 @@ export class ActivitiesController {
             const attObj = {
                 HandledBy: destinyUserId
             }       
-            await this.sapServices.updateActivity(ticket.ClgCode, attObj);
+            await this.SapServices.updateActivity(ticket.ClgCode, attObj);
             ticketsProcessados.push({ ClgCode: ticket.ClgCode });
         } catch (err: any) {
             ticketErrors.push({ ClgCode: ticket.ClgCode, error: err.message });

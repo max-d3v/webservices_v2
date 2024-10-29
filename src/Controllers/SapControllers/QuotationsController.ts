@@ -4,18 +4,22 @@ import { CrmOne } from "../../models/CrmOneClass";
 import * as helperFunctions from '../../utils/helperFunctions';
 import { HttpError } from "../../Server";
 import * as interfaces from '../../types/interfaces'
+import { ActivitiesController } from "./ActivitiesController";
+
 export class QuotationsController {
     public static instance: QuotationsController;
 
     private SapServices: SapServices;
     private DataBaseServices: DatabaseServices;
     private CrmOne: CrmOne;
+    private ActivitesController: ActivitiesController;
 
 
     constructor() {
         this.CrmOne = CrmOne.getInstance();
         this.SapServices = SapServices.getInstance();
         this.DataBaseServices = DatabaseServices.getInstance();
+        this.ActivitesController = ActivitiesController.getInstance();
     }
 
     public static getInstance(): QuotationsController {
@@ -25,8 +29,8 @@ export class QuotationsController {
         return QuotationsController.instance;
     }
 //
-    public async CreateQuotationsForOldEcommerceCarts() {
-        const processedCarts: any = [];
+    public async CreateQuotationsForOldEcommerceCarts(): Promise<interfaces.QuotationData[]> {
+        const processedCarts: interfaces.QuotationData[] = [];
         const errorCarts: any = [];
 
         //Maybe move the cart age to the query params.
@@ -38,9 +42,7 @@ export class QuotationsController {
 
         await Promise.all(Array.from(carts.entries()).map(async ([key, cart]) =>{await this.processCart(key, cart, processedCarts, errorCarts)}));
 
-        const returnData = await helperFunctions.handleMultipleProcessesResult(errorCarts, processedCarts)
-
-        return returnData
+        return processedCarts 
     }
 
     private async getOldCarts(daysOfAge: number) {
@@ -52,15 +54,18 @@ export class QuotationsController {
         }
     }
 
-    private async processCart(CardCode: string, cart: interfaces.Cart, successCarts: any[], errorCarts: any[]) {
+    private async processCart(CardCode: string, cart: interfaces.Cart, successCarts: interfaces.QuotationData[], errorCarts: any[]) {
         try {
-            await this.createQuotation(CardCode, cart);
-            successCarts.push({ CardCode });
+            const response = await this.createQuotation(CardCode, cart);
+            console.log(`Successfully created quotation for client ${CardCode}`);
+            const { CardName, DocEntry, DocTotal, DocNum } = response.Retorno.Dados;
+            if (!DocNum) {
+                throw new HttpError(500, "No DocNum was given in API response");
+            }
+            successCarts.push({ CardCode, CardName, DocEntry, DocTotal, DocNum, DocType: "Cotação" });
         } catch (err: any) {
-            console.log("não pushou eh")
             errorCarts.push({ CardCode, error: err.message });
         }
-
     }
 
     private async createQuotation(CardCode: string, cart: interfaces.Cart) {
@@ -137,8 +142,6 @@ export class QuotationsController {
                     'LocalCampo': 0
                 }
             ];
-
-            console.log(quotationData)
 
             const result = await this.CrmOne.adicionaCotacao(quotationData, userData);
 

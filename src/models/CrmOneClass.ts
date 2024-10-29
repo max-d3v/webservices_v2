@@ -30,7 +30,7 @@ export class CrmOne {
             headers: {
                 'Content-Type': 'application/json',
             },
-            data: this.credentials
+            data: {"oPropriedade": this.credentials}
         }
     }
 
@@ -59,23 +59,25 @@ export class CrmOne {
 
     public async adicionaCotacao(dadosCotacao: any, camposUsuario: any) {
         try {
-            const config = this.baseConfig;
+            const config = { ...this.baseConfig };
 
             let data = {
-                aCotacao: dadosCotacao,
+                oCotacao: dadosCotacao,
                 ListaCamposUsuario: camposUsuario
             };
     
             config.url += "/AdicionaCotacao";
             config.data = { ...config.data, ...data }
     
+            console.log(config)
+
             var response = await axios.request(config);
-            const responseData = response.data
+            const responseData = response.data;
 
             this.validateResponse(responseData, "cotacao")
             return responseData;    
         } catch(err: any) {
-            throw new HttpError(err.statusCode ?? 500, "Erro ao criar cotacao via API DWU: " + err.message);
+            throw new HttpError(err.statusCode ?? 500, "Erro ao usar API DWU: " + err.message);
         }
     }
 
