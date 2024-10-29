@@ -37,12 +37,10 @@ class Routes {
     }
 
     private SapRoutes() {
-        this.router.patch("/BusinessPartners/SupplierData/All", (req:  Request, res: Response, next: NextFunction) => {
-            this.serviceRunner(() => this.SapHandler.AtualizaCadastroFornecedores("All"), req, res, next)
+        this.router.patch("/BusinessPartners/SupplierData/:type", (req:  Request, res: Response, next: NextFunction) => {
+            this.serviceRunner(() => this.SapHandler.AtualizaCadastroFornecedores(req.params.type), req, res, next)
         });
-        this.router.patch("/BusinessPartners/SupplierData/Today", (req:  Request, res: Response, next: NextFunction) => {
-            this.serviceRunner(() => this.SapHandler.AtualizaCadastroFornecedores("Today"), req, res, next);
-        });
+
 
         this.router.patch("/BusinessPartners/FiscalData/:entityType", (req:  Request, res: Response, next: NextFunction) => {
             this.serviceRunner(() => this.SapHandler.updateClientsRegistrationData(req.params.entityType), req, res, next)

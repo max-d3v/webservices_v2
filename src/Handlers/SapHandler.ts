@@ -5,6 +5,7 @@ import { BusinessPartnersController } from "../Controllers/SapControllers/Busine
 import { OpportunitiesController } from "../Controllers/SapControllers/OpportunitiesController";
 import { QuotationsController } from "../Controllers/SapControllers/QuotationsController";
 import { HttpError } from "../Server";
+import * as helperFunctions from '../utils/helperFunctions';
 export class SapHandler {
     private static instance: SapHandler;
     private sapServices: SapServices;
@@ -49,7 +50,10 @@ export class SapHandler {
 
     //Business partners
 
-    public async AtualizaCadastroFornecedores(type: string): Promise<any> {
+    public async AtualizaCadastroFornecedores(type: string | null | undefined): Promise<any> {
+        if (!type) {
+            throw new HttpError(400, "No valid type was given");
+        }
         return this.BusinessPartnersController.AtualizaCadastroFornecedores(type);
     }
 
@@ -113,7 +117,23 @@ export class SapHandler {
     //Quotations
 
     public async CreateQuotationsForOldEcommerceCarts() {
-        return this.QuotationsController.CreateQuotationsForOldEcommerceCarts();
+        //const createdQuotations = await this.QuotationsController.CreateQuotationsForOldEcommerceCarts();
+        //if (createdQuotations.length == 0) {
+        //    throw new HttpError(500, "No quotation was created successfully");
+        //}
+
+        //const requiredFieldQuotations = createdQuotations.map(({ DocType, DocNum }) => ({ DocType, DocNum }));
+
+        const requiredFieldQuotationsMock = [
+            { DocType: 'Cotação', DocNum: 1542944 },
+            { DocType: 'Cotação', DocNum: 154295 }
+        ]
+
+        const [ successes, errors ] = await this.ActivitiesController.createFollowUpActivities(requiredFieldQuotationsMock)
+
+        const retorno = helperFunctions.handleMultipleProcessesResult(errors, successes)
+        
+        return retorno
     }
 
 }

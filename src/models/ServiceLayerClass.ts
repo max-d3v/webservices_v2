@@ -265,7 +265,7 @@ export default class SL {
             return { status: true, data: response.data };
         } catch (err: any) {
             const errorMessage = err.response.data.error?.message?.value || err.message;
-            throw new HttpError(500, 'Erro ao atualizar dados na SL: ' + errorMessage);
+            throw new HttpError(err.statusCode ?? 500, 'Erro ao atualizar dados na SL: ' + errorMessage);
         }
     }
 

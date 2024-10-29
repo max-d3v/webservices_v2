@@ -29,6 +29,18 @@ export class DatabaseServices {
         return DatabaseServices.instance;
     }
 
+    public async getUnprocessedSuppliers() {
+        try {
+            const suppliers = await this.prisma.fornecedores_cadastro_geral_log.findMany({
+                where: { Status: { not: "Atualizado" } }
+            });
+    
+            return suppliers    
+        } catch(err: any) {
+            throw new HttpError(err.statusCode ?? 500, "Error when retrieving unprocessed suppliers");
+        }
+    }
+
     public async getInactivatedClients() {
         try {
             const clients = await this.prisma.log_atualizacao_cadastral_clientes.findMany({
@@ -56,6 +68,8 @@ export class DatabaseServices {
         }
     }
 
+    
+
     public async getOldCarts(daysOfAge: number): Promise<Map<string, interfaces.Cart>> {
         try {
             //Vai pegar todos os clientes que tenham um produto a no minimo 2 dias no carrinho, dai vai procurar o carrinho inteiro do cara e
@@ -65,7 +79,7 @@ export class DatabaseServices {
             const xDaysAgoIsoDate = xDaysAgo.toISOString().split("T")[0];
 
             
-            const query: any = `SELECT * FROM carrinho WHERE data <= '${xDaysAgoIsoDate}' AND id_usuario = 'C027122'`;
+            const query: any = `SELECT * FROM carrinho WHERE data <= '${xDaysAgoIsoDate}' AND id_usuario IN ('C016805', 'C029169')`;
 
             const items: any = await this.MeuspedidosDatabase.query(query);
     
@@ -152,6 +166,7 @@ export class DatabaseServices {
             }
             const fornecedorExists = await this.findFornecedorCadastrado(fornecedorObj.CardCode);
             if (fornecedorExists) {
+                console.log(fornecedorExists)
                 console.log("Tried to create fornecedor log that already exists: ", fornecedorObj.CardCode);
                 return false;
             }

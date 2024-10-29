@@ -406,21 +406,24 @@ export class BusinessPartnersController {
 
     public async AtualizaCadastroFornecedores(type: string): Promise<any> {
         try {
+            let unprocessed = false;
             let isoString = '1890-01-01';
             if (type == "Today") {
                 isoString = new Date().toISOString().split('T')[0];
+            } else if (type == "Unprocessed") {
+                unprocessed = true;
             }
             const isIsoString = helperFunctions.isIsoString(isoString);
             if (!isIsoString) {
                 throw new HttpError(400, 'Data inválida (deve ser uma data no formato ISO ("yyyy-mm-dd"))');
             }
-            const fornecedores = await this.sapServices.getFornecedoresLeads(isoString);
+            const fornecedores = await this.sapServices.getFornecedoresLeads(isoString, unprocessed);
 
             if (fornecedores.length == 0) {
                 throw new HttpError(404, 'Nenhum fornecedor encontrado');
             }
 
-            console.log(`Staerting process with ${fornecedores.length} fornecedores`)
+            console.log(`Starting process with ${fornecedores.length} fornecedores`)
 
             const processErrors: any[] = [];
             const fornecedoresProcessados: any[] = [];

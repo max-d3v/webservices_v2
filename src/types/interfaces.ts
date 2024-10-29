@@ -30,6 +30,48 @@ export interface Cart {
     Items: CartItem[]
 }
 
+export interface ActivityCreation {
+    ActivityDate: string;
+    ActivityTime: string;
+    CardCode: string;
+    Duration: string; 
+    DurationType: 'du_Minuts' | string;
+    EndDueDate: string;
+    EndTime: string;
+    Closed: 'tNO' | 'tYES';
+    Reminder: 'tYES' | 'tNO';
+    ReminderPeriod: string; 
+    ReminderType: 'du_Minuts' | string;
+    StartDate: string;
+    StartTime: string;
+    Notes: string;
+    Activity: 'cn_Other' | string;
+    ActivityType: number; 
+    Subject: number; 
+    HandledBy: string | number;
+  }
+
+
+export interface Field {
+    field: string;
+}
+
+
+export interface Document {
+    DocType: string;
+    DocNum: number;
+}
+
+
+export interface QuotationData {
+    CardCode: string;
+    CardName: string;
+    DocEntry: string;
+    DocTotal: number;
+    DocNum: number;
+    DocType: "Cotação"
+}
+
 export interface CrmOneResponse {
     Retorno: {
         Dados: null | any,

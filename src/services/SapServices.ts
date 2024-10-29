@@ -38,7 +38,6 @@ export class SapServices {
         }
     }
 
-
     public async getClientsWithNoOrders(filter: interfaces.generalFilter | null = null): Promise<interfaces.DeactivationClientsData[]> {
         try {
             const query = `SELECT A."CardCode", CAST(A."Free_Text" AS NVARCHAR) as "Free_Text" FROM "SBO_COPAPEL_PRD"."OCRD" A LEFT JOIN "SBO_COPAPEL_PRD"."OINV" B ON A."CardCode" = B."CardCode" WHERE B."DocNum" IS NULL AND A."validFor" = 'Y' AND (A."CardType" = 'C' OR A."CardType" = 'L')  ${ filter ? `AND ${filter.field} ${filter.operator} ${filter.value}` : "" }`;
@@ -47,6 +46,19 @@ export class SapServices {
             return result.data;
         } catch(err: any) {
             throw new HttpError(err.statusCode ?? 500, "Erro ao pegar clientes sem ordens: " + err.message);
+        }
+    }
+
+    public async getDataFromDoc(DocNum: number, fields: interfaces.Field[]): Promise<any> {
+        let query;
+        try {
+            const query = `SELECT ${fields.map(field => field.field).join(', ')} FROM "SBO_COPAPEL_PRD".ORDR A INNER JOIN "SBO_COPAPEL_PRD".OCRD B ON A."CardCode" = B."CardCode" INNER JOIN "SBO_COPAPEL_PRD".OHEM C ON B."SlpCode" = C."salesPrson" WHERE "DocNum" = ${DocNum}`;
+            const result = await this.sl.querySAP(query);
+    
+            return result.data[0] || []
+        } catch(err: any) {
+            console.log(`Query with error: ${query}`);
+            throw new HttpError(err.statusCode ?? 500, "Error when fetching data from doc: " + err.message)
         }
     }
 
@@ -90,7 +102,7 @@ export class SapServices {
     }
 
 
-    public async getFornecedoresLeads(isoString: string): Promise<interfaces.Fornecedor[]> {
+    public async getFornecedoresLeads(isoString: string, getUnprocessed: boolean = false): Promise<interfaces.Fornecedor[]> {
         try {
             const query = `SELECT DISTINCT A."CardCode", A."CardName", A."CardType", B."TaxId0", A."State1", B."TaxId4" 
             FROM "SBO_COPAPEL_TST".OCRD A 
@@ -104,12 +116,27 @@ export class SapServices {
 
             const fornecedores = await this.sl.querySAP(query, true);
 
-            const data = fornecedores.data;
+            let data = fornecedores.data;
 
-            return fornecedores.data;
+            if (getUnprocessed) {
+                data = await this.filterProcessedSuppliers(data);
+            }
+            
+            return data;
         } catch (err: any) {                                                    
             throw new HttpError(500, 'Erro ao buscar fornecedores cadastrados no SAP: ' + err.message);
         }
+    }
+
+    private async filterProcessedSuppliers(data: interfaces.Fornecedor[]) {
+        const unprocessedSuppliers = await this.dataBaseServices.getUnprocessedSuppliers();
+
+        const filteredSuppliers = data.filter((supplier) => {
+            const unprocessed = unprocessedSuppliers.findIndex((sup) => sup.CardCode === supplier.CardCode);
+            return unprocessed !== -1;
+        });
+        
+        return filteredSuppliers
     }
 
     public async getOpportunities(SlpCode: number): Promise<interfaces.Opportunity[]>  {
@@ -119,6 +146,15 @@ export class SapServices {
             return response.data;    
         } catch(err: any) {
             throw new HttpError(err.statusCode ?? 500, "Erro ao pegar oportunidades: " + err.message)
+        }
+    }
+
+    public async createTicket(ticket: interfaces.ActivityCreation) {
+        try {
+            const response = await this.sl.post("Activities", ticket);
+            return response;
+        } catch(err: any) {
+            throw new HttpError(err.statusCode ?? 500, "Error creating ticket: " + err.message);
         }
     }
 
@@ -139,7 +175,7 @@ export class SapServices {
         try {
             const data = fieldsToUpdateObject;
             await this.sl.patch("BusinessPartners", CardCode, data);
-            this.dataBaseServices.atualizaFornecedorCadastrado({ CardCode: CardCode, Status: "Atualizado" });
+            const response = this.dataBaseServices.atualizaFornecedorCadastrado({ CardCode: CardCode, Status: "Atualizado", Erro: null });
             console.log("Updated fornecedor: ", CardCode, "with data: ", data);
         } catch (err: any) {    
             this.dataBaseServices.atualizaFornecedorCadastrado({ CardCode: CardCode, Status: "Erro ao atualizar" });
