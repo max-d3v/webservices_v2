@@ -70,7 +70,6 @@ export class BusinessPartnersController {
 
             //await helperFunctions.batchOperation(clients, this.ClientProcessController, 200, JsonInMemory, processedClients, errors, tipo);
 
-            console.log("Chegou aqui")
             JsonInMemory.quit()
             const apiReturn = await helperFunctions.handleMultipleProcessesResult(errors, processedClients)
             return apiReturn;
@@ -226,7 +225,6 @@ export class BusinessPartnersController {
             value: "'" + removedClients.join(`','`) + "'"
         } : null;
         
-        console.log("Chegou antes de pegar os cliente");
 
         clients = await this.sapServices.getAllActiveClientsRegistrationData(filter, exceptions, getInactiveClients);
         return clients;

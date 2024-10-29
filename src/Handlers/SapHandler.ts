@@ -6,6 +6,7 @@ import { OpportunitiesController } from "../Controllers/SapControllers/Opportuni
 import { QuotationsController } from "../Controllers/SapControllers/QuotationsController";
 import { HttpError } from "../Server";
 import * as helperFunctions from '../utils/helperFunctions';
+import { create } from "domain";
 export class SapHandler {
     private static instance: SapHandler;
     private sapServices: SapServices;
@@ -116,24 +117,26 @@ export class SapHandler {
 
     //Quotations
 
-    public async CreateQuotationsForOldEcommerceCarts() {
-        //const createdQuotations = await this.QuotationsController.CreateQuotationsForOldEcommerceCarts();
-        //if (createdQuotations.length == 0) {
-        //    throw new HttpError(500, "No quotation was created successfully");
-        //}
+    public async CreateQuotationsAndFollowUpTicketsForOldEcommerceCarts() {
+        const totalProcessedObjects: any[] = [];
+        const totalErrors: any[] = [];
 
-        //const requiredFieldQuotations = createdQuotations.map(({ DocType, DocNum }) => ({ DocType, DocNum }));
-
-        const requiredFieldQuotationsMock = [
-            { DocType: 'Cotação', DocNum: 1542944 },
-            { DocType: 'Cotação', DocNum: 154295 }
-        ]
-
-        const [ successes, errors ] = await this.ActivitiesController.createFollowUpActivities(requiredFieldQuotationsMock)
-
-        const retorno = helperFunctions.handleMultipleProcessesResult(errors, successes)
+        const [createdQuotations, errorQuotations] = await this.QuotationsController.CreateQuotationsForOldEcommerceCarts();
+        totalProcessedObjects.push(createdQuotations);
+        totalErrors.push(errorQuotations);
         
-        return retorno
+        const requiredFieldQuotations = createdQuotations.map(({ DocType, DocNum }) => ({ DocType, DocNum }));
+
+        //const requiredFieldQuotationsMock = [
+        //    { DocType: 'Cotação', DocNum: 154294 },
+        //    { DocType: 'Cotação', DocNum: 154295 }
+        //]
+
+        const [ successes, errors ] = await this.ActivitiesController.createFollowUpActivities(requiredFieldQuotations)
+        totalProcessedObjects.push(successes);
+        totalErrors.push(errors);
+
+        return helperFunctions.handleMultipleProcessesResult(totalErrors, totalProcessedObjects);
     }
 
 }

@@ -71,7 +71,7 @@ class Routes {
 
 
         this.router.post("/Quotations/CreateForOldEcommerceCarts", (req:  Request, res: Response, next: NextFunction) => {
-            this.serviceRunner(() => this.SapHandler.CreateQuotationsForOldEcommerceCarts(), req, res, next);
+            this.serviceRunner(() => this.SapHandler.CreateQuotationsAndFollowUpTicketsForOldEcommerceCarts(), req, res, next);
         })
 
 

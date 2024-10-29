@@ -2,7 +2,6 @@ import { HttpError } from "../Server";
 import { HttpErrorWithDetails } from "./errorHandler";
 import shortUUID from "short-uuid";
 export const objetoVazio = (objeto: Object | null | undefined) => {
-  console.log(typeof objeto)
   if (typeof objeto !== 'object' || objeto === null || Array.isArray(objeto)) {
     return false;
   }
@@ -158,6 +157,8 @@ export const validaCPF = (cpf: string | null | undefined | number) => {
 
 
     export const handleMultipleProcessesResult = async ( errors: any[], processedEntities: any[] ) => {
+      deleteEmptyArraysInPlace(errors);
+      deleteEmptyArraysInPlace(processedEntities);
       if (processedEntities.length === 0 && errors.length > 0) {
           throw new HttpErrorWithDetails(400, "Erro ao executar todas as operações", errors);
       } else if (errors.length > 0 && processedEntities.length > 0) {
@@ -170,6 +171,15 @@ export const validaCPF = (cpf: string | null | undefined | number) => {
         throw new HttpError(500, 'Erro ao processar resultados');
       }
     }
+
+    const deleteEmptyArraysInPlace = (array: any[]): void => {
+      for (let i = array.length - 1; i >= 0; i--) {
+        if (Array.isArray(array[i]) && array[i].length === 0) {
+          array.splice(i, 1);
+        }
+      }
+    };
+    
 
   export const checkAllFields = (Data: any): void => {
       try {

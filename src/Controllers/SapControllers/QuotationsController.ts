@@ -29,20 +29,28 @@ export class QuotationsController {
         return QuotationsController.instance;
     }
 //
-    public async CreateQuotationsForOldEcommerceCarts(): Promise<interfaces.QuotationData[]> {
+    public async CreateQuotationsForOldEcommerceCarts(): Promise<[interfaces.QuotationData[], any[]]> {
         const processedCarts: interfaces.QuotationData[] = [];
         const errorCarts: any = [];
 
         //Maybe move the cart age to the query params.
-        const cartAge = 30;
+        const cartAge = 7;
 
         const carts = await this.getOldCarts(cartAge)
 
-        console.log(`Will create ${carts.size} quotations.`)
+        console.log(`Starting quotations creation process with: ${carts.size} quotations.`)
 
         await Promise.all(Array.from(carts.entries()).map(async ([key, cart]) =>{await this.processCart(key, cart, processedCarts, errorCarts)}));
 
-        return processedCarts 
+        this.logCartsThatHadQuotationCreated(processedCarts);
+
+        return [processedCarts, errorCarts] 
+    }
+
+    private async logCartsThatHadQuotationCreated(processedCarts: interfaces.QuotationData[]) {
+        const CardCodes = processedCarts.map((cart) => cart.CardCode);
+        await this.DataBaseServices.logCartsWithQuotationsCreateds(CardCodes)
+        console.log(`Finished logging carts that had quotation created`)
     }
 
     private async getOldCarts(daysOfAge: number) {
@@ -77,7 +85,7 @@ export class QuotationsController {
             const DocDate = date.toLocaleDateString('pt-BR');
             const TaxDate = date.toLocaleDateString('pt-BR');
             const DocDueDate = helperFunctions.addWorkDays(date, 2).toLocaleDateString('pt-BR');
-            const Comments = 'Cotação gerada por carrinho parado no meus pedidos!';
+            const Comments = 'Cotação gerada a partir do carrinho parado desse cliente no meus pedidos!';
             const IncoTerms = 0;
             const TrnspCode = 3;
             const OrigemPedido = 4; //meuspedidos
@@ -144,8 +152,6 @@ export class QuotationsController {
             ];
 
             const result = await this.CrmOne.adicionaCotacao(quotationData, userData);
-
-        console.log(result);
 
         return result;
     } catch(err: any) {

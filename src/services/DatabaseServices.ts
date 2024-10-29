@@ -79,7 +79,7 @@ export class DatabaseServices {
             const xDaysAgoIsoDate = xDaysAgo.toISOString().split("T")[0];
 
             
-            const query: any = `SELECT * FROM carrinho WHERE data <= '${xDaysAgoIsoDate}' AND id_usuario IN ('C016805', 'C029169')`;
+            const query: any = `SELECT * FROM carrinho WHERE data <= '${xDaysAgoIsoDate}' AND QuotationCreated <> 'S'`;
 
             const items: any = await this.MeuspedidosDatabase.query(query);
     
@@ -92,6 +92,17 @@ export class DatabaseServices {
             throw new HttpError(err.statusCode ?? 500, "Erro ao pegar itens dos carrinhos:" + err.message);
         }
 
+    }
+
+    public async logCartsWithQuotationsCreateds(CardCodes: string[]) {
+        try {
+            const CardCodesString = "'" + CardCodes.join("','") + "'";
+            const query = `UPDATE carrinho SET QuotationCreated = 'S' WHERE id_usuario IN (${CardCodesString})`;    
+            await this.MeuspedidosDatabase.query(query);
+        } catch(err: any) {
+            console.log(`Error when loggin the carts that had quotations created, be aware!: ` + err.message);
+            
+        }
     }
 
     private async removeClientsWithNoMinimumDate(carts: Map<interfaces.CardCode, interfaces.Cart>, daysOfAge: number) {
