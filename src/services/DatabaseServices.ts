@@ -37,7 +37,7 @@ export class DatabaseServices {
     
             return suppliers    
         } catch(err: any) {
-            throw new HttpError(err.statusCode ?? 500, "Error when retrieving unprocessed suppliers");
+            throw new HttpError(err.statusCode ?? 500, "Error when retrieving unprocessed suppliers: " + err.message);
         }
     }
 
