@@ -79,7 +79,7 @@ export class DatabaseServices {
             const xDaysAgoIsoDate = xDaysAgo.toISOString().split("T")[0];
 
             
-            const query: any = `SELECT * FROM carrinho WHERE data <= '${xDaysAgoIsoDate}' AND QuotationCreated <> 'S' AND id_usuario = 'C029169' LIMIT 10`;
+            const query: any = `SELECT * FROM carrinho WHERE data <= '${xDaysAgoIsoDate}' AND QuotationCreated <> 'S' AND id_usuario = 'C029169'`;
 
             const items: any = await this.MeuspedidosDatabase.query(query);
     
