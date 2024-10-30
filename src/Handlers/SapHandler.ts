@@ -124,6 +124,8 @@ export class SapHandler {
         const [createdQuotations, errorQuotations] = await this.QuotationsController.CreateQuotationsForOldEcommerceCarts();
         totalProcessedObjects.push(createdQuotations);
         totalErrors.push(errorQuotations);
+
+        console.log("Processados: ", totalProcessedObjects);
         
         const requiredFieldQuotations = createdQuotations.map(({ DocType, DocNum }) => ({ DocType, DocNum }));
 

@@ -29,8 +29,8 @@ export class QuotationsController {
         return QuotationsController.instance;
     }
 //
-    public async CreateQuotationsForOldEcommerceCarts(): Promise<[interfaces.QuotationData[], any[]]> {
-        const processedCarts: interfaces.QuotationData[] = [];
+    public async CreateQuotationsForOldEcommerceCarts(): Promise<[Array<interfaces.QuotationData | interfaces.DraftData>, any[]]> {
+        const processedCarts: Array<interfaces.QuotationData | interfaces.DraftData>  = [];
         const errorCarts: any = [];
 
         //Maybe move the cart age to the query params.
@@ -47,7 +47,7 @@ export class QuotationsController {
         return [processedCarts, errorCarts] 
     }
 
-    private async logCartsThatHadQuotationCreated(processedCarts: interfaces.QuotationData[]) {
+    private async logCartsThatHadQuotationCreated(processedCarts: Array<interfaces.QuotationData | interfaces.DraftData>) {
         const CardCodes = processedCarts.map((cart) => cart.CardCode);
         await this.DataBaseServices.logCartsWithQuotationsCreateds(CardCodes)
         console.log(`Finished logging carts that had quotation created`)
@@ -62,16 +62,26 @@ export class QuotationsController {
         }
     }
 
-    private async processCart(CardCode: string, cart: interfaces.Cart, successCarts: interfaces.QuotationData[], errorCarts: any[]) {
+    private async processCart(CardCode: string, cart: interfaces.Cart, successCarts: Array<interfaces.QuotationData | interfaces.DraftData>, errorCarts: any[]) {
         try {
             const response = await this.createQuotation(CardCode, cart);
-            console.log(`Successfully created quotation for client ${CardCode}`);
-            const { CardName, DocEntry, DocTotal, DocNum } = response.Retorno.Dados;
-            if (!DocNum) {
-                console.log(`Response que não retornou erro: `, response)
-                throw new HttpError(500, "No DocNum was given in API response");
+            const dados = response.Retorno.Dados;
+            if (!dados) {
+                throw new HttpError(500, "No data was given in quotation creation.");
             }
-            successCarts.push({ CardCode, CardName, DocEntry, DocTotal, DocNum, DocType: "Cotação" });
+            const { CardName, DocEntry, DocTotal, DocNum } = dados;
+            
+            if (!DocNum) {
+                const DraftData = dados.DadosRetornoEsboco;
+                console.log(`Draft was created for client ${CardCode}: `, DraftData);
+                if (!DraftData || helperFunctions.objetoVazio(DraftData)) {
+                    throw new HttpError(500, "No order or draft data was given in API response")
+                }
+                const { NumeroEsboco, NomeAutorizacao } = DraftData;
+                successCarts.push({ DocNum: NumeroEsboco, MotivoAutorizacao: NomeAutorizacao, CardCode, DocType: "Cotação (esboço)" });
+            } else if (DocNum) {
+                successCarts.push({ CardCode, CardName, DocEntry, DocTotal, DocNum, DocType: "Cotação" });
+            }
         } catch (err: any) {
             errorCarts.push({ CardCode, error: err.message });
         }

@@ -72,6 +72,14 @@ export interface QuotationData {
     DocType: "Cotação"
 }
 
+export interface DraftData {
+    DocNum: number;
+    MotivoAutorizacao: string; //motivo de ter virado esboco
+    CardCode: string;
+    DocType: "Cotação (esboço)";
+}
+
+
 export interface CrmOneResponse {
     Retorno: {
         Dados: null | any,
