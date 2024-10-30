@@ -77,9 +77,9 @@ export class ActivitiesController {
         try {
         const { DocNum, DocType } = Document;
 
-        const FieldsWanted = [{field: 'A."CardCode"'}, {field: 'C."userId"'}];
-        const { CardCode, userId } = await this.SapServices.getDataFromDoc(DocNum, FieldsWanted);
-        if (!CardCode || !userId || typeof CardCode !== "string" || typeof userId !== "number") {
+        const FieldsWanted = [{field: 'A."CardCode"'}, {field: 'D."USERID"'}];
+        const { CardCode, USERID } = await this.SapServices.getDataFromDoc(DocNum, FieldsWanted);
+        if (!CardCode || !USERID || typeof CardCode !== "string" || typeof USERID !== "number") {
             throw new HttpError(500, "No Valid CardCode or userId was found for Document.");
         }
         //Se for user id 173 (vago) não criar? - Vou deixar criando, não vai atrapalhar ninguem e depois podemos mover não sei
@@ -101,7 +101,7 @@ export class ActivitiesController {
         const StartTime = ActivityTime;
         const ActivityType = 10;
         const Subject = DocType == "Orçamento" ? 90 : 98 
-        const HandledBy = userId; 
+        const HandledBy = USERID; 
         
 
         const Activity = {

@@ -52,7 +52,7 @@ export class SapServices {
     public async getDataFromDoc(DocNum: number, fields: interfaces.Field[]): Promise<any> {
         let query;
         try {
-            const query = `SELECT ${fields.map(field => field.field).join(', ')} FROM "SBO_COPAPEL_PRD".ORDR A INNER JOIN "SBO_COPAPEL_PRD".OCRD B ON A."CardCode" = B."CardCode" INNER JOIN "SBO_COPAPEL_PRD".OHEM C ON B."SlpCode" = C."salesPrson" WHERE "DocNum" = ${DocNum}`;
+            const query = `SELECT ${fields.map(field => field.field).join(', ')} FROM "SBO_COPAPEL_PRD".ORDR A INNER JOIN "SBO_COPAPEL_PRD".OCRD B ON A."CardCode" = B."CardCode" INNER JOIN "SBO_COPAPEL_PRD".OAGP C ON B."AgentCode" = C."AgentCode" INNER JOIN "SBO_COPAPEL_PRD".OUSR D ON C."UserSign" = D."userSign" INNER JOIN "SBO_COPAPEL_PRD".OHEM E ON D."USERID" = E."userId" WHERE A."DocNum" = ${DocNum} AND E."Active" = 'Y'`;
             const result = await this.sl.querySAP(query);
     
             return result.data[0] || []
