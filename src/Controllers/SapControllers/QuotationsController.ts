@@ -68,6 +68,7 @@ export class QuotationsController {
             console.log(`Successfully created quotation for client ${CardCode}`);
             const { CardName, DocEntry, DocTotal, DocNum } = response.Retorno.Dados;
             if (!DocNum) {
+                console.log(`Response que não retornou erro: `, response)
                 throw new HttpError(500, "No DocNum was given in API response");
             }
             successCarts.push({ CardCode, CardName, DocEntry, DocTotal, DocNum, DocType: "Cotação" });
