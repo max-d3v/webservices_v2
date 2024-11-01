@@ -7,6 +7,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+
 model SLACK_PEDIDOS {
   DocNum  Int     @id @default(autoincrement()) @db.UnsignedInt
   content String? @db.Text
@@ -57,7 +58,6 @@ model api_we4u_ferias {
 }
 
 model api_we4u_turnover {
-  idInterno         Int       @default(autoincrement())
   cod_local         Int
   nome_local        String?   @db.VarChar(255)
   horas_trabalhadas BigInt?
@@ -70,12 +70,12 @@ model api_we4u_turnover {
   absenteismo       String?   @db.VarChar(10)
   data_insercao     DateTime? @db.DateTime(0)
   data_competencia  String    @db.VarChar(7)
-  cod_empresa       Int?
-  filial            Int?
+  cod_empresa       Int
+  filial            Int
   nome_filial       String?   @db.VarChar(100)
   cnpj_filial       String?   @db.VarChar(20)
 
-  @@id([idInterno, cod_local, data_competencia])
+  @@id([cod_local, data_competencia, filial, cod_empresa])
 }
 
 model atividades_prospects {
@@ -1267,7 +1267,7 @@ model pdh_products {
 
 model pesquisa_blip {
   id               Int       @id @default(autoincrement())
-  ticket           String?   @db.VarChar(20)
+  ticket           String?   @unique(map: "ticket") @db.VarChar(20)
   cardcode         String?   @db.VarChar(255)
   contato_cliente  String?   @db.VarChar(255)
   nota_atendimento Int?
@@ -3022,56 +3022,103 @@ model blog_copy_BKP20092024 {
 }
 
 model log_atualizacao_cadastral_clientes {
-  id           Int      @id @default(autoincrement())
-  timestamp    DateTime @default(dbgenerated("(now())")) @db.DateTime(0)
-  CardName     String?  @db.VarChar(2000)
-  CardCode     String?  @unique(map: "CardCode") @db.VarChar(50)
-  Status       String?  @default("PEND") @db.VarChar(50)
-  data_updated String?  @db.Text
-  Error        String?  @db.Text
+  id           Int       @id @default(autoincrement())
+  timestamp    DateTime? @default(now()) @db.Timestamp(0)
+  CardName     String?   @db.VarChar(2000)
+  CardCode     String?   @unique(map: "CardCode") @db.VarChar(50)
+  Status       String?   @default("PEND") @db.VarChar(50)
+  data_updated String?   @db.Text
+  Error        String?   @db.Text
 }
 
-model saida_comodato {
-  NumDocumento   Int
-  TipoDocumento  String           @db.VarChar(20)
-  DataDocumento  DateTime?        @db.Date
-  Status         String?          @db.VarChar(20)
-  CodigoCliente  String?          @db.VarChar(20)
-  NumLinha       Int
-  CodigoItem     String?          @db.VarChar(20)
-  Qtde           Decimal?         @db.Decimal(16, 2)
-  ValorUnitario  Decimal?         @db.Decimal(16, 2)
-  NumNF          Int?
-  DataInsercao   DateTime?        @default(now()) @db.Timestamp(0)
-  IdSaida        Int              @unique(map: "ID") @default(autoincrement())
-  Amortizado     String?          @db.VarChar(1)
-  baixa_comodato baixa_comodato[]
-
-  @@id([NumDocumento, TipoDocumento, NumLinha])
+model POST_SL {
+  id          Int       @id @default(autoincrement()) @db.UnsignedInt
+  EndPoint    String?   @db.VarChar(100)
+  credenciais String?   @db.LongText
+  json        String?   @db.LongText
+  time        DateTime? @default(dbgenerated("(now())")) @db.Timestamp(0)
+  retorno     String?   @db.LongText
 }
 
-model entrada_comodato {
-  NumDocumento  Int
-  TipoDocumento String    @db.VarChar(20)
-  DataDocumento DateTime? @db.Date
-  Status        String?   @db.VarChar(20)
-  CodigoCliente String?   @db.VarChar(20)
-  NumLinha      Int
-  CodigoItem    String?   @db.VarChar(20)
-  Qtde          Decimal?  @db.Decimal(16, 2)
-  NumNF         String?   @db.VarChar(45)
-  DataInsercao  DateTime? @default(now()) @db.Timestamp(0)
-  IdEntrada     Int       @unique(map: "ID") @default(autoincrement())
+model api_we4u_cargos {
+  id_cargo          Int
+  nome_cargo        String?   @db.VarChar(255)
+  cod_empresa       Int
+  filial            Int
+  horas_trabalhadas BigInt?
+  horas_faltas      BigInt?
+  absenteismo       String?   @db.VarChar(10)
+  saldo_inicial     Int?
+  admissoes         Int?
+  demissoes         Int?
+  saldo_final       Int?
+  turnover          String?   @db.VarChar(10)
+  nome_filial       String?   @db.VarChar(255)
+  cnpj_filial       String?   @db.VarChar(20)
+  data_competencia  String    @db.VarChar(7)
+  data_insercao     DateTime? @db.DateTime(0)
 
-  @@id([NumDocumento, TipoDocumento, NumLinha])
+  @@id([id_cargo, filial, data_competencia, cod_empresa])
 }
 
-model baixa_comodato {
-  IdBaixa        Int             @id @default(autoincrement())
-  IdEntrada      Int?
-  IdSaida        Int?
-  QtdeBaixada    Int?
-  saida_comodato saida_comodato? @relation(fields: [IdSaida], references: [IdSaida], onDelete: NoAction, onUpdate: NoAction, map: "fk_saida_comodato")
+model comodato_baixa {
+  IdBaixa          Int               @id @default(autoincrement())
+  IdEntrada        Int?
+  IdSaida          Int?
+  QtdeBaixada      Int?
+  comodato_entrada comodato_entrada? @relation(fields: [IdEntrada], references: [IdEntrada], onDelete: Cascade, map: "fk_comodato_entrada")
+  comodato_saida   comodato_saida?   @relation(fields: [IdSaida], references: [IdSaida], onDelete: NoAction, onUpdate: NoAction, map: "fk_saida_comodato")
 
+  @@index([IdEntrada], map: "fk_comodato_entrada")
   @@index([IdSaida], map: "fk_saida_comodato")
+}
+
+model comodato_depreciacao {
+  IdSaida         Int
+  PeriodoInicial  DateTime @db.Date
+  PeriodoFinal    DateTime @db.Date
+  QtdeDepreciada  Int?
+  ValorDepreciado Decimal? @db.Decimal(16, 2)
+  ValorAbatido    Decimal? @db.Decimal(16, 2)
+  IdDepreciacao   Int      @unique(map: "IdDepreciacao_UNIQUE") @default(autoincrement())
+
+  @@id([IdSaida, PeriodoInicial, PeriodoFinal])
+}
+
+model comodato_entrada {
+  NumDocumento    Int
+  TipoDocumento   String           @db.VarChar(20)
+  DataDocumento   DateTime?        @db.Date
+  Status          String?          @db.VarChar(20)
+  CodigoCliente   String?          @db.VarChar(20)
+  NumLinha        Int
+  CodigoItem      String?          @db.VarChar(20)
+  Qtde            Decimal?         @db.Decimal(16, 2)
+  NumNF           String?          @db.VarChar(45)
+  DataInsercao    DateTime?        @default(now()) @db.Timestamp(0)
+  IdEntrada       Int              @unique(map: "ID") @default(autoincrement())
+  DataAtualizacao DateTime?        @db.Date
+  comodato_baixa  comodato_baixa[]
+
+  @@id([NumDocumento, TipoDocumento, NumLinha])
+}
+
+model comodato_saida {
+  NumDocumento    Int
+  TipoDocumento   String           @db.VarChar(20)
+  DataDocumento   DateTime?        @db.Date
+  Status          String?          @db.VarChar(20)
+  CodigoCliente   String?          @db.VarChar(20)
+  NumLinha        Int
+  CodigoItem      String?          @db.VarChar(20)
+  Qtde            Decimal?         @db.Decimal(16, 2)
+  ValorUnitario   Decimal?         @db.Decimal(16, 2)
+  NumNF           Int?
+  DataInsercao    DateTime?        @default(now()) @db.Timestamp(0)
+  IdSaida         Int              @unique(map: "ID") @default(autoincrement())
+  Amortizado      String?          @db.VarChar(1)
+  DataAtualizacao DateTime?        @db.Date
+  comodato_baixa  comodato_baixa[]
+
+  @@id([NumDocumento, TipoDocumento, NumLinha])
 }

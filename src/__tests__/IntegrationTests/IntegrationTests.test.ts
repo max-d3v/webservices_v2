@@ -1,12 +1,10 @@
 import { baseConfig } from "./BaseFetchConfig";
 import { Server } from '../../Server';
 import { BusinessPartnersController } from "../../Controllers/SapControllers/BusinessPartnersController";
-import { SapServices } from "../../services/SapServices";
 import axios from "axios";
 import * as interfaces from '../../types/interfaces';
-//
+
 const ActiveClientsReturnedMock = jest.spyOn(BusinessPartnersController.prototype, "getFiscalClientData")
-const getOpenTicketsFromVendorMock = jest.spyOn(SapServices.prototype, "getOpenTicketsFromVendor");
 
 describe("Integration tests", () => {
 
