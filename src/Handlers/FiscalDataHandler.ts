@@ -17,6 +17,7 @@ export class FiscalDataHandler {
     }   
 
     public async getCompanyByTaxId(taxid: string) {
+        await this.FiscalDataController.loadLocalFiscalData();
         return this.FiscalDataController.getCompanyByTaxId(taxid);
     }
 

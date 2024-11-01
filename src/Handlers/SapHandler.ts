@@ -3,7 +3,10 @@ import { DatabaseServices } from "../services/DatabaseServices";
 import { ActivitiesController } from "../Controllers/SapControllers/ActivitiesController";
 import { BusinessPartnersController } from "../Controllers/SapControllers/BusinessPartnersController";
 import { OpportunitiesController } from "../Controllers/SapControllers/OpportunitiesController";
+import { QuotationsController } from "../Controllers/SapControllers/QuotationsController";
 import { HttpError } from "../Server";
+import * as helperFunctions from '../utils/helperFunctions';
+import { create } from "domain";
 export class SapHandler {
     private static instance: SapHandler;
     private sapServices: SapServices;
@@ -12,7 +15,7 @@ export class SapHandler {
     private ActivitiesController: ActivitiesController;
     private BusinessPartnersController: BusinessPartnersController;
     private OpportunitiesController: OpportunitiesController;
-
+    private QuotationsController: QuotationsController;
 
     private loginMaintainer: NodeJS.Timeout | null;
 
@@ -23,6 +26,7 @@ export class SapHandler {
         this.ActivitiesController = ActivitiesController.getInstance();
         this.BusinessPartnersController = BusinessPartnersController.getInstance();
         this.OpportunitiesController = OpportunitiesController.getInstance();
+        this.QuotationsController = QuotationsController.getInstance();
 
         this.loginMaintainer = null;
     }
@@ -47,7 +51,10 @@ export class SapHandler {
 
     //Business partners
 
-    public async AtualizaCadastroFornecedores(type: string): Promise<any> {
+    public async AtualizaCadastroFornecedores(type: string | null | undefined): Promise<any> {
+        if (!type) {
+            throw new HttpError(400, "No valid type was given");
+        }
         return this.BusinessPartnersController.AtualizaCadastroFornecedores(type);
     }
 
@@ -80,11 +87,15 @@ export class SapHandler {
     }
 
     //Activities
-    public async deactiveAllTicketsFromVendor(userId: string | null | undefined | number): Promise<any> {
-        if (typeof userId !== "string") {
+    public async deactiveTickets(type: string | null | undefined, userId: string | null | undefined = null): Promise<any> {
+        if (typeof type !== "string" || type == "") {
+            throw new HttpError(400, "Invalid Type given")
+        }
+
+        if (type == "Vendor" && (typeof userId !== "string" || userId == "")) {
             throw new HttpError(400, "Invalid id given")
         }
-        return this.ActivitiesController.deactiveAllTicketsFromVendor(userId);
+        return this.ActivitiesController.deactiveTickets(type, userId);
     }
 
     public async changeTicketsOwnerShip(originUserId: string | null | undefined | number, destinyUserId: string | null | undefined| number): Promise<any> {
@@ -101,6 +112,33 @@ export class SapHandler {
             throw new HttpError(400, "Invalid Ids given")
         }
         return this.OpportunitiesController.ChangeOpportunitiesOwnerShip(originUserId, destinyUserId);
+    }
+
+
+    //Quotations
+
+    public async CreateQuotationsAndFollowUpTicketsForOldEcommerceCarts() {
+        const totalProcessedObjects: any[] = [];
+        const totalErrors: any[] = [];
+
+        const [createdQuotations, errorQuotations] = await this.QuotationsController.CreateQuotationsForOldEcommerceCarts();
+        totalProcessedObjects.push(createdQuotations);
+        totalErrors.push(errorQuotations);
+
+        console.log("Processados: ", totalProcessedObjects);
+        
+        const requiredFieldQuotations = createdQuotations.map(({ DocType, DocNum }) => ({ DocType, DocNum }));
+
+        //const requiredFieldQuotationsMock = [
+        //    { DocType: 'Cotação', DocNum: 154294 },
+        //    { DocType: 'Cotação', DocNum: 154295 }
+        //]
+
+        const [ successes, errors ] = await this.ActivitiesController.createFollowUpActivities(requiredFieldQuotations)
+        totalProcessedObjects.push(successes);
+        totalErrors.push(errors);
+
+        return helperFunctions.handleMultipleProcessesResult(totalErrors, totalProcessedObjects);
     }
 
 }

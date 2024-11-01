@@ -1,8 +1,7 @@
 import { HttpError } from "../Server";
 import { HttpErrorWithDetails } from "./errorHandler";
-
+import shortUUID from "short-uuid";
 export const objetoVazio = (objeto: Object | null | undefined) => {
-  console.log(typeof objeto)
   if (typeof objeto !== 'object' || objeto === null || Array.isArray(objeto)) {
     return false;
   }
@@ -157,17 +156,30 @@ export const validaCPF = (cpf: string | null | undefined | number) => {
   }
 
 
-    export const handleMultipleProcessesResult = async ( errors: any[], processedEntities: any[] ) => {
+    export const handleMultipleProcessesResult = async <TError, TProcessed>( errors: TError[], processedEntities: TProcessed[] ) => {
+      deleteEmptyArraysInPlace(errors);
+      deleteEmptyArraysInPlace(processedEntities);
       if (processedEntities.length === 0 && errors.length > 0) {
           throw new HttpErrorWithDetails(400, "Erro ao executar todas as operações", errors);
       } else if (errors.length > 0 && processedEntities.length > 0) {
           throw new HttpErrorWithDetails(206, "Erro ao atualizar parte das operações", { ObjetosComErro: errors, ObjetosProcessados:processedEntities })
       } else if (errors.length === 0 && processedEntities.length > 0) {
           return processedEntities;
+      } else if (errors.length == 0 && processedEntities.length == 0) {
+        throw new HttpError(500, 'Erro ao processar resultados, nenhum dado passado.');
       } else {
-          throw new HttpError(500, 'Erro ao processar resultados');
+        throw new HttpError(500, 'Erro ao processar resultados');
       }
     }
+
+    const deleteEmptyArraysInPlace = (array: any[]): void => {
+      for (let i = array.length - 1; i >= 0; i--) {
+        if (Array.isArray(array[i]) && array[i].length === 0) {
+          array.splice(i, 1);
+        }
+      }
+    };
+    
 
   export const checkAllFields = (Data: any): void => {
       try {
@@ -181,4 +193,30 @@ export const validaCPF = (cpf: string | null | undefined | number) => {
           throw new HttpError(err.statusCode || 500, 'Erro ao verificar se os dados do cliente estão completos: ' + err.message);
       }
   }
+
+
+  export const generateReferenceNum = (CardCode: string | null) => {
+    let ref = "";
+
+    const id = shortUUID.generate();
+    //const date = new Date().toISOString().split("T")[0];
+    ref = `${id}`;
+
+    return ref
+  }
+
+  export const addWorkDays = (date: Date, days: number): Date => {
+    const result = new Date(date);
+    result.setDate(date.getDate() + days);
+
+    if (result.getDay() === 0) { 
+      result.setDate(result.getDate() + 1); 
+    } else if (result.getDay() === 6) { 
+      result.setDate(result.getDate() + 2);
+    }
+
+    return result;
+  }
+
+
 

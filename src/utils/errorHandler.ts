@@ -7,19 +7,40 @@ export class HttpError extends Error {
   }
 
   export class HttpErrorWithDetails extends HttpError {
-    constructor(public statusCode: number, message: string, public details: any) {
+    constructor(public statusCode: number, message: string, public details: unknown) {
       super(statusCode, message);
     }
   }
-export const ErrorHandling = (err: HttpError | HttpErrorWithDetails | Error, req: Request, res: Response, next: NextFunction): Response => {
-    //console.error(err.message);
-    const statusCode = (err as HttpError).statusCode || 500;
-    const message = err.message || 'An unexpected error occurred';
-    
+  export const ErrorHandling = (
+    err: unknown,
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Response => {
     if (err instanceof HttpErrorWithDetails) {
-      console.log(err.message);
-      return res.status(statusCode).json({ error: message, details: err.details });
-    } else {
-      return res.status(statusCode).json({ error: message });
+      return res.status(err.statusCode).json({
+        error: err.message,
+        details: err.details
+      });
     }
-}
+  
+    if (err instanceof HttpError) {
+      return res.status(err.statusCode).json({
+        error: err.message
+      });
+    }
+  
+    if (err instanceof Error) {
+      return res.status(500).json({
+        error: process.env.NODE_ENV === 'prd' 
+          ? 'An unexpected error occurred'
+          : err.message
+      });
+    }
+  
+    return res.status(500).json({
+      error: 'An unexpected error occurred'
+    });
+  };
+
+  
