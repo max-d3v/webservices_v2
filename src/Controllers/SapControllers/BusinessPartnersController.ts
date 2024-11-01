@@ -49,8 +49,8 @@ export class BusinessPartnersController {
                 throw new HttpError(404, "Nenhum cliente encontrado para processamento!");
             }
 
-            const errors: any[] = [];
-            const processedClients: any[] = [];
+            const errors: {CardCode: string, error: string}[] = [];
+            const processedClients: [] = [];
 
             //BATCHING 
 
@@ -140,7 +140,6 @@ export class BusinessPartnersController {
 
             const cnpj = client.TaxId0?.replace(/\D/g, '') ?? null;
             const estado = client.State1 ?? null;
-            const cardName = client.CardName;
             const freeText = client.Free_Text ?? null;
             const balance = client.Balance;
     
@@ -313,7 +312,7 @@ export class BusinessPartnersController {
         return await this.dataBaseServices.getMysqlSapClients();
     }
 
-    private ProcessCnpjStatus(status: number, balance: number, ClientData: any): void {
+    private ProcessCnpjStatus<T extends { Valid: string | null, Frozen: string | null }>(status: number, balance: number, ClientData: T): void {
         try {
             if (balance === 0) {
                 const statusForSL = status === 2 || status === 4 ? "tYES" : "tNO";
@@ -332,7 +331,7 @@ export class BusinessPartnersController {
     private async ProcessIE(registrations: interfaces.Registration[] | [], estado: string, cardCode: string, clientAdresses: interfaces.RelevantClientData["Adresses"], ClientData: any): Promise<void> {
         try {
             //IE normal e do estado.
-            let foundRegistrations = registrations?.filter((registration) => registration?.state === estado && registration?.type?.id === 1 || registration?.type?.id === 4);
+            const foundRegistrations = registrations?.filter((registration) => registration?.state === estado && registration?.type?.id === 1 || registration?.type?.id === 4);
             let registration: null | interfaces.Registration = null;
             if (foundRegistrations.length == 1) {
                 registration = foundRegistrations[0]
@@ -369,7 +368,7 @@ export class BusinessPartnersController {
         }
     }
 
-    private ProcessSimplesOptant(simplesOptant: boolean, ClientData: any): void {
+    private ProcessSimplesOptant<T extends { U_TX_SN: number | null }>(simplesOptant: boolean, ClientData: T): void {
         try {
             ClientData.U_TX_SN = simplesOptant ? 1 : 2;
         } catch (err: any) {
@@ -401,8 +400,13 @@ export class BusinessPartnersController {
         }
     }
 
+    
 
-    public async AtualizaCadastroFornecedores(type: string): Promise<any> {
+
+    public async AtualizaCadastroFornecedores(type: string): Promise<{
+        CardCode: string;
+        data: any | undefined | null;
+    }[]> {
         try {
             let unprocessed = false;
             let isoString = '1890-01-01';
@@ -423,8 +427,8 @@ export class BusinessPartnersController {
 
             console.log(`Starting process with ${fornecedores.length} fornecedores`)
 
-            const processErrors: any[] = [];
-            const fornecedoresProcessados: any[] = [];
+            const processErrors: {CardCode: string, error: string | undefined}[] = [];
+            const fornecedoresProcessados: {CardCode: string, data: any | undefined | null}[] = [];
 
             const JsonInMemory = new LocalFiscalDataClass();
             await JsonInMemory.loadFile('./src/models/data/cnpj_data_fornecedores_full.json');
@@ -489,10 +493,10 @@ export class BusinessPartnersController {
                             const isMEI = fornecedorData.company.simei.optant;
                             const registrations = fornecedorData.registrations;
                             
-                            let foundRegistrations = registrations?.filter((registration) => registration?.state === estado && registration?.type?.id === 1 || registration?.type?.id === 4);
+                            const foundRegistrations = registrations?.filter((registration) => registration?.state === estado && registration?.type?.id === 1 || registration?.type?.id === 4);
                             let stateRegistration: null | interfaces.Registration = null;
                             if (foundRegistrations.length == 1) {
-                                stateRegistration = foundRegistrations[0]
+                                stateRegistration = foundRegistrations[0];
                             } else if (foundRegistrations.length > 1) {
                                 console.log("Cliente tem mais de uma IE normal para o estado, selecionando a ativa (se tiver!)")
                                 const activatedRegistration = foundRegistrations.find((registration) => registration.enabled == true)
@@ -624,6 +628,7 @@ export class BusinessPartnersController {
 
         console.log(`Starting Deactivation process with ${clients.length} clients!`);
 
+
         return await this.DeactivateClients(clients, type)
     }
 
@@ -632,8 +637,26 @@ export class BusinessPartnersController {
             let clients: interfaces.DeactivationClientsData[] = [];
 
             if (type == "BrunoProcess") {
+                const filteredClients = [
+                    "C038942", "C042111", "C000041", "C001323", "C038228", "C040649", "C042358", "C044150", "C044964",
+                    "C042221", "C037432", "C045344", "C038887", "C040972", "C039763", "C041762", "C037508", "C038572",
+                    "C040382", "C045385", "C040147", "C042434", "C038884", "C018137", "C016707", "C000940", "C035658",
+                    "C004400", "C039172", "C031929", "C041377", "C040022", "C038621", "C008908", "C038972", "C042709",
+                    "C025905", "C042472", "C045372", "C041574", "C038442", "C000643", "C043185", "C042618", "C018376",
+                    "C042394", "C040054", "C042257", "C042141", "C000567", "C044026", "C005064", "C041469", "C039037",
+                    "C009035", "C001952", "C042020", "C042660", "C003387", "C039867", "C040428", "C037966", "C042634",
+                    "C038415", "C039004", "C003826", "C040278", "C000995", "C042167", "C042617", "C041617", "C000607",
+                    "C013244", "C007258", "C042973", "C015087", "C041579", "C017403", "C041710", "C040156", "C038811",
+                    "C041890", "C038830", "C041576", "C038311", "C040950", "C042977", "C038795", "C040069", "C034576",
+                    "C015632", "C045465", "C039315", "C011792", "C032591", "C043260", "C038308", "C038685", "C040653",
+                    "C041535", "C043431", "C036350", "C041483", "C037608", "C042497", "C019863", "C042746", "C012260",
+                    "C020177", "C000027", "C039250", "C043029", "C001949", "C038414", "C045373", "C017728", "C040323",
+                    "C041758", "C042950", "C013771", "C038853", "C038927", "C041977", "C032030", "C001777", "C041852",
+                    "C038290", "C042708", "C001005", "C038454"
+                ];
                 const filter = { field: 'A."CreateDate"', operator: "<", value: "'2024-05-01'"}
                 clients = await this.sapServices.getClientsWithNoOrders(filter);
+                clients = clients.filter((client) => !filteredClients.includes(client.CardCode))
             } else {
                 clients = []
             }
@@ -644,27 +667,24 @@ export class BusinessPartnersController {
         }
     }
 
-    public async DeactivateClients(vendors: interfaces.DeactivationClientsData[], type: string) {
+    public async DeactivateClients(clients: interfaces.DeactivationClientsData[], type: string) {
         try {
-            const deactivatedVendors: interfaces.CardCode[] = [];
-            const errorVendors: interfaces.CardCode[] = [];
-            await Promise.all(vendors.map( async (vendor: interfaces.DeactivationClientsData) => { await this.DeactivateProcess(vendor, deactivatedVendors, errorVendors, type) }) );
+            const deactivatedClients: interfaces.CardCode[] = [];
+            const errorClients: interfaces.CardCode[] = [];
+            await Promise.all(clients.map( async (vendor: interfaces.DeactivationClientsData) => { await this.DeactivateProcess(vendor, deactivatedClients, errorClients, type) }) );
 
 
-            console.log(deactivatedVendors)
-            console.log(errorVendors)
+            console.log(deactivatedClients)
+            console.log(errorClients)
 
-            const response = helperFunctions.handleMultipleProcessesResult(errorVendors, deactivatedVendors);
+            const response = helperFunctions.handleMultipleProcessesResult(errorClients, deactivatedClients);
             return response;
         } catch(err: any) {
-            if (err instanceof HttpErrorWithDetails) {
-                throw err;
-            }
             throw new HttpError(err.statusCode ?? 500, "Erro ao Desativar vendedores: " + err.message)
         }
     }
 
-    private async DeactivateProcess(vendor: interfaces.DeactivationClientsData, processedVendors: interfaces.CardCode[] , errorVendors: interfaces.CardCode[], type: string) {
+    private async DeactivateProcess(vendor: interfaces.DeactivationClientsData, processedVendors: interfaces.CardCode[] , errorClients: interfaces.CardCode[], type: string) {
         try {
             await this.updateObservationWithReason(vendor.Free_Text, vendor.CardCode, type);
             await this.DeactivateClient(vendor.CardCode);
@@ -674,7 +694,7 @@ export class BusinessPartnersController {
             processedVendors.push(vendor)
         } catch(err: any) {
             console.log("Error when deactivating")
-            errorVendors.push(vendor)
+            errorClients.push(vendor)
         }
     }
 
@@ -683,7 +703,7 @@ export class BusinessPartnersController {
             const todayDate = new Date().toLocaleString('pt-BR');
             let motivo = "Não especificado";
             let newObs = "";
-            if (type = "BrunoProcess") {
+            if (type == "BrunoProcess") {
                 motivo = "Cliente foi criado antes do dia 01/05/2024 e nunca comprou com a copapel."
             }
     
@@ -695,7 +715,7 @@ export class BusinessPartnersController {
     
             await this.sapServices.updateClient(data, CardCode);    
         } catch(err: any) {
-            throw new HttpError(err.statusCode ?? 500, "Erro ao atualizar as Observações")
+            throw new HttpError(err.statusCode ?? 500, "Erro ao atualizar as Observações: " + err.message);
         }
     }
 

@@ -156,7 +156,7 @@ export const validaCPF = (cpf: string | null | undefined | number) => {
   }
 
 
-    export const handleMultipleProcessesResult = async ( errors: any[], processedEntities: any[] ) => {
+    export const handleMultipleProcessesResult = async <TError, TProcessed>( errors: TError[], processedEntities: TProcessed[] ) => {
       deleteEmptyArraysInPlace(errors);
       deleteEmptyArraysInPlace(processedEntities);
       if (processedEntities.length === 0 && errors.length > 0) {
@@ -199,7 +199,7 @@ export const validaCPF = (cpf: string | null | undefined | number) => {
     let ref = "";
 
     const id = shortUUID.generate();
-    const date = new Date().toISOString().split("T")[0];
+    //const date = new Date().toISOString().split("T")[0];
     ref = `${id}`;
 
     return ref
@@ -217,4 +217,6 @@ export const validaCPF = (cpf: string | null | undefined | number) => {
 
     return result;
   }
+
+
 
