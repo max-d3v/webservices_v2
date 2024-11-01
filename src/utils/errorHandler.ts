@@ -11,12 +11,10 @@ export class HttpError extends Error {
       super(statusCode, message);
     }
   }
-  export const errorHandler = (
+  export const ErrorHandling = (
     err: unknown,
     req: Request,
     res: Response,
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     next: NextFunction
   ): Response => {
     if (err instanceof HttpErrorWithDetails) {
