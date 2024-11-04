@@ -671,8 +671,22 @@ export class BusinessPartnersController {
         try {
             const deactivatedClients: interfaces.CardCode[] = [];
             const errorClients: interfaces.CardCode[] = [];
-            await Promise.all(clients.map( async (vendor: interfaces.DeactivationClientsData) => { await this.DeactivateProcess(vendor, deactivatedClients, errorClients, type) }) );
 
+
+
+
+            const BATCH_SIZE = 200;
+            const maxIterations = Math.ceil(clients.length / BATCH_SIZE);
+            for (let iteration = 0; iteration < maxIterations; iteration++) {
+                console.log(`Starting iteration ${iteration}, of ${BATCH_SIZE} clients - total iterations: ${maxIterations}`);
+
+                const firstPosition = iteration * BATCH_SIZE;
+                console.log(`Vai pegar os clientes do index ${firstPosition} ao ${firstPosition + BATCH_SIZE}`);
+
+                const batch = clients.slice(firstPosition, firstPosition + BATCH_SIZE) as interfaces.DeactivationClientsData[];
+
+                await Promise.all(batch.map( async (vendor: interfaces.DeactivationClientsData) => { await this.DeactivateProcess(vendor, deactivatedClients, errorClients, type) }) );
+            }
 
             console.log(deactivatedClients)
             console.log(errorClients)
@@ -708,8 +722,6 @@ export class BusinessPartnersController {
             }
     
             newObs = oldObs + ` - Cliente desativado dia ${todayDate} via integração, Motivo: ` + motivo;
-
-            console.log(`Obs antiga: ${oldObs} -- NOVA: ${newObs}`)
     
             const data = { "FreeText": newObs }
     
