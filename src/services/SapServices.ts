@@ -208,9 +208,9 @@ export class SapServices {
         }
     }
 
-    public async getOpenTicketsFromRegion(region: number): Promise<interfaces.ActivitiesCode[]> {
+    public async getOpenTicketsFromRegion(region: number, userException: number): Promise<interfaces.ActivitiesCode[]> {
         try {
-            const query = `SELECT A."ClgCode" FROM "SBO_COPAPEL_PRD".OCLG A INNER JOIN "SBO_COPAPEL_PRD".OCRD B ON A."CardCode" = B."CardCode" WHERE B."U_RSD_RegVend" = '${region}' AND A."Closed" = 'N'`;
+            const query = `SELECT A."ClgCode" FROM "SBO_COPAPEL_PRD".OCLG A INNER JOIN "SBO_COPAPEL_PRD".OCRD B ON A."CardCode" = B."CardCode" WHERE B."U_RSD_RegVend" = '${region}' AND A."AttendUser" <> ${userException} AND A."Closed" = 'N'`;
             const tickets = await this.sl.querySAP(query);
             return tickets.data;
         } catch (err: any) {

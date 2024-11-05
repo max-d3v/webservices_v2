@@ -193,11 +193,12 @@ export class ActivitiesController {
             throw new HttpError(400, 'Id de usuário inválido');
         }
 
-        const tickets = await this.SapServices.getOpenTicketsFromRegion(parsedRegion);
+        const tickets = await this.SapServices.getOpenTicketsFromRegion(parsedRegion, parsedDestinyUserId);
         if (tickets.length === 0) {
             throw new HttpError(404, `Nenhum ticket encontrado para a região ${parsedRegion}`);
         }
 
+        console.log(`Starting process to change owners: ${tickets.length} tickets.`)
 
         const ticketsProcessados: any[] = [];
         const ticketsErros: any[] = [];
