@@ -105,6 +105,13 @@ export class SapHandler {
         return this.ActivitiesController.changeTicketsOwnerShip(originUserId, destinyUserId);
     }
 
+    public async changeTicketsOwnerShipFromRegion(region: string | undefined, destinyUserId: string | undefined): Promise<any> {
+        if (!region || !destinyUserId) {
+            throw new HttpError(400, "Invalid Ids given")
+        }
+        return this.ActivitiesController.changeTicketOwnerShipRegion(region, destinyUserId);
+    }
+
     //Opportunities
 
     public async changeOpportunitiesOwnerShip(originUserId: number | undefined | string | null, destinyUserId: number | undefined | string | null): Promise<any> {

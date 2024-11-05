@@ -25,9 +25,9 @@ export class ActivitiesController {
     }
 
     public async deactiveTickets(type: string, userId: string | null) {
-        try {            
+        try {
             const tickets: interfaces.TicketNumber[] = await this.getTickets(type, userId);
-            
+
             console.log(`Starting deactivation of ${tickets.length} tickets!`);
 
 
@@ -37,7 +37,7 @@ export class ActivitiesController {
             await Promise.all(tickets.map(async (ticket) => {
                 try {
                     this.SapServices.deactivateTicket(ticket.ClgCode),
-                    console.log(`ticket ${ticket.ClgCode} desativado com sucesso`)
+                        console.log(`ticket ${ticket.ClgCode} desativado com sucesso`)
                     ticketsProcessados.push({ ClgCode: ticket.ClgCode });
                 } catch (err: any) {
                     ticketsErros.push({ ClgCode: ticket.ClgCode, error: err.message });
@@ -56,7 +56,7 @@ export class ActivitiesController {
         const createdTickets: any = [];
         const errorTickets: any = [];
 
-        await Promise.all( documents.map( async (doc) => await this.createTicketController(doc, createdTickets, errorTickets)) )
+        await Promise.all(documents.map(async (doc) => await this.createTicketController(doc, createdTickets, errorTickets)))
 
         return [createdTickets, errorTickets];
     }
@@ -66,69 +66,69 @@ export class ActivitiesController {
         try {
             const { CardCode, ActivityCode } = await this.createFollowUpTicket(Document);
             console.log(`Created ticket ${ActivityCode} successfully`);
-            createdTickets.push({DocNum, CardCode, ActivityCode});
-        } catch(err: any) {
-            errorTickets.push({DocNum, Error: err.message})
+            createdTickets.push({ DocNum, CardCode, ActivityCode });
+        } catch (err: any) {
+            errorTickets.push({ DocNum, Error: err.message })
         }
     }
 
 
     private async createFollowUpTicket(Document: interfaces.Document) {
         try {
-        const { DocNum, DocType } = Document;
+            const { DocNum, DocType } = Document;
 
-        const FieldsWanted = [{field: 'A."CardCode"'}, {field: 'D."USERID"'}];
-        const { CardCode, USERID } = await this.SapServices.getDataFromQuotation(DocNum, FieldsWanted);
-        if (!CardCode || !USERID || typeof CardCode !== "string" || typeof USERID !== "number") {
-            throw new HttpError(500, "No Valid CardCode or userId was found for Document.");
-        }
-        //Se for user id 173 (vago) não criar? - Vou deixar criando, não vai atrapalhar ninguem e depois podemos mover não sei
+            const FieldsWanted = [{ field: 'A."CardCode"' }, { field: 'D."USERID"' }];
+            const { CardCode, USERID } = await this.SapServices.getDataFromQuotation(DocNum, FieldsWanted);
+            if (!CardCode || !USERID || typeof CardCode !== "string" || typeof USERID !== "number") {
+                throw new HttpError(500, "No Valid CardCode or userId was found for Document.");
+            }
+            //Se for user id 173 (vago) não criar? - Vou deixar criando, não vai atrapalhar ninguem e depois podemos mover não sei
 
-        
-        const date = new Date();
-        const nextWorkDay = helperFunctions.addWorkDays(date, 1).toISOString().split("T")[0];
 
-        const Notes = `Ticket de acompanhamento para o(a) ${DocType} ${DocNum}`;
-        const ActivityDate = nextWorkDay; 
-        const ActivityTime = '08:00:00';
-        const EndDueDate = nextWorkDay;
-        const EndTime = '08:05:00';
-        const Duration = '5';
-        const DurationType = 'du_Minuts';
-        const ReminderPeriod = '15';
-        const ReminderType = 'du_Minuts';
-        const StartDate = nextWorkDay;
-        const StartTime = ActivityTime;
-        const ActivityType = 10;
-        const Subject = DocType == "Orçamento" ? 90 : 98 
-        const HandledBy = USERID; 
-        
+            const date = new Date();
+            const nextWorkDay = helperFunctions.addWorkDays(date, 1).toISOString().split("T")[0];
 
-        const Activity = {
-            ActivityDate,
-            ActivityTime,
-            CardCode,
-            Duration,
-            DurationType,
-            EndDueDate,
-            EndTime,
-            Closed: "tNO" as "tNO" | "tYES",
-            Reminder: 'tYES' as "tNO" | "tYES",
-            ReminderPeriod,
-            ReminderType,
-            StartDate,
-            StartTime,
-            Notes,
-            Activity: "cn_Other",
-            ActivityType,
-            Subject,
-            HandledBy
-        }
+            const Notes = `Ticket de acompanhamento para o(a) ${DocType} ${DocNum}`;
+            const ActivityDate = nextWorkDay;
+            const ActivityTime = '08:00:00';
+            const EndDueDate = nextWorkDay;
+            const EndTime = '08:05:00';
+            const Duration = '5';
+            const DurationType = 'du_Minuts';
+            const ReminderPeriod = '15';
+            const ReminderType = 'du_Minuts';
+            const StartDate = nextWorkDay;
+            const StartTime = ActivityTime;
+            const ActivityType = 10;
+            const Subject = DocType == "Orçamento" ? 90 : 98
+            const HandledBy = USERID;
 
-        const ticket = await this.SapServices.createTicket(Activity);
-        //if nothing is throw, data is suposed to be instanciated 100%
-        return ticket.data;
-        } catch(err: any) {
+
+            const Activity = {
+                ActivityDate,
+                ActivityTime,
+                CardCode,
+                Duration,
+                DurationType,
+                EndDueDate,
+                EndTime,
+                Closed: "tNO" as "tNO" | "tYES",
+                Reminder: 'tYES' as "tNO" | "tYES",
+                ReminderPeriod,
+                ReminderType,
+                StartDate,
+                StartTime,
+                Notes,
+                Activity: "cn_Other",
+                ActivityType,
+                Subject,
+                HandledBy
+            }
+
+            const ticket = await this.SapServices.createTicket(Activity);
+            //if nothing is throw, data is suposed to be instanciated 100%
+            return ticket.data;
+        } catch (err: any) {
             throw new HttpError(err.statusCode ?? 500, "Erro ao criar ticket: " + err.message);
         }
     }
@@ -145,7 +145,7 @@ export class ActivitiesController {
             }
             tickets = await this.SapServices.getOpenTicketsFromVendor(parsedUserId);
         } else if (type == "OldTickets") {
-            const date = new Date(new Date().getFullYear(), 9, 17); 
+            const date = new Date(new Date().getFullYear(), 9, 17);
             tickets = await this.SapServices.getOpenTicketsFromBefore(date);
         }
 
@@ -174,9 +174,7 @@ export class ActivitiesController {
             const ticketsProcessados: any[] = [];
             const ticketsErros: any[] = [];
 
-            
             await Promise.all(getTickets.map(async (ticket) => { await this.ChangeTicketOwner(ticket, parsedDestinyUserId, ticketsProcessados, ticketsErros) }))
-            
 
             const apiReturn = helperFunctions.handleMultipleProcessesResult(ticketsErros, ticketsProcessados);
             return apiReturn;
@@ -185,14 +183,37 @@ export class ActivitiesController {
                 throw err;
             }
             throw new HttpError(err.statusCode || 500, 'Erro ao mudar proprietário dos tickets: ' + err.message);
-        }   
+        }
+    }
+
+    public async changeTicketOwnerShipRegion(region: string, destinyUserId: string) {
+        const parsedRegion = parseInt(region);
+        const parsedDestinyUserId = parseInt(destinyUserId);
+        if (isNaN(parsedRegion) || isNaN(parsedDestinyUserId)) {
+            throw new HttpError(400, 'Id de usuário inválido');
+        }
+
+        const tickets = await this.SapServices.getOpenTicketsFromRegion(parsedRegion);
+        if (tickets.length === 0) {
+            throw new HttpError(404, `Nenhum ticket encontrado para a região ${parsedRegion}`);
+        }
+
+
+        const ticketsProcessados: any[] = [];
+        const ticketsErros: any[] = [];
+
+        await Promise.all(tickets.map(async (ticket) => { await this.ChangeTicketOwner(ticket, parsedDestinyUserId, ticketsProcessados, ticketsErros) }))
+
+        const apiReturn = helperFunctions.handleMultipleProcessesResult(ticketsErros, ticketsProcessados);
+
+        return apiReturn;
     }
 
     private async ChangeTicketOwner(ticket: interfaces.ActivitiesCode, destinyUserId: number, ticketsProcessados: any[], ticketErrors: any[]) {
         try {
             const attObj = {
                 HandledBy: destinyUserId
-            }       
+            }
             await this.SapServices.updateActivity(ticket.ClgCode, attObj);
             ticketsProcessados.push({ ClgCode: ticket.ClgCode });
         } catch (err: any) {

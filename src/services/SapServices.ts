@@ -208,6 +208,16 @@ export class SapServices {
         }
     }
 
+    public async getOpenTicketsFromRegion(region: number): Promise<interfaces.ActivitiesCode[]> {
+        try {
+            const query = `SELECT A."ClgCode" FROM "SBO_COPAPEL_PRD".OCLG A INNER JOIN "SBO_COPAPEL_PRD".OCRD B ON A."CardCode" = B."CardCode" WHERE B."U_RSD_RegVend" = '${region}' AND A."Closed" = 'N'`;
+            const tickets = await this.sl.querySAP(query);
+            return tickets.data;
+        } catch (err: any) {
+            throw new HttpError(500, 'Erro ao buscar tickets do fornecedor: ' + err.message);
+        }
+    }
+
     public async deactivateTicket(ticketNumber: number) {
         try {
             const tickets = await this.sl.patch("Activities", ticketNumber, { "Closed": "tYES" });

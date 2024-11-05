@@ -43,7 +43,16 @@ export class Server {
     await this.SapHandler.maintainServicesLogin();
   }
 
+  private logMemoryUsage() {
+    setInterval(() => {
+      const memoryUsage = process.memoryUsage();
+      console.log(`Memory Usage: RSS: ${memoryUsage.rss / 1024 / 1024} MB, Heap Used: ${memoryUsage.heapUsed / 1024 / 1024} MB`);
+    }, 5000); 
+  }
+
   private applyMiddlewares(): void {
+    //this.logMemoryUsage()
+
     this.app.use(express.json());
     this.app.use(authMiddleware);
   }
