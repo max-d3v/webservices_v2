@@ -40,7 +40,7 @@ export class SapServices {
 
     public async getClientsWithNoOrders(filter: interfaces.generalFilter | null = null): Promise<interfaces.DeactivationClientsData[]> {
         try {
-            const query = `SELECT A."CardCode", CAST(A."Free_Text" AS NVARCHAR) as "Free_Text" FROM "SBO_COPAPEL_PRD"."OCRD" A LEFT JOIN "SBO_COPAPEL_PRD"."OINV" B ON A."CardCode" = B."CardCode" WHERE B."DocNum" IS NULL AND A."validFor" = 'Y' AND (A."CardType" = 'C' OR A."CardType" = 'L')  ${ filter ? `AND ${filter.field} ${filter.operator} ${filter.value}` : "" }`;
+            const query = `SELECT A."CardCode", CAST(A."Free_Text" AS NVARCHAR) as "Free_Text" FROM "SBO_COPAPEL_PRD"."OCRD" A LEFT JOIN "SBO_COPAPEL_PRD"."OINV" B ON A."CardCode" = B."CardCode" WHERE B."DocNum" IS NULL AND A."validFor" = 'Y' AND (A."CardType" = 'C' OR A."CardType" = 'L') AND A."OrdersBal" = 0 ${ filter ? `AND ${filter.field} ${filter.operator} ${filter.value}` : "" }`;
             console.log(query)
             const result = await this.sl.querySAP(query, true);
             return result.data;
@@ -48,6 +48,19 @@ export class SapServices {
             throw new HttpError(err.statusCode ?? 500, "Erro ao pegar clientes sem ordens: " + err.message);
         }
     }
+
+    public async getDeactivationDataFromClients(clients: string[]) {
+        try {
+            const cardCodesString = clients.join("','");
+        
+            const query = `SELECT A."CardCode" FROM "SBO_COPAPEL_PRD"."OCRD" A WHERE (A."CardType" = 'C' OR A."CardType" = 'L') AND A."CardCode" IN ('${cardCodesString}')`;
+            console.log(query);
+            const result = await this.sl.querySAP(query, true);
+            return result.data;    
+        } catch(err: any) {
+            throw new HttpError(err.statusCode ?? 500, "Erro ao pegar data de desativacao dos clientes: " + err.message);
+        }
+}
 
     public async getDataFromQuotation(DocNum: number, fields: interfaces.Field[]): Promise<any> {
         let query;
@@ -234,6 +247,16 @@ export class SapServices {
             return response;
         } catch(err: any) {
             throw new HttpError(500, "Erro ao desativar vendedor: " + err.message);
+        }   
+    }
+
+    public async activateClient(CardCode: string) {
+        try {
+            const data = { Valid: "tYES", Frozen: "tNO" }
+            const response = await this.sl.patch('BusinessPartners', CardCode, data);
+            return response;
+        } catch(err: any) {
+            throw new HttpError(500, "Erro ao ativar vendedor: " + err.message);
         }   
     }
 

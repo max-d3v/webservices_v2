@@ -54,6 +54,10 @@ class Routes {
             this.serviceRunner(() => this.SapHandler.DeactivateVendors(req.params.type), req, res, next)
         });
 
+        this.router.patch("/BusinessPartners/Activate/:type", (req:  Request, res: Response, next: NextFunction) => {
+            this.serviceRunner(() => this.SapHandler.ActivateVendors(req.params.type), req, res, next)
+        });
+
         this.router.post("/Activities/Deactivate/Vendor/:userId", (req:  Request, res: Response, next: NextFunction) => {
             this.serviceRunner(() => this.SapHandler.deactiveTickets("Vendor", req.params.userId), req, res, next);
         })
@@ -85,7 +89,8 @@ class Routes {
         this.router.get("/BuscarCnpjTodosFornecedores", (req:  Request, res: Response, next: NextFunction) => {
             this.serviceRunner(() => this.SapHandler.getAllFornecedoresCnpjClear(), req, res, next);
         })
-        this.router.get("/getMysqlSapClients", (req: Request, res: Response, next: NextFunction) => {
+        this.router.get("/getMysqlSapClients/asdasd", (req: Request, res: Response, next: NextFunction) => {
+            console.log(req);
             this.serviceRunner(() => this.SapHandler.getMysqlSapClients(), req, res, next);
         })
 

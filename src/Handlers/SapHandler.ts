@@ -76,6 +76,7 @@ export class SapHandler {
     }
 
     public async getMysqlSapClients(): Promise<any> {
+        return [];
         return this.BusinessPartnersController.getMysqlSapClients();
     }
 
@@ -84,6 +85,13 @@ export class SapHandler {
             throw new HttpError(400, "Invalid type given")
         }
         return this.BusinessPartnersController.DeactivateChosenClients(type);
+    }
+
+    public async ActivateVendors(type: string | null | undefined | number): Promise<any> {
+        if (typeof type !== "string") {
+            throw new HttpError(400, "Invalid type given")
+        }
+        return this.BusinessPartnersController.ActivateChosenClients(type);
     }
 
     //Activities

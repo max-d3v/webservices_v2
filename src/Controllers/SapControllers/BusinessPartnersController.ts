@@ -229,11 +229,6 @@ export class BusinessPartnersController {
         return clients;
     }
 
-    private async getSelectedClients() {
-        const clients = this.dataBaseServices
-
-
-    }
 
     private async getInactivatedClientsSAP(): Promise<string[]> {
         try {
@@ -628,8 +623,15 @@ export class BusinessPartnersController {
 
         console.log(`Starting Deactivation process with ${clients.length} clients!`);
 
-
         return await this.DeactivateClients(clients, type)
+    }
+
+    public async ActivateChosenClients(type: string) {
+        const clients = await this.getClients(type);
+
+        console.log(`Starting Activation process with ${clients.length} clients!`);
+
+        return await this.ActivateClients(clients, type)
     }
 
     private async getClients(type: string): Promise<interfaces.DeactivationClientsData[]> {
@@ -657,7 +659,100 @@ export class BusinessPartnersController {
                 const filter = { field: 'A."CreateDate"', operator: "<", value: "'2024-05-01'"}
                 clients = await this.sapServices.getClientsWithNoOrders(filter);
                 clients = clients.filter((client) => !filteredClients.includes(client.CardCode))
-            } else {
+            } else if (type == "ReactivationClients") {
+                const clientsSelected = [
+                    "C045006",
+                    "C040108",
+                    "C039083",
+                    "C038683",
+                    "C017435",
+                    "C035734",
+                    "C040871",
+                    "C005305",
+                    "C032355",
+                    "C017431",
+                    "C035890",
+                    "C045160",
+                    "C020222",
+                    "C002489",
+                    "C037955",
+                    "C042335",
+                    "C024284",
+                    "C016666",
+                    "C014871",
+                    "C032751",
+                    "C008144",
+                    "C031299",
+                    "C038120",
+                    "C021386",
+                    "C001258",
+                    "C006540",
+                    "C042933",
+                    "L07000140",
+                    "C000176",
+                    "C002436",
+                    "C027955",
+                    "C034649",
+                    "C018096",
+                    "C021664",
+                    "L06000058",
+                    "C033722",
+                    "C021072",
+                    "C044603",
+                    "C037445",
+                    "C033429",
+                    "C025502",
+                    "C026020",
+                    "C033004",
+                    "C044364",
+                    "C035611",
+                    "L07000644",
+                    "C043225",
+                    "C034260",
+                    "C020905",
+                    "C028291",
+                    "C034146",
+                    "C029855",
+                    "C035891",
+                    "C031908",
+                    "C032644",
+                    "C029341",
+                    "C041487",
+                    "C019599",
+                    "C007034",
+                    "C031220",
+                    "C041152",
+                    "C012610",
+                    "C037852",
+                    "C007573",
+                    "C041089",
+                    "C029596",
+                    "C036281",
+                    "C009207",
+                    "C013521",
+                    "C007821",
+                    "L07003825",
+                    "L07003128",
+                    "C036127",
+                    "L07003900",
+                    "C010736",
+                    "C039451",
+                    "C005633",
+                    "C025006",
+                    "C006947",
+                    "C037738",
+                    "C037438",
+                    "C037218",
+                    "C008301",
+                    "C017972",
+                    "C018550",
+                    "C043846",
+                    "C022246",
+                    "C027674"
+                ];
+                clients = await this.sapServices.getDeactivationDataFromClients(clientsSelected);
+            } 
+            else {
                 clients = []
             }
     
@@ -695,6 +790,50 @@ export class BusinessPartnersController {
             return response;
         } catch(err: any) {
             throw new HttpError(err.statusCode ?? 500, "Erro ao Desativar vendedores: " + err.message)
+        }
+    }
+
+    public async ActivateClients(clients: interfaces.DeactivationClientsData[], type: string) {
+        try {
+            const deactivatedClients: interfaces.CardCode[] = [];
+            const errorClients: interfaces.CardCode[] = [];
+
+
+
+
+            const BATCH_SIZE = 200;
+            const maxIterations = Math.ceil(clients.length / BATCH_SIZE);
+            for (let iteration = 0; iteration < maxIterations; iteration++) {
+                console.log(`Starting iteration ${iteration}, of ${BATCH_SIZE} clients - total iterations: ${maxIterations}`);
+
+                const firstPosition = iteration * BATCH_SIZE;
+                console.log(`Vai pegar os clientes do index ${firstPosition} ao ${firstPosition + BATCH_SIZE}`);
+
+                const batch = clients.slice(firstPosition, firstPosition + BATCH_SIZE) as interfaces.DeactivationClientsData[];
+
+                await Promise.all(batch.map( async (vendor: interfaces.DeactivationClientsData) => { await this.ActivateProcess(vendor, deactivatedClients, errorClients, type) }) );
+            }
+
+            console.log(deactivatedClients)
+            console.log(errorClients)
+
+            const response = helperFunctions.handleMultipleProcessesResult(errorClients, deactivatedClients);
+            return response;
+        } catch(err: any) {
+            throw new HttpError(err.statusCode ?? 500, "Erro ao Desativar vendedores: " + err.message)
+        }
+    }
+
+    private async ActivateProcess(vendor: interfaces.DeactivationClientsData, processedVendors: interfaces.CardCode[] , errorClients: interfaces.CardCode[], type: string) {
+        try {
+            await this.ActivateClient(vendor.CardCode);
+            
+        
+            console.log(`Activated client ${vendor.CardCode} successfully`)
+            processedVendors.push(vendor)
+        } catch(err: any) {
+            console.log("Error when activating")
+            errorClients.push(vendor)
         }
     }
 
@@ -736,6 +875,13 @@ export class BusinessPartnersController {
             await this.sapServices.deactivateClient(CardCode)
         } catch(err: any) {
             throw new HttpError(err.statusCode ?? 500, "Erro ao desativar cliente: " + err.message);
+        }
+    }
+    private async ActivateClient(CardCode: string) {
+        try {
+            await this.sapServices.activateClient(CardCode)
+        } catch(err: any) {
+            throw new HttpError(err.statusCode ?? 500, "Erro ao ativar cliente: " + err.message);
         }
     }
 }
