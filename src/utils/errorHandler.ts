@@ -12,7 +12,7 @@ export class HttpError extends Error {
     }
   }
   export const ErrorHandling = (
-    err: unknown,
+    err: any,
     req: Request,
     res: Response,
     next: NextFunction
@@ -32,14 +32,12 @@ export class HttpError extends Error {
   
     if (err instanceof Error) {
       return res.status(500).json({
-        error: process.env.NODE_ENV === 'prd' 
-          ? 'An unexpected error occurred'
-          : err.message
+        error: err.message
       });
     }
   
     return res.status(500).json({
-      error: 'An unexpected error occurred'
+      error: err?.message 
     });
   };
 
