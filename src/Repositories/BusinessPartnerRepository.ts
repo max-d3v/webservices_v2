@@ -60,10 +60,6 @@ export class SapB1BusinessPartnerRepository implements ISapRepository<BusinessPa
     }
   }
 
-  returnEntities(businessPartners: Array<Partial<BusinessPartner>>): Array<Partial<BusinessPartner>> {
-    return businessPartners;
-  }
-
   async createInBatches<OriginData>(creatorFunction: (params: OriginData) => Promise<BusinessPartner>, originData: OriginData[]) {
     const results: (SapClientTypes.SapClientError | SapClientTypes.ActionResponse<BusinessPartner>)[] = [];
 

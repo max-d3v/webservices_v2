@@ -29,11 +29,11 @@ export class BusinessPartnerServices implements SapEntityServices<BusinessPartne
   async processEntities(QueryParams: utils.QueryParams<BusinessPartner>, processingFunction: (params: Partial<BusinessPartner>) => Promise<Partial<BusinessPartner>>) {
     const BusinessPartners = await this.Repository.findMany(QueryParams);
     return await this.Repository.updateInBatches(BusinessPartners, processingFunction);
-  }
+  }   
 
   async retrieveEntities(QueryParams: utils.QueryParams<BusinessPartner>): Promise<Array<Partial<BusinessPartner>>> {
     const BusinessPartners = await this.Repository.findMany(QueryParams);
-    return this.Repository.returnEntities(BusinessPartners);
+    return BusinessPartners
   }
 
   async Deactivate(BusinessPartner: Partial<BusinessPartner>): Promise<Partial<BusinessPartner>> {
