@@ -1,3 +1,0 @@
-Segundo, Colocar um logger correto
-
-Terceiro, toda resposta errada pro usuario tem que disparar um aviso pra ti e deixar esses num banco

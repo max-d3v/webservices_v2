@@ -21,7 +21,6 @@ class DeployPortainer {
     private token: string;
     
     constructor() {
-        //.
         dotenv.config({ path: '.env.deploy' });
         this.portainerUrl = process.env.PORTAINER_URL;
         this.dockerAuth = process.env.DOCKER_AUTH;
