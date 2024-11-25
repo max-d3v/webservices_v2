@@ -35,7 +35,7 @@ class Routes {
             this.serviceRunner(() => this.FiscalDataHandler.getCompanyByTaxId(req.params.taxid), req, res, next);
         })
     }
-
+//
     private SapRoutes() {
         this.router.patch("/BusinessPartners/SupplierData/:type", (req:  Request, res: Response, next: NextFunction) => {
             this.serviceRunner(() => this.SapHandler.AtualizaCadastroFornecedores(req.params.type), req, res, next)
