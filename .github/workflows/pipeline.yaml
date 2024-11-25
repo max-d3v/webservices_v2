@@ -3,8 +3,7 @@ name: Build and Deploy webservices
 on:
   push:
     branches:
-      - development
-      - main
+      - legacy
 
 jobs:
 
