@@ -3,8 +3,7 @@ name: Build and Deploy webservices
 on:
   push:
     branches:
-      - development
-      - main
+      - legacy
 
 jobs:
 
@@ -14,14 +13,6 @@ jobs:
     steps:
     - name: Check out the repository
       uses: actions/checkout@v4
-
-    - name: echo files
-      run: |
-        cd src/Controllers
-        ls -la
-        cd ../services
-        ls -la
-
 
     - name: Get secrets
       run: |
@@ -33,10 +24,6 @@ jobs:
         openssl enc -aes-256-cbc -d -in src/models/data/encrypted_cnpj_data/cnpj_clientes.bin -out src/models/data/cnpj_data_clientes_full.json -k ${{ secrets.DECRYPTION_KEY }}
         openssl enc -aes-256-cbc -d -in src/models/data/encrypted_cnpj_data/cnpj_fornecedores.bin -out src/models/data/cnpj_data_fornecedores_full.json -k ${{ secrets.DECRYPTION_KEY }}
 
-
-    - name: Echo files
-      run: |
-        ls -la
 
     - name: Login into docker
       uses: docker/login-action@v3.2.0
