@@ -147,6 +147,15 @@ export class ActivitiesController {
         } else if (type == "OldTickets") {
             const date = new Date(new Date().getFullYear(), 9, 17);
             tickets = await this.SapServices.getOpenTicketsFromBefore(date);
+        } else if (type == "Pending") {
+            if (userId == null) {
+                throw new HttpError(400, "Id de usuario não recebido ao procurar por pendentes")
+            }
+            const parsedUserId = parseInt(userId);
+            if (isNaN(parsedUserId)) {
+                throw new HttpError(400, 'Id de usuário inválido');
+            }
+            tickets = await this.SapServices.getPendingTicketsFromVendor(parsedUserId);
         }
 
 

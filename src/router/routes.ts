@@ -42,6 +42,7 @@ class Routes {
         });
 
 
+
         this.router.patch("/BusinessPartners/FiscalData/:entityType", (req:  Request, res: Response, next: NextFunction) => {
             this.serviceRunner(() => this.SapHandler.updateClientsRegistrationData(req.params.entityType), req, res, next)
         })
@@ -73,6 +74,10 @@ class Routes {
             this.serviceRunner(() => this.SapHandler.changeTicketsOwnerShipFromRegion(req.body.region, req.body.destinyUserId), req, res, next);
         })
 
+        this.router.patch("/Activities/DeactivatePending/:userId", (req:  Request, res: Response, next: NextFunction) => {
+            this.serviceRunner(() => this.SapHandler.deactivatePendingTickets(req.params.userId), req, res, next);
+        })
+
         this.router.patch("/Opportunities/ChangeOwnership", (req:  Request, res: Response, next: NextFunction) => {
             this.serviceRunner(() => this.SapHandler.changeOpportunitiesOwnerShip(req.body.OriginSlpCode, req.body.DestinySlpCode), req, res, next);
         })
@@ -94,6 +99,17 @@ class Routes {
             this.serviceRunner(() => this.SapHandler.getMysqlSapClients(), req, res, next);
         })
 
+        //Testing purposes
+        this.router.get("/stale", () => {
+            this.stale();
+        })
+
+    }
+
+    stale() {
+        for (let i = 100000000000000000000; i > 0; i--) {
+            console.log(i);
+        }
     }
     
 

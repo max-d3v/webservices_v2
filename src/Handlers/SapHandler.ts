@@ -106,6 +106,13 @@ export class SapHandler {
         return this.ActivitiesController.deactiveTickets(type, userId);
     }
 
+    public async deactivatePendingTickets(userId: string | null | undefined): Promise<any> {
+        if (typeof userId !== "string") {
+            throw new HttpError(400, "Invalid Id given")
+        }
+        return this.ActivitiesController.deactiveTickets("Pending", userId);
+    }
+
     public async changeTicketsOwnerShip(originUserId: string | null | undefined | number, destinyUserId: string | null | undefined| number): Promise<any> {
         if (typeof originUserId !== "string" || typeof destinyUserId !== "string") {
             throw new HttpError(400, "Invalid Ids given")
