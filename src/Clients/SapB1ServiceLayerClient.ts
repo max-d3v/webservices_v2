@@ -49,7 +49,7 @@ export class SapB1ServiceLayerClient {
     private readonly SESSION_REFRESH_INTERVAL = 20 * 60 * 1000; // 20 minutes
     private readonly MAX_RETRIES = 2;
 
-    private constructor() {
+    constructor() {
         this.config = this.loadConfig();
         this.axios = this.createAxiosInstance();
         this.initialize();
@@ -131,6 +131,7 @@ export class SapB1ServiceLayerClient {
                 `${this.config.serviceLayers.url}:${this.config.serviceLayers.port}/b1s/v1/Login`,
                 credentials
             );
+            console.log(`Logged into SL at: ${new Date().toLocaleDateString('pt-BR')}`);
             this.sessionId = response.data.SessionId;
             this.axios.defaults.headers.common['Cookie'] = `B1SESSION=${this.sessionId}; ROUTEID=.node3`;
         } catch (error: any) {
@@ -138,7 +139,7 @@ export class SapB1ServiceLayerClient {
         }
     }
 
-    private startSessionMaintenance(): void {
+    startSessionMaintenance(): void {
         if (this.loginInterval) {
             clearInterval(this.loginInterval);
         }

@@ -12,7 +12,7 @@ export class SapB1ServiceLayerServices {
     private readonly queryBuilder: SapQueryBuilderClient;
 
     private constructor() {
-        this.serviceLayer = SapB1ServiceLayerClient.getInstance();
+        this.serviceLayer = new SapB1ServiceLayerClient();
         this.translator = new SapB1FieldTranslator();
         this.queryBuilder = new SapQueryBuilderClient();
     }

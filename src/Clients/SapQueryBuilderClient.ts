@@ -140,7 +140,7 @@ export class SapQueryBuilderClient {
         case '\\':
           return '\\\\';
         case '%':
-          return '\\%';
+          return '%';
         default:
           return char;
       }

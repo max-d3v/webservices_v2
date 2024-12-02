@@ -3,6 +3,7 @@
 export enum SapB1FieldTranslations {
     Free_Text = 'FreeText',
     CardCode = "CardCode",
+    CardName = 'CardName',
     TaxId0 = "TaxId0",
     GroupCode = "GroupCode",
     validFor = "Valid"
