@@ -6,11 +6,7 @@ import * as utils from '../interfaces/utils';
 
 export class BusinessPartnerServices implements SapEntityServices<BusinessPartner> {
   public static instance: BusinessPartnerServices;
-  private Repository: SapB1BusinessPartnerRepository;
-
-  constructor() {
-    this.Repository = SapB1BusinessPartnerRepository.getInstance();
-  }
+  constructor() {}
 
   public static getInstance(): BusinessPartnerServices {
     if (!BusinessPartnerServices.instance) {
@@ -19,25 +15,23 @@ export class BusinessPartnerServices implements SapEntityServices<BusinessPartne
     return BusinessPartnerServices.instance;
   }
 
-
-  async createEntities() {
-    //Origins of data:
-    //Databases, webservices, csv, etc.
-
+  getProcessingFunction(action: string | undefined): (params: Partial<BusinessPartner>) => Promise<Partial<BusinessPartner>> {
+    if (!action) {
+      throw new HttpError(400, "No action was given.")
+    }
+    switch (action) {
+      case "Deactivate":
+          return this.Deactivate;
+      case "FiscalDataMock":
+          return this.FiscalDataMock;
+        default:
+        throw new HttpError(400, "Action was not implemented yet.")
+    }
   }
 
-  async processEntities(QueryParams: utils.QueryParams<BusinessPartner>, processingFunction: (params: Partial<BusinessPartner>) => Promise<Partial<BusinessPartner>>) {
-    const BusinessPartners = await this.Repository.findMany(QueryParams);
-    return await this.Repository.updateInBatches(BusinessPartners, processingFunction);
-  }   
-
-  async retrieveEntities(QueryParams: utils.QueryParams<BusinessPartner>): Promise<Array<Partial<BusinessPartner>>> {
-    const BusinessPartners = await this.Repository.findMany(QueryParams);
-    return BusinessPartners
-  }
 
   async Deactivate(BusinessPartner: Partial<BusinessPartner>): Promise<Partial<BusinessPartner>> {
-    const requiredFields: (keyof BusinessPartner)[] = ["GroupCode"];
+    const requiredFields: (keyof BusinessPartner)[] = [];
     this.validateRequiredFieldsForService(requiredFields, BusinessPartner)
 
     const data = {
@@ -62,37 +56,36 @@ export class BusinessPartnerServices implements SapEntityServices<BusinessPartne
   }
 
 
-
-  getProcessingFunction(action: string | undefined): (params: Partial<BusinessPartner>) => Promise<Partial<BusinessPartner>> {
-    if (!action) {
-      throw new HttpError(400, "No action was given.")
-    }
-    switch (action) {
-      case "Deactivate":
-          return this.Deactivate;
-      case "FiscalDataMock":
-          return this.FiscalDataMock;
-        default:
-        throw new HttpError(400, "Action was not implemented yet.")
-    }
-  }
-
   businessPartnerTypes(Type: string): { selects: string[], filters: Array<utils.FilterRequest>, tables: string[], limit: number | undefined } {
     let selects: string[] = [];
     let filters: utils.FilterRequest[] = [];
     let tables: string[] = ["OCRD"];
     let limit: number | undefined = 100;
 
+    let filter: utils.FilterRequest | null = null;
 
     switch (Type) {
       case "oldInactiveClients":
-        const filter: utils.FilterRequest = {
+        filter = {
           field: "Valid",
           operator: "=",
           value: ["tNO"],
           conjunction: "and"
         }
         filters.push(filter);
+        break;
+      case "testClients":
+        filter = {
+          field: "CardName",
+          operator: "LIKE",
+          value: ["%C%"],
+          conjunction: "and",
+        }
+        limit = 500;
+        filters.push(filter);
+        selects.push("CardName");
+        selects.push("CardCode");
+
         break;
       default:
         throw new HttpError(400, "Type of business partner not implemented.")

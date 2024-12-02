@@ -1,24 +1,28 @@
+import { SapB1BusinessPartnerRepository } from "../Repositories/BusinessPartnerRepository";
 import { BusinessPartnerServices } from "../Services/BusinessPartnerServices";
 import { HttpError } from "../utils/errorHandler";
 import { Request } from "express";
 import { BusinessPartner } from "../Models/BusinessPartner";
 import { BusinessPartnerProperties } from "../Models/BusinessPartner";
+import { Operators } from "../interfaces/utils";
+
 import * as utils from "../interfaces/utils";
 import * as helper from '../utils/helperFunctions';
 import * as SapClientTypes from '../interfaces/SapB1Client';
-import { Operators } from "../interfaces/utils";
 
 
 export class BusinessPartnerController {
+  private SapB1BusinessPartnerRepository: SapB1BusinessPartnerRepository;
   private BusinessPartnerServices: BusinessPartnerServices;
 
   constructor() {
     this.BusinessPartnerServices = new BusinessPartnerServices();
+    this.SapB1BusinessPartnerRepository = new SapB1BusinessPartnerRepository();
   }
 
   async RequestHandler(req: Request) {
     const { method, url, body } = req;
-    if (method === utils.HttpMethods.GET) {
+    if (method === utils.HttpMethods.GET) {  
       return await this.handleGetRequest(url, body);
     } else {
       return await this.handleActionRequest(url, body, method);
@@ -34,7 +38,7 @@ export class BusinessPartnerController {
     const QueryParams = { selects, filters, tables, limit };
     const validatedParams = this.validateQueryParams(QueryParams);
 
-    const results = await this.BusinessPartnerServices.retrieveEntities(validatedParams);
+    const results = await this.SapB1BusinessPartnerRepository.retrieveEntities(validatedParams);
     return results;
   }
 
@@ -48,12 +52,10 @@ export class BusinessPartnerController {
     const QueryParams = { selects, filters, tables, limit };
     const validatedParams = this.validateQueryParams(QueryParams);
 
-    const results = await this.BusinessPartnerServices.processEntities(validatedParams, processingFunction);
+    const results = await this.SapB1BusinessPartnerRepository.processEntities(validatedParams, processingFunction);
     const ActionReturn: any = this.handleActionResults(results);
     return ActionReturn;
   }
-
-
 
   defineQueryParams(Type: string | undefined, Body: any): utils.QueryParamsRequest {
     let QueryParams: utils.QueryParamsRequest = {

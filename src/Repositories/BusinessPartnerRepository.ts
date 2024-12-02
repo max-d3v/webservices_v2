@@ -1,8 +1,7 @@
 import { SapB1ServiceLayerServices } from "../Services/SapB1ServiceLayerServices";
 import { BusinessPartner } from "../Models/BusinessPartner";
-import { BusinessPartnerServices } from "../Services/BusinessPartnerServices";
 import { ISapRepository } from "../interfaces/ISapRepository";
-import { HttpError } from "../utils/errorHandler";
+import { BusinessPartnerServices } from "../Services/BusinessPartnerServices";
 import * as utils from '../interfaces/utils';
 import * as SapClientTypes from '../interfaces/SapB1Client';
 
@@ -12,7 +11,7 @@ export class SapB1BusinessPartnerRepository implements ISapRepository<BusinessPa
   private SapClient: SapB1ServiceLayerServices;
   private BusinessPartnerServices: BusinessPartnerServices;
 
-  constructor() {
+  constructor( ) {
     this.BusinessPartnerServices = BusinessPartnerServices.getInstance();
     this.SapClient = SapB1ServiceLayerServices.getInstance();
   }
@@ -36,14 +35,14 @@ export class SapB1BusinessPartnerRepository implements ISapRepository<BusinessPa
 
   async createOne<OriginData>(originData: OriginData, creatorFunction: (params: OriginData) => Promise<BusinessPartner>): Promise<SapClientTypes.ActionResponse<BusinessPartner> | SapClientTypes.SapClientError> {
     try {
-      const boundFunction = creatorFunction.bind(this.BusinessPartnerServices);
-      const data = await boundFunction(originData);
+      const data = await creatorFunction(originData);
 
       return await this.SapClient.createEntity<BusinessPartner>("BusinessPartners", data);
     } catch(err: unknown) {
       return this.handleError(err);
     }
   }
+  
 
   //This is expected that some fail. (All of SAP rules are not implemented for each individual update :)) )
   async updateOne(BusinessPartner: Partial<BusinessPartner>, processingFunction: (params: Partial<BusinessPartner>) => Promise<Partial<BusinessPartner>>): Promise<SapClientTypes.ActionResponse<BusinessPartner> | SapClientTypes.SapClientError> {
@@ -51,8 +50,8 @@ export class SapB1BusinessPartnerRepository implements ISapRepository<BusinessPa
       const identifier = BusinessPartner.CardCode!
       console.log(`Starting update process of business partner: ${identifier}`);
 
-      const boundFunction = processingFunction.bind(this.BusinessPartnerServices);
-      const data = await boundFunction(BusinessPartner);
+      const service = processingFunction.bind(this.BusinessPartnerServices);
+      const data = await service(BusinessPartner);
 
       return (await this.SapClient.updateEntity<BusinessPartner>("BusinessPartners", identifier, data));
     } catch (err: SapClientTypes.SapClientError | unknown) {
@@ -64,7 +63,7 @@ export class SapB1BusinessPartnerRepository implements ISapRepository<BusinessPa
     const results: (SapClientTypes.SapClientError | SapClientTypes.ActionResponse<BusinessPartner>)[] = [];
 
     // Processamento em lotes com controle de concorrência
-    for (const chunk of this.chunkArray(originData, 50)) {
+    for (const chunk of this.chunkArray(originData, 100)) {
       const batchResults = await Promise.all(
         chunk.map(async originDataObject => await this.createOne(originDataObject, creatorFunction))
       );
@@ -84,6 +83,22 @@ export class SapB1BusinessPartnerRepository implements ISapRepository<BusinessPa
       results.push(...batchResults);
     }
     return results;
+  }
+
+  async createEntities() {
+    //Origins of data:
+    //Databases, webservices, csv, etc.
+
+  }
+
+  async processEntities(QueryParams: utils.QueryParams<BusinessPartner>, processingFunction: (params: Partial<BusinessPartner>) => Promise<Partial<BusinessPartner>>) {
+    const BusinessPartners = await this.findMany(QueryParams);
+    return await this.updateInBatches(BusinessPartners, processingFunction);
+  }   
+
+  async retrieveEntities(QueryParams: utils.QueryParams<BusinessPartner>): Promise<Array<Partial<BusinessPartner>>> {
+    const BusinessPartners = await this.findMany(QueryParams);
+    return BusinessPartners
   }
 
   private chunkArray<T>(array: T[], size: number): T[][] {
