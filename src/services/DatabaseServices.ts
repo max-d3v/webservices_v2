@@ -29,6 +29,31 @@ export class DatabaseServices {
         return DatabaseServices.instance;
     }
 
+    public async getFilaQuotations() {
+        try {
+            const quotations = await this.prisma.fila_cotacoes.findMany({
+                where: { Status: "Pendente" }
+            });
+            return quotations;
+        } catch(err: any) {
+            throw new HttpError(err.statusCode ?? 500, "Error when retrieving quotations: " + err.message);
+        }
+    }
+
+    
+    public async atualizaFilaCotacoes(id: number, data: Partial<Omit<PrismaTypes.fila_cotacoes, "id" | "timestamp">>) {
+        try {
+            const quotation = await this.prisma.fila_cotacoes.update({
+                where: { id: id },
+                data: data
+            });
+            return quotation;
+        } catch (err: any) {
+            throw new HttpError(500, 'Erro ao atualizar fila de cotações: ' + err.message);
+        }
+
+    }
+
     public async getUnprocessedSuppliers() {
         try {
             const suppliers = await this.prisma.fornecedores_cadastro_geral_log.findMany({
@@ -72,20 +97,15 @@ export class DatabaseServices {
 
     public async getOldCarts(daysOfAge: number): Promise<Map<string, interfaces.Cart>> {
         try {
-            //Vai pegar todos os clientes que tenham um produto a no minimo 2 dias no carrinho, dai vai procurar o carrinho inteiro do cara e
-            //so vai manter se ele tiver um a no minimo 7 dias mesmo.  
-            const xDaysAgo = new Date();
-            xDaysAgo.setDate(xDaysAgo.getDate() - 2);
-            const xDaysAgoIsoDate = xDaysAgo.toISOString().split("T")[0];
-
-            
-            const query: any = `SELECT * FROM carrinho WHERE data <= '${xDaysAgoIsoDate}' AND QuotationCreated <> 'S' AND id_usuario = 'C029169'`;
+            //Vai pegar todos os clientes que tenham um produto no carrinho, dai vai so vai manter se ele tiver um a no minimo 7 dias mesmo.  
+                        
+            const query: any = `SELECT * FROM carrinho WHERE QuotationCreated <> 'S' AND id_usuario = 'C037465' ORDER BY data LIMIT 1`;
 
             const items: any = await this.MeuspedidosDatabase.query(query);
     
             const carts = this.GroupItemsByClient(items);
 
-            this.removeClientsWithNoMinimumDate(carts, daysOfAge);
+            this.removeClientsWithNoMinimumDate(carts, 0);
 
             return carts
         } catch(err: any) {

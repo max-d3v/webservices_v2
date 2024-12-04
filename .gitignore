@@ -10,6 +10,7 @@ ideas.txt
 
 src/models/data/cnpj_*
 
+cpu_profiles/*
 sensitive_data/
 
 info.log

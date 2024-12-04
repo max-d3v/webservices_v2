@@ -66,8 +66,12 @@ export class SapServices {
         let query;
         try {
             const query = `SELECT ${fields.map(field => field.field).join(', ')} FROM "SBO_COPAPEL_PRD".OQUT A INNER JOIN "SBO_COPAPEL_PRD".OCRD B ON A."CardCode" = B."CardCode" INNER JOIN "SBO_COPAPEL_PRD".OAGP C ON B."AgentCode" = C."AgentCode" INNER JOIN "SBO_COPAPEL_PRD".OUSR D ON C."UserSign" = D."userSign" INNER JOIN "SBO_COPAPEL_PRD".OHEM E ON D."USERID" = E."userId" WHERE A."DocNum" = ${DocNum} AND E."Active" = 'Y'`;
-            const result = await this.sl.querySAP(query);
-    
+            //console.log(query);
+            const result = await this.sl.querySAP(query, true);
+
+            console.log(result);
+            console.log(result.data[0]);
+
             return result.data[0] || []
         } catch(err: any) {
             console.log(`Query with error: ${query}`);

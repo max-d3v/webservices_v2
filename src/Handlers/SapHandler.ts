@@ -67,6 +67,11 @@ export class SapHandler {
         }
         return this.BusinessPartnersController.updateClientsRegistrationData(entityType, CardCode);
     }
+
+    public async TransformApprovedQuotationsIntoOrders() {
+        return this.QuotationsController.TransformApprovedQuotationsIntoOrders();
+    }
+
     public async getAllClientsCnpjClear(): Promise<string> {
         return this.BusinessPartnersController.getAllClientsCnpjClear();
     }

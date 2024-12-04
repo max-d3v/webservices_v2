@@ -3,6 +3,8 @@ import { ErrorHandling } from "./utils/errorHandler";
 import { authMiddleware } from "./middlewares/auth";
 import { SapHandler } from "./Handlers/SapHandler";
 import { FiscalDataHandler } from "./Handlers/FiscalDataHandler";
+import { Session } from 'node:inspector/promises';
+import { writeFile } from "node:fs/promises";
 import routerClass from "./router/routes";
 import http from "http";
 
@@ -25,8 +27,8 @@ export class Server {
     this.server = null;
     this.app = express();
     this.PORT = parseInt(process.env.PORT as string);
-    this.SapHandler = null;
-    this.FiscalDataInstance = null;
+    this.SapHandler = new SapHandler();
+    this.FiscalDataInstance = new FiscalDataHandler();
   }
 
   public static getInstance(): Server {
@@ -35,6 +37,30 @@ export class Server {
     }
     return Server.instance;
 }
+
+  private cpuProfiling() {
+    let _session: Session;
+    return {
+      async start() {
+        _session = new Session();
+        _session.connect();
+
+        await _session.post("Profiler.enable");
+        await _session.post("Profiler.start");
+      },
+
+      async stop() {
+        const { profile } = await _session.post("Profiler.stop");
+        console.log(profile)
+        _session.disconnect();
+        
+        const profileName = `cpu_profiles/profile-${Date.now()}.cpuprofile`;
+        await writeFile(profileName, JSON.stringify(profile));
+        
+        return profile;
+      }
+    }
+  }
 
   private async getHandlers() {
     this.SapHandler = SapHandler.getInstance();
@@ -67,8 +93,25 @@ export class Server {
     this.app.use("/webservices", routes);
   }
 
+  private startCpuProfiling() {
+    const { start, stop } = this.cpuProfiling();
+    console.log(`Started CPU profiling`);
+    start();
+
+    const exitSignals = ["SIGINT", "SIGTERM", "SIGUSR2"];
+    exitSignals.forEach(signal => {
+      process.on(signal, async () => {
+        await stop();
+        console.log(`Stopped cpu profile`);
+        process.exit(0);
+      });
+    })
+
+  } 
 
   public async start() {
+    this.startCpuProfiling();
+
     this.applyMiddlewares();
     
     await this.getHandlers();

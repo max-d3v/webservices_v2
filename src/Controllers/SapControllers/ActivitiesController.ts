@@ -79,6 +79,7 @@ export class ActivitiesController {
 
             const FieldsWanted = [{ field: 'A."CardCode"' }, { field: 'D."USERID"' }];
             const { CardCode, USERID } = await this.SapServices.getDataFromQuotation(DocNum, FieldsWanted);
+            console.log(CardCode, USERID)
             if (!CardCode || !USERID || typeof CardCode !== "string" || typeof USERID !== "number") {
                 throw new HttpError(500, "No Valid CardCode or userId was found for Document.");
             }

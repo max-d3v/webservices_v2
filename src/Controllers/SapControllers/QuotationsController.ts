@@ -5,7 +5,7 @@ import * as helperFunctions from '../../utils/helperFunctions';
 import { HttpError } from "../../Server";
 import * as interfaces from '../../types/interfaces'
 import { ActivitiesController } from "./ActivitiesController";
-
+import axios from "axios";
 export class QuotationsController {
     public static instance: QuotationsController;
 
@@ -28,6 +28,84 @@ export class QuotationsController {
         }
         return QuotationsController.instance;
     }
+
+    public async TransformApprovedQuotationsIntoOrders() {
+        const processedQuotations = [];
+        const errorQuotations = [];
+
+        const quotations = await this.DataBaseServices.getFilaQuotations();
+
+        
+
+        if (quotations.length === 0) {
+            throw new HttpError(404, "Nenhuma cotação pendente!");
+        }
+
+        for (const quotation of quotations) {
+            try {
+                const { DocEntry, id } = quotation;
+                if (!DocEntry || DocEntry === "") {
+                    throw new HttpError(500, "No DocEntry was given in quotation data.");
+                }
+                const response = await this.TransformQuotationIntoOrder(DocEntry);
+                const { pedido, esboco, motivo_autorizacao } = response;
+                let tipo = 'desconhecido'
+                if (pedido) {
+                    tipo = "pedido";
+                    const { DocNum } = pedido;
+                    const data = {
+                        Status: "Sucesso",
+                        Info: `Pedido número ${DocNum} gerado`
+                    }
+                    await this.DataBaseServices.atualizaFilaCotacoes(id, data);
+                } else if (esboco) {
+                    tipo = "esboço";
+                    const { NumeroEsboco } = esboco;
+                    const data = {
+                        Status: "Sucesso",
+                        Info: `Esboco número ${NumeroEsboco} gerado, motivo: ${motivo_autorizacao}`
+                    }
+                    await this.DataBaseServices.atualizaFilaCotacoes(id, data);
+                }
+                processedQuotations.push({ DocEntry, tipo });
+            } catch (err: any) {
+                this.DataBaseServices.atualizaFilaCotacoes(quotation.id, { Status: "Erro", Info: err.message });
+                errorQuotations.push({ DocEntry: quotation.DocEntry, error: err.message });
+            }
+        }
+
+        const retorno = helperFunctions.handleMultipleProcessesResult(errorQuotations, processedQuotations);
+        return retorno;
+    }
+
+    public async TransformQuotationIntoOrder(DocEntry: string) {
+        const baseUrl = `https://lark-handy-horse.ngrok-free.app`;  
+        const url = `${baseUrl}/api/sap/transformarEmPedido/${DocEntry}`;
+        console.log(url);
+        try {
+            const response = await axios.post(url, null, {
+                headers: {
+                  "ngrok-skip-browser-warning": true
+                }
+            });
+
+            const { pedido, esboco, motivo_autorizacao } = response.data;
+
+            if (pedido) {
+                return pedido;
+            } else if (esboco) {
+                return {esboco, motivo_autorizacao};
+            } else {
+                throw new HttpError(500, "No order or draft data was given in API response")
+            }
+        } catch(err: any) {
+            const { error, details } = err.response.data;
+            if (error) {
+                throw new HttpError(500, `${error} ${details}`);
+            }
+            throw new HttpError(500, "Erro inesperado ao transformar cotação em pedido: " + err.message);
+        }
+    }
 //
     public async CreateQuotationsForOldEcommerceCarts(): Promise<[Array<interfaces.QuotationData | interfaces.DraftData>, any[]]> {
         const processedCarts: Array<interfaces.QuotationData | interfaces.DraftData>  = [];
@@ -37,14 +115,24 @@ export class QuotationsController {
         const cartAge = 7;
 
         const carts = await this.getOldCarts(cartAge)
+        const cartEntries = Array.from(carts.entries());
 
         console.log(`Starting quotations creation process with: ${carts.size} quotations.`)
 
-        await Promise.all(Array.from(carts.entries()).map(async ([key, cart]) =>{await this.processCart(key, cart, processedCarts, errorCarts)}));
+        
+        const BATCH_SIZE = 200;
+        const maxIterations = Math.ceil(carts.size / BATCH_SIZE);
+        for (let iteration = 0; iteration < maxIterations; iteration++) {
+            console.log(`Starting iteration ${iteration} of ${maxIterations}`)
+            const firstPosition = iteration * BATCH_SIZE;
+            const batch = cartEntries.slice(firstPosition, firstPosition + BATCH_SIZE);
+
+            await Promise.all(Array.from(batch).map(async ([key, cart]) =>{await this.processCart(key, cart, processedCarts, errorCarts)}));
+        }
 
         this.logCartsThatHadQuotationCreated(processedCarts);
 
-        return [processedCarts, errorCarts] 
+        return [processedCarts, errorCarts]
     }
 
     private async logCartsThatHadQuotationCreated(processedCarts: Array<interfaces.QuotationData | interfaces.DraftData>) {
@@ -61,7 +149,7 @@ export class QuotationsController {
             throw new HttpError(err.statusCode ?? 500, "Error when getting old carts for getting old carts: " + err.message);
         }
     }
-
+    
     private async processCart(CardCode: string, cart: interfaces.Cart, successCarts: Array<interfaces.QuotationData | interfaces.DraftData>, errorCarts: any[]) {
         try {
             const response = await this.createQuotation(CardCode, cart);
