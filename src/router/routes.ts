@@ -91,6 +91,10 @@ class Routes {
             this.serviceRunner(() => this.SapHandler.TransformApprovedQuotationsIntoOrders(), req, res, next);
         })
 
+        this.router.get("/Quotations/RejectQuotationsInLine", (req:  Request, res: Response, next: NextFunction) => {
+            this.serviceRunner(() => this.SapHandler.RejectQuotationsInLine(), req, res, next);
+        })
+
 
         this.router.get("/BuscarCnpjTodosClientes", (req:  Request, res: Response, next: NextFunction) => {
             this.serviceRunner(() => this.SapHandler.getAllClientsCnpjClear(), req, res, next);

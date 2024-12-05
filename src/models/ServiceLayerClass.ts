@@ -41,7 +41,7 @@ export default class SL {
     private slConfig: slConfig;
 
 
-    constructor() {
+    constructor(customCredentials?: Credentials) {
         this.slConfig = {
             serviceLayers: {
                 port: process.env.SERVICE_LAYER_PORT!, // Changed from SERVICE_LAYERS_PORT
@@ -71,6 +71,9 @@ export default class SL {
             Password: this.slConfig.serviceLayers.password!,
             CompanyDB: this.slConfig.serviceLayers.companyName!
         };
+        if (customCredentials) {
+            this.credentialsObj = customCredentials;
+        }
 
         this.config = {
             method: 'post',
@@ -229,10 +232,44 @@ export default class SL {
             }
 
             if (id !== undefined) {
-                configCopy.url += typeof id === 'number' ? `(${id})` : `('${id}')`;
+                configCopy.url += isNaN(parseInt(id as any)) ? `('${id}')` : `(${id})`;            
             }
 
             configCopy.method = 'patch';
+
+            console.log(configCopy.url)
+
+            const response = await axios.request(configCopy);
+            return { status: true, data: response.data };
+
+        } catch (err: any) {
+            const errorMessage = err.response.data.error?.message?.value || err.message;
+            let translatedErrorMessage = errorMessage;
+            try {
+                translatedErrorMessage = await this.translateErrorMessage(errorMessage);
+            } catch (err: any) {
+                throw new HttpError(500, 'Erro ao atualizar dados na SL: ' + errorMessage);
+            }
+            throw new HttpError(500, 'Erro ao atualizar dados na SL: ' + translatedErrorMessage);
+        }
+    }
+
+    async postWithMethod(tipo: string, id: string | number, endpoint: string): Promise<{ status: boolean; data?: any; message?: string }> {
+        try {
+            const configCopy = { ...this.config };
+            configCopy.url = `${this.host}:${this.port}/b1s/v1/${tipo}`;
+            delete configCopy.data;
+            
+
+            if (id !== undefined) {
+                configCopy.url += isNaN(parseInt(id as any)) ? `('${id}')` : `(${id})`;            
+                configCopy.url += `/${endpoint}`;
+            }
+
+            configCopy.method = 'post';
+
+
+            console.log(configCopy.url)
 
             const response = await axios.request(configCopy);
             return { status: true, data: response.data };

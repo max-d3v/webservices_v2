@@ -3216,3 +3216,12 @@ model sap_regioes {
   ISS              Decimal? @db.Decimal(10, 2)
   Ativo            String?  @db.VarChar(2)
 }
+
+model fila_cotacoes_recusa {
+  id                Int       @id @default(autoincrement())
+  timestamp         DateTime? @default(now()) @db.Timestamp(0)
+  Status            String?   @default("Pendente") @db.VarChar(50)
+  MotivoRecusaIndex String?   @db.VarChar(50)
+  DocEntry          String?   @db.VarChar(50)
+  Info              String?   @db.Text
+}

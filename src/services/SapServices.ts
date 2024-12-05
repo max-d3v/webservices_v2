@@ -118,6 +118,19 @@ export class SapServices {
         }
     }
 
+    public async rejectQuotation(DocEntry: string, MotivoIndexId: string, customLoggedSl: any) {
+        try {
+            const data = {
+                U_MotivoPerda: MotivoIndexId
+            }   
+            
+            await customLoggedSl.patch("Quotations", DocEntry, data),
+            await customLoggedSl.postWithMethod("Quotations", DocEntry, "Close")
+        } catch(err: any) {
+            throw new HttpError(500, "Erro ao rejeitar cotação: " + err.message);
+        }
+    } 
+
 
     public async getFornecedoresLeads(isoString: string, getUnprocessed: boolean = false): Promise<interfaces.Fornecedor[]> {
         try {

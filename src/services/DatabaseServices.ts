@@ -29,6 +29,17 @@ export class DatabaseServices {
         return DatabaseServices.instance;
     }
 
+    public async getFilaRecusaQuotations() {
+        try {
+            const quotations = await this.prisma.fila_cotacoes_recusa.findMany({
+                where: { Status: "Pendente" }
+            });
+            return quotations;
+        } catch(err: any) {
+            throw new HttpError(err.statusCode ?? 500, "Error when retrieving quotations: " + err.message);
+        }
+    }
+
     public async getFilaQuotations() {
         try {
             const quotations = await this.prisma.fila_cotacoes.findMany({
@@ -44,6 +55,19 @@ export class DatabaseServices {
     public async atualizaFilaCotacoes(id: number, data: Partial<Omit<PrismaTypes.fila_cotacoes, "id" | "timestamp">>) {
         try {
             const quotation = await this.prisma.fila_cotacoes.update({
+                where: { id: id },
+                data: data
+            });
+            return quotation;
+        } catch (err: any) {
+            throw new HttpError(500, 'Erro ao atualizar fila de cotações: ' + err.message);
+        }
+
+    }
+
+    public async atualizaFilaRecusaCotacoes(id: number, data: Partial<Omit<PrismaTypes.fila_cotacoes_recusa, "id" | "timestamp">>) {
+        try {
+            const quotation = await this.prisma.fila_cotacoes_recusa.update({
                 where: { id: id },
                 data: data
             });
@@ -99,7 +123,7 @@ export class DatabaseServices {
         try {
             //Vai pegar todos os clientes que tenham um produto no carrinho, dai vai so vai manter se ele tiver um a no minimo 7 dias mesmo.  
                         
-            const query: any = `SELECT * FROM carrinho WHERE QuotationCreated <> 'S' AND id_usuario = 'C037465' ORDER BY data LIMIT 1`;
+            const query: any = `SELECT * FROM carrinho WHERE QuotationCreated <> 'S' ORDER BY data DESC LIMIT 2`;
 
             const items: any = await this.MeuspedidosDatabase.query(query);
     

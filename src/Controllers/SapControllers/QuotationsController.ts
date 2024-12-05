@@ -2,6 +2,7 @@ import { SapServices } from "../../services/SapServices";
 import { DatabaseServices } from "../../services/DatabaseServices";
 import { CrmOne } from "../../models/CrmOneClass";
 import * as helperFunctions from '../../utils/helperFunctions';
+import SL from "../../models/ServiceLayerClass";
 import { HttpError } from "../../Server";
 import * as interfaces from '../../types/interfaces'
 import { ActivitiesController } from "./ActivitiesController";
@@ -29,13 +30,40 @@ export class QuotationsController {
         return QuotationsController.instance;
     }
 
+    public async RejectQuotationsInLine() {
+        const processedQuotations = [];
+        const errorQuotations = [];
+
+        const quotations = await this.DataBaseServices.getFilaRecusaQuotations();
+
+        if (quotations.length === 0) {
+            throw new HttpError(404, "Nenhuma cotação pendente de recusa!");
+        }
+
+        for (const quotation of quotations) {
+            try {
+                const { DocEntry, MotivoRecusaIndex, id } = quotation;
+                if (!DocEntry || DocEntry === "" || !MotivoRecusaIndex) {
+                    throw new HttpError(500, "No DocEntry or Motive was given in quotation data.");
+                }
+                await this.RejectQuotation(DocEntry, MotivoRecusaIndex);
+                processedQuotations.push({ DocEntry });
+                await this.DataBaseServices.atualizaFilaRecusaCotacoes(id, { Status: "Sucesso", Info: `Cotação recusada com o id ${MotivoRecusaIndex} com sucesso` });
+            } catch (err: any) {
+                errorQuotations.push({ DocEntry: quotation.DocEntry, error: err.message });
+                await this.DataBaseServices.atualizaFilaRecusaCotacoes(quotation.id, { Status: "Erro", Info: err.message });
+            }
+        }
+
+        const retorno = helperFunctions.handleMultipleProcessesResult(errorQuotations, processedQuotations);
+        return retorno;
+    }
+
     public async TransformApprovedQuotationsIntoOrders() {
         const processedQuotations = [];
         const errorQuotations = [];
 
         const quotations = await this.DataBaseServices.getFilaQuotations();
-
-        
 
         if (quotations.length === 0) {
             throw new HttpError(404, "Nenhuma cotação pendente!");
@@ -77,6 +105,24 @@ export class QuotationsController {
         const retorno = helperFunctions.handleMultipleProcessesResult(errorQuotations, processedQuotations);
         return retorno;
     }
+
+    public async RejectQuotation(DocEntry: string, ReasonIndex: string) {
+        if (!process.env.SERVICE_LAYER_MANAGER3_PASSWORD || !process.env.SERVICE_LAYER_COMPANY_NAME) {
+            throw new HttpError(500, "Missing environment variables for manager3 credentials");
+        }
+        const manager3Credentials = {
+            UserName: 'manager3',
+            Password: process.env.SERVICE_LAYER_MANAGER3_PASSWORD,
+            CompanyDB: process.env.SERVICE_LAYER_COMPANY_NAME,
+        }
+        const manager3 = new SL(manager3Credentials);
+        try {
+            await manager3.login();    
+        } catch(err: any) {
+            throw new HttpError(500, "Erro ao logar no manager3: " + err.message);
+        }
+        await this.SapServices.rejectQuotation(DocEntry, ReasonIndex, manager3);
+    }  
 
     public async TransformQuotationIntoOrder(DocEntry: string) {
         const baseUrl = `https://lark-handy-horse.ngrok-free.app`;  
