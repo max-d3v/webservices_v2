@@ -6,7 +6,7 @@ import { DatabaseServices } from "../../services/DatabaseServices";
 import { LocalFiscalDataClass } from "../../models/LocalFiscalDataClass";
 import { LocalFiscalDataServices } from "../../services/LocalFiscalDataServices";
 import { ApiFiscalDataClass } from "../../models/ApiFiscalDataClass";
-//Updating sap controller file name
+//Updating sap controller file name.
 
 export class BusinessPartnersController {
     private static instance: BusinessPartnersController;
