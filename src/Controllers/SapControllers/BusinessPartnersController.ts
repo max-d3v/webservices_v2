@@ -767,9 +767,6 @@ export class BusinessPartnersController {
             const deactivatedClients: interfaces.CardCode[] = [];
             const errorClients: interfaces.CardCode[] = [];
 
-
-
-
             const BATCH_SIZE = 200;
             const maxIterations = Math.ceil(clients.length / BATCH_SIZE);
             for (let iteration = 0; iteration < maxIterations; iteration++) {

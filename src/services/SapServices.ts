@@ -91,7 +91,7 @@ export class SapServices {
             throw new HttpError(404, "No tickets were found for deactivation")
         }
         return data;
-}
+    }
 
     public async getOrderClientData(CardCode: string): Promise<interfaces.BaseOrderClientData> {
         try {

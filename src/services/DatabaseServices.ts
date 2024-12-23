@@ -123,13 +123,13 @@ export class DatabaseServices {
         try {
             //Vai pegar todos os clientes que tenham um produto no carrinho, dai vai so vai manter se ele tiver um a no minimo 7 dias mesmo.  
                         
-            const query: any = `SELECT * FROM carrinho WHERE QuotationCreated <> 'S' ORDER BY data DESC LIMIT 2`;
+            const query: any = `SELECT * FROM carrinho WHERE QuotationCreated <> 'S' ORDER BY data DESC`;
 
             const items: any = await this.MeuspedidosDatabase.query(query);
     
             const carts = this.GroupItemsByClient(items);
 
-            this.removeClientsWithNoMinimumDate(carts, 0);
+            this.removeClientsWithNoMinimumDate(carts, 7);
 
             return carts
         } catch(err: any) {
