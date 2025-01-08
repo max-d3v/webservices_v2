@@ -125,15 +125,11 @@ export class QuotationsController {
     }  
 
     public async TransformQuotationIntoOrder(DocEntry: string) {
-        const baseUrl = `https://lark-handy-horse.ngrok-free.app`;  
+        const baseUrl = `https://proposta.copapel.com.br`;  
         const url = `${baseUrl}/api/sap/transformarEmPedido/${DocEntry}`;
         console.log(url);
         try {
-            const response = await axios.post(url, null, {
-                headers: {
-                  "ngrok-skip-browser-warning": true
-                }
-            });
+            const response = await axios.post(url, null, {});
 
             const { pedido, esboco, motivo_autorizacao } = response.data;
 
