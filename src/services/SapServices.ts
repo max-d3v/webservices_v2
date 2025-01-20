@@ -3,6 +3,7 @@ import { ApiFiscalDataClass } from "../models/ApiFiscalDataClass";
 import { HttpError } from "../utils/errorHandler";
 import * as interfaces from "../types/interfaces";
 import { DatabaseServices } from "./DatabaseServices";
+import { ParsedQs } from "qs";
 
 export class SapServices {
     private static instance: SapServices;
@@ -228,9 +229,14 @@ export class SapServices {
         }
     }
 
-    public async getOpenTicketsFromVendor(userId: number): Promise<interfaces.ActivitiesCode[]> {
+    public async getOpenTicketsFromVendor(userId: number, filter: string | string[] | ParsedQs | ParsedQs[] | undefined): Promise<interfaces.ActivitiesCode[]> {
         try {
-            const query = `SELECT "ClgCode" FROM "SBO_COPAPEL_PRD".OCLG WHERE "AttendUser" = '${userId}' AND "Closed" = 'N'`;
+            console.log(filter);
+            let query = `SELECT "ClgCode" FROM "SBO_COPAPEL_PRD".OCLG WHERE "AttendUser" = '${userId}' AND "Closed" = 'N'`;
+            if (filter && filter !== "") {
+                query += ` AND ${filter}`;
+            }
+            console.log(query);
             const tickets = await this.sl.querySAP(query);
             return tickets.data;
         } catch (err: any) {

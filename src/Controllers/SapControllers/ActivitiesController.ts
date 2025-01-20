@@ -4,6 +4,7 @@ import * as helperFunctions from "../../utils/helperFunctions";
 import * as interfaces from "../../types/interfaces";
 import { DatabaseServices } from "../../services/DatabaseServices";
 import { LocalFiscalDataClass } from "../../models/LocalFiscalDataClass";
+import { ParsedQs } from "qs";
 
 export class ActivitiesController {
     private static instance: ActivitiesController;
@@ -144,7 +145,7 @@ export class ActivitiesController {
             if (isNaN(parsedUserId)) {
                 throw new HttpError(400, 'Id de usuário inválido');
             }
-            tickets = await this.SapServices.getOpenTicketsFromVendor(parsedUserId);
+            tickets = await this.SapServices.getOpenTicketsFromVendor(parsedUserId, undefined);
         } else if (type == "OldTickets") {
             const date = new Date(new Date().getFullYear(), 9, 17);
             tickets = await this.SapServices.getOpenTicketsFromBefore(date);
@@ -164,7 +165,7 @@ export class ActivitiesController {
         return tickets;
     }
 
-    public async changeTicketsOwnerShip(originUserId: string, destinyUserId: string) {
+    public async changeTicketsOwnerShip(originUserId: string, destinyUserId: string, filter: string | string[] | ParsedQs | ParsedQs[] | undefined) {
         try {
             if (!originUserId || !destinyUserId) {
                 throw new HttpError(400, 'Nenhum Id de usuário encontrado');
@@ -175,8 +176,8 @@ export class ActivitiesController {
             if (isNaN(parsedOriginUserId) || isNaN(parsedDestinyUserId)) {
                 throw new HttpError(400, 'Id de usuário inválido');
             }
-
-            const getTickets = await this.SapServices.getOpenTicketsFromVendor(parsedOriginUserId);
+            console.log(filter)
+            const getTickets = await this.SapServices.getOpenTicketsFromVendor(parsedOriginUserId, filter);
             if (getTickets.length === 0) {
                 throw new HttpError(404, 'Nenhum ticket encontrado para o vendedor');
             }

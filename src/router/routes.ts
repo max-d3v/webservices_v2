@@ -67,7 +67,9 @@ class Routes {
         })
 
         this.router.patch("/Activities/ChangeOwnership", (req:  Request, res: Response, next: NextFunction) => {
-            this.serviceRunner(() => this.SapHandler.changeTicketsOwnerShip(req.body.originUserId, req.body.destinyUserId), req, res, next);
+            const { filter } = req.query; 
+            console.log(`Filtro da url: ${filter}`);
+            this.serviceRunner(() => this.SapHandler.changeTicketsOwnerShip(req.body.originUserId, req.body.destinyUserId, filter), req, res, next);
         })
 
         this.router.patch("/Activities/ChangeOwnershipRegion", (req:  Request, res: Response, next: NextFunction) => {

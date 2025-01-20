@@ -7,6 +7,7 @@ import { QuotationsController } from "../Controllers/SapControllers/QuotationsCo
 import { HttpError } from "../Server";
 import * as helperFunctions from '../utils/helperFunctions';
 import { create } from "domain";
+import { ParsedQs } from "qs";
 export class SapHandler {
     private static instance: SapHandler;
     private sapServices: SapServices;
@@ -122,11 +123,12 @@ export class SapHandler {
         return this.ActivitiesController.deactiveTickets("Pending", userId);
     }
 
-    public async changeTicketsOwnerShip(originUserId: string | null | undefined | number, destinyUserId: string | null | undefined| number): Promise<any> {
+    public async changeTicketsOwnerShip(originUserId: string | null | undefined | number, destinyUserId: string | null | undefined| number, filter: string | string[] | ParsedQs | ParsedQs[] | undefined): Promise<any> {
         if (typeof originUserId !== "string" || typeof destinyUserId !== "string") {
             throw new HttpError(400, "Invalid Ids given")
         }
-        return this.ActivitiesController.changeTicketsOwnerShip(originUserId, destinyUserId);
+        console.log(filter)
+        return this.ActivitiesController.changeTicketsOwnerShip(originUserId, destinyUserId, filter);
     }
 
     public async changeTicketsOwnerShipFromRegion(region: string | undefined, destinyUserId: string | undefined): Promise<any> {

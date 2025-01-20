@@ -129,8 +129,8 @@ export class QuotationsController {
         const url = `${baseUrl}/api/sap/transformarEmPedido/${DocEntry}`;
         console.log(url);
         try {
-            const response = await axios.post(url, null, {});
-
+            const response = await axios.post(url);
+            console.log(response);
             const { pedido, esboco, motivo_autorizacao } = response.data;
 
             if (pedido) {
