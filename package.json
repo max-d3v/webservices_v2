@@ -5,34 +5,41 @@
   "main": "src/index.js",
   "scripts": {
     "build": "npx tsc",
-    "start-dev": "node dist/primary-cluster.js",
-    "start": "node dist/src/primary-cluster.js",
-    "dev": "nodemon src/main.ts",
+    "start-dev": "cross-env NODE_ENV=prd node dist/src/main.js",
+    "start": "cross-env NODE_ENV=prd node dist/src/primary-cluster.js",
+    "dev": "cross-env NODE_ENV=dev nodemon src/app/main.ts",
     "test": "jest",
-    "itest": "jest --config itest.config.ts"
+    "itest-dev": "cross-env NODE_ENV=tst.local jest --config itest.config.ts",
+    "itest": "cross-env NODE_ENV=tst jest --config itest.config.ts --detectOpenHandles"
   },
   "dependencies": {
     "@prisma/client": "^5.19.1",
     "axios": "^1.7.7",
     "bcrypt": "^5.1.1",
+    "cross-env": "^7.0.3",
     "dotenv": "^16.4.5",
     "express": "^4.20.0",
     "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.11.3",
     "redis": "^4.7.0",
-    "uuid": "^10.0.0",
+    "short-uuid": "^5.2.0",
     "winston": "^3.14.2"
   },
   "prisma": {
-    "schema": "src/models/data/schema.prisma"
+    
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
+    "@types/jest": "^29.5.13",
     "@types/jsonwebtoken": "^9.0.6",
-    "@types/node": "^22.5.4",
+    "@types/node": "^22.7.9",
     "@types/redis": "^4.0.11",
     "@types/uuid": "^10.0.0",
+    "globals": "^15.11.0",
+    "jest": "^29.7.0",
     "nodemon": "^3.1.4",
-    "prisma": "^5.19.1",
+    "prisma": "^5.22.0",
+    "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
     "typescript": "^5.6.2"
   }
