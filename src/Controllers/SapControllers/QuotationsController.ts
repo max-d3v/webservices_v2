@@ -125,7 +125,7 @@ export class QuotationsController {
     }  
 
     public async TransformQuotationIntoOrder(DocEntry: string) {
-        const baseUrl = `https://proposta.copapel.com.br`;  
+        const baseUrl = `http://143.0.121.90:9090`;  
         const url = `${baseUrl}/api/sap/transformarEmPedido/${DocEntry}`;
         console.log(url);
         try {
