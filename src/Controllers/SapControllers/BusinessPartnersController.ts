@@ -35,7 +35,7 @@ export class BusinessPartnersController {
         try {
             let clients: interfaces.RelevantClientData[] = [];
             const JsonInMemory = new LocalFiscalDataClass();
-            await JsonInMemory.loadFile('./src/models/data/cnpj_data_clientes_full.json');
+            await JsonInMemory.loadFile('./src/models/data/cnpj_clientes_novo.json');
 
             if (tipo == "Client" && !CardCode) {
                 throw new HttpError(400, "No CardCode was given!");

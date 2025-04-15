@@ -24,7 +24,7 @@ export class FiscalDataController {
     }
 
     public async loadLocalFiscalData() {
-        await this.LocalFiscalDataClass.loadFile('./src/models/data/cnpj_data_clientes_full.json');
+        await this.LocalFiscalDataClass.loadFile('./src/models/data/cnpj_clientes_novo.json');
     }
     
     public async getCompanyByTaxId(taxid: string) {
