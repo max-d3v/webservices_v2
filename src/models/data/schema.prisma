@@ -24,60 +24,42 @@ model adm {
 }
 
 model api_we4u_colaboradores {
-  numemp          Int
-  tipocol         Int
-  numcad          Int       @id
-  nomefun         String    @db.VarChar(255)
-  tipoadm         Int
-  cod_depto       Int
-  nome_depto      String?   @db.VarChar(255)
-  centro_de_custo String?   @db.VarChar(255)
-  data_admissao   DateTime  @db.DateTime(0)
-  cargo           String    @db.VarChar(255)
-  codfil          Int
-  nomefilial      String    @db.VarChar(200)
-  fil_cnpj        String    @db.VarChar(20)
-  status          Int?
-  data_demissao   DateTime? @db.Date
-  cpf             String?   @db.VarChar(11)
+  numemp        Int
+  tipocol       Int
+  numcad        Int       @id
+  nomefun       String    @db.VarChar(255)
+  tipoadm       Int
+  cod_depto     Int
+  nome_depto    String?   @db.VarChar(255)
+  centro_custo  String?   @db.VarChar(255)
+  data_admissao DateTime  @db.DateTime(0)
+  cargo         String    @db.VarChar(255)
+  codfil        Int
+  nomefilial    String    @db.VarChar(200)
+  fil_cnpj      String    @db.VarChar(20)
+  status        Int?
+  data_demissao DateTime? @db.Date
+  cpf           String?   @db.VarChar(11)
+  data_insercao DateTime? @db.DateTime(0)
 }
 
 model api_we4u_ferias {
-  numcad      Int
-  colaborador String   @db.VarChar(255)
-  admissao    DateTime @db.Date
-  data_limite DateTime @db.Date
-  periodo     String   @db.VarChar(30)
-  falta       Int
-  direito     Int
-  debito      Int
-  compensado  Int
-  saldo       Int
-  avos        Int
-  situacao    String   @db.VarChar(10)
+  numcad        Int
+  colaborador   String    @db.VarChar(255)
+  admissao      DateTime  @db.Date
+  data_limite   DateTime  @db.Date
+  periodo       String    @db.VarChar(30)
+  falta         Int
+  direito       Int
+  debito        Int
+  compensado    Int
+  saldo         Int
+  avos          Int
+  situacao      String    @db.VarChar(10)
+  data_insercao DateTime? @db.DateTime(0)
+  ativo         String?   @db.VarChar(2)
 
   @@id([numcad, data_limite])
-}
-
-model api_we4u_turnover {
-  cod_local         Int
-  nome_local        String?   @db.VarChar(255)
-  horas_trabalhadas BigInt?
-  horas_faltas      BigInt
-  saldo_inicial     Int?
-  saldo_final       Int?
-  admissoes         Int?
-  demissoes         Int?
-  turnover          String?   @db.VarChar(10)
-  absenteismo       String?   @db.VarChar(10)
-  data_insercao     DateTime? @db.DateTime(0)
-  data_competencia  String    @db.VarChar(7)
-  cod_empresa       Int
-  filial            Int
-  nome_filial       String?   @db.VarChar(100)
-  cnpj_filial       String?   @db.VarChar(20)
-
-  @@id([cod_local, data_competencia, filial, cod_empresa])
 }
 
 model atividades_prospects {
@@ -1934,7 +1916,8 @@ model sap_OHEM {
   IdGerente         Int?
   IdFuncao          Int?
   Ativo             String?  @db.VarChar(2)
-  email             String?  @db.VarChar(255)
+  Email             String?  @db.VarChar(255)
+  Senha             String?  @db.VarChar(100)
 }
 
 model sap_OINV {
@@ -1963,6 +1946,7 @@ model sap_OINV {
   PregaoEletronico     String?              @db.VarChar(50)
   NumRomaneio          String?              @db.VarChar(20)
   ValorTotal           Decimal?             @db.Decimal(16, 2)
+  NumPedido            BigInt?
   sap_INV1             sap_INV1[]
   sap_clientes         sap_clientes?        @relation(fields: [CodigoCliente], references: [CardCode], onDelete: NoAction, onUpdate: NoAction, map: "FK_CLIENTE_OINV")
   sap_cond_pagamentos  sap_cond_pagamentos? @relation(fields: [CodigoPagamento], references: [GroupNumber], onDelete: NoAction, onUpdate: NoAction, map: "FK_OINV_OCTG")
@@ -2203,6 +2187,7 @@ model sap_clientes {
   CodigoMatrizPN       String?            @db.VarChar(20)
   TokenVendedor        String?            @db.VarChar(6)
   DataTokenVendedor    DateTime?          @db.DateTime(0)
+  Situacao             String?            @db.VarChar(10)
   sap_OINV             sap_OINV[]
   sap_ORIN             sap_ORIN[]
   sap_cliente_lic      sap_cliente_lic[]
@@ -2331,6 +2316,7 @@ model sap_contrato_lic {
   Estado          String?           @db.VarChar(2)
   ValorContrato   Decimal?          @db.Decimal(16, 2)
   dataCriacao     DateTime?         @db.Date
+  Cancelado       String?           @db.VarChar(1)
   sap_cliente_lic sap_cliente_lic[]
   sap_clientes    sap_clientes?     @relation(fields: [CodigoCliente], references: [CardCode], onDelete: NoAction, onUpdate: NoAction, map: "FK_CLIENTE_LIC_PRINCIPAL")
   sap_item_lic    sap_item_lic[]
@@ -2831,7 +2817,7 @@ model segmentos_superficies {
 
 model sessions {
   session_id String  @id @db.VarChar(128)
-  expires    Int     @db.UnsignedInt
+  expires    Int
   data       String? @db.MediumText
 }
 
@@ -3224,4 +3210,291 @@ model fila_cotacoes_recusa {
   MotivoRecusaIndex String?   @db.VarChar(50)
   DocEntry          String?   @db.VarChar(50)
   Info              String?   @db.Text
+}
+
+model RD_Leads {
+  id                          Int       @id @default(autoincrement()) @db.UnsignedInt
+  CardCode                    String?   @db.VarChar(20)
+  email                       String?   @unique(map: "idx_row_unique") @db.VarChar(255)
+  nome                        String?   @db.VarChar(100)
+  conversoes                  Int?
+  primeira_conversao          String?   @db.VarChar(255)
+  primeira_conversao_origem   String?   @db.VarChar(255)
+  primeira_conversao_campanha String?   @db.VarChar(255)
+  primeira_conversao_canal    String?   @db.VarChar(255)
+  ultima_conversao            String?   @db.VarChar(255)
+  ultima_conversao_origem     String?   @db.VarChar(255)
+  ultima_conversao_campanha   String?   @db.VarChar(255)
+  ultima_conversao_canal      String?   @db.VarChar(255)
+  data                        DateTime? @db.DateTime(0)
+}
+
+model RD_Leads_Conversoes {
+  id            Int       @id @default(autoincrement()) @db.UnsignedInt
+  email         String?   @db.VarChar(255)
+  identificador String?   @db.VarChar(255)
+  data          DateTime? @db.DateTime(0)
+}
+
+model Usuarios {
+  id           Int      @id @default(autoincrement())
+  USERID       Int?
+  USER_CODE    String?  @db.VarChar(100)
+  nome         String?  @db.VarChar(255)
+  email        String?  @db.VarChar(255)
+  telefone     String?  @db.VarChar(20)
+  senha        String?  @db.VarChar(50)
+  avatar       String?  @db.VarChar(255)
+  tipo         String?  @db.Char(1)
+  codigo       String?  @db.VarChar(5)
+  status       String?  @db.Char(1)
+  regiao       String?  @db.VarChar(2000)
+  cad          Int?
+  matricula_se String?  @db.VarChar(100)
+  createdAt    DateTime @db.DateTime(0)
+  updatedAt    DateTime @db.DateTime(0)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model api_colaboradores {
+  numemp        Int
+  tipcol        Int
+  numcad        Int
+  nomefun       String    @db.VarChar(255)
+  tipoadm       Int
+  cod_depto     Int
+  nome_depto    String    @db.VarChar(255)
+  centro_custo  String    @db.VarChar(255)
+  data_admissao DateTime  @db.Date
+  data_demissao DateTime? @db.Date
+  cargo         String    @db.VarChar(255)
+  codfil        Int
+  nomfilial     String    @db.VarChar(255)
+  fil_cnpj      String    @db.VarChar(14)
+  status        Int
+  cpf           String    @db.VarChar(11)
+  data_insercao DateTime? @db.Date
+
+  @@id([numcad, cpf, codfil])
+}
+
+model api_ferias {
+  numcad        Int
+  colaborador   String    @db.VarChar(255)
+  admissao      DateTime  @db.Date
+  data_limite   DateTime  @db.Date
+  periodo       String    @db.VarChar(30)
+  falta         Int
+  direito       Int
+  debito        Int
+  compensado    Int
+  saldo         Int
+  avos          Int
+  situacao      String    @db.VarChar(50)
+  ativo         String    @db.VarChar(2)
+  data_insercao DateTime? @db.Date
+
+  @@id([numcad, data_limite])
+}
+
+model cliente_dados_venda {
+  CodigoCliente  String @id @db.VarChar(20)
+  PrimeiraCompra Int?
+  UltimaCompra   Int?
+}
+
+model cliente_historico_venda_devolucao {
+  Documento        Int
+  CodigoCliente    String   @db.VarChar(50)
+  DataUltimaCompra DateTime @db.Date
+  DataDocumento    DateTime @db.Date
+  NumDocumento     Int
+  ValorTotal       Decimal  @db.Decimal(18, 2)
+
+  @@id([Documento, NumDocumento])
+  @@index([CodigoCliente, DataDocumento], map: "idx_cliente_data")
+  @@index([DataUltimaCompra], map: "idx_data_ultima_compra")
+  @@index([ValorTotal], map: "idx_valor_total")
+}
+
+model log_atualizacao_cadastral_clientes_segunda_vez {
+  id           Int       @id @default(autoincrement())
+  timestamp    DateTime? @default(now()) @db.Timestamp(0)
+  CardName     String?   @db.VarChar(2000)
+  CardCode     String?   @unique(map: "CardCode") @db.VarChar(50)
+  Status       String?   @default("PEND") @db.VarChar(50)
+  data_updated String?   @db.Text
+  Error        String?   @db.Text
+}
+
+model sapOUSR {
+  USERID             Int     @id @default(autoincrement())
+  USER_CODE          String? @db.VarChar(100)
+  U_NAME             String? @db.VarChar(100)
+  senhaSAP           String? @db.VarChar(50)
+  statusSenhaNovaSAP String? @db.VarChar(1)
+}
+
+model sapOUSRs {
+  USERID             Int      @id @default(autoincrement())
+  USER_CODE          String?  @db.VarChar(100)
+  U_NAME             String?  @db.VarChar(100)
+  senhaSAP           String?  @db.VarChar(50)
+  statusSenhaNovaSAP String?  @db.VarChar(1)
+  createdAt          DateTime @db.DateTime(0)
+  updatedAt          DateTime @db.DateTime(0)
+}
+
+model sap_OOPR {
+  NumDocumento    Int      @id
+  CodigoCliente   String   @db.VarChar(10)
+  CodigoVendedor  Int
+  Status          String   @db.VarChar(2)
+  DataCriacao     DateTime @db.DateTime(0)
+  DataAtualizacao DateTime @db.DateTime(0)
+  DataInsercao    DateTime @db.Date
+}
+
+model sap_OPOR {
+  NumInterno     Int        @id
+  NumDocumento   Int?
+  CodigoCliente  String?    @db.VarChar(15)
+  DataLancamento DateTime?  @db.Date
+  Filial         String?    @db.VarChar(100)
+  Status         String?    @db.VarChar(2)
+  Cancelado      String?    @db.VarChar(2)
+  ValorTotal     Decimal?   @db.Decimal(16, 2)
+  sap_POR1       sap_POR1[]
+}
+
+model sap_OPR1 {
+  NumDocumento    Int
+  Linha           Int
+  CodigoVendedor  Int
+  Etapa           Int
+  ValorPotencial  Decimal   @db.Decimal(16, 2)
+  Porcentagem     Decimal   @db.Decimal(16, 2)
+  ValorPonderado  Decimal   @db.Decimal(16, 2)
+  Status          String    @db.VarChar(2)
+  DataCriacao     DateTime? @db.DateTime(0)
+  DataAtualizacao DateTime? @db.DateTime(0)
+  DataInsercao    DateTime? @db.Date
+
+  @@id([NumDocumento, Linha])
+}
+
+model sap_POR1 {
+  NumInterno       Int
+  NumLinha         Int
+  CodigoItem       String   @db.VarChar(20)
+  Quantidade       Decimal  @db.Decimal(21, 6)
+  Preco            Decimal  @db.Decimal(21, 6)
+  ValorTotal       Decimal  @db.Decimal(21, 6)
+  CodigoDeposito   String   @db.VarChar(8)
+  CodigoUtilizacao Int
+  sap_OPOR         sap_OPOR @relation(fields: [NumInterno], references: [NumInterno], onDelete: NoAction, onUpdate: NoAction, map: "FK_sap_POR1_sap_OPOR")
+
+  @@id([NumInterno, NumLinha])
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model wms_tarefas_armazenagem {
+  Filial              String?   @db.VarChar(12)
+  Dta_tarefa          DateTime? @db.Date
+  TAREFA              String?   @db.VarChar(250)
+  STATUS              String?   @db.VarChar(250)
+  PRODUTO             String?   @db.VarChar(50)
+  NOME_PRODUTO        String?   @db.VarChar(120)
+  PRIORIDADE          String?   @db.VarChar(250)
+  QTY                 Decimal?  @db.Decimal(10, 2)
+  FROMLOC             String?   @db.VarChar(25)
+  FROMID              String?   @db.VarChar(50)
+  TOLOC               String?   @db.VarChar(25)
+  TOID                String?   @db.VarChar(50)
+  USERKEY             String?   @db.VarChar(18)
+  STARTTIME           DateTime? @db.DateTime(0)
+  ENDTIME             DateTime? @db.DateTime(0)
+  TEMPO_ATIVIDADE_MM  Int?
+  ORDERKEY            String?   @db.VarChar(10)
+  ROUTE               String?   @db.VarChar(10)
+  DESTINATARIO        String?   @db.VarChar(15)
+  NOME_DESTINATARIO   String?   @db.VarChar(45)
+  CIDADE              String?   @db.VarChar(45)
+  COD_TRANSPORTADORA  String?   @db.VarChar(15)
+  NOME_TRANSPORTADORA String?   @db.VarChar(120)
+  MODO_TRANSPORTE     String?   @db.VarChar(250)
+  ORDEM_EXTERNA2      String?   @db.VarChar(32)
+  NOTA_FISCAL         String?   @db.VarChar(32)
+  FORNECEDOR          String?   @db.VarChar(1)
+  NOME_FORNECEDOR     String?   @db.VarChar(1)
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model wms_tarefas_reposicao {
+  Filial              String?   @db.VarChar(12)
+  Dta_tarefa          DateTime? @db.Date
+  TAREFA              String?   @db.VarChar(250)
+  STATUS              String?   @db.VarChar(250)
+  PRODUTO             String?   @db.VarChar(50)
+  NOME_PRODUTO        String?   @db.VarChar(120)
+  PRIORIDADE          String?   @db.VarChar(250)
+  QTY                 Decimal?  @db.Decimal(10, 2)
+  FROMLOC             String?   @db.VarChar(25)
+  FROMID              String?   @db.VarChar(50)
+  TOLOC               String?   @db.VarChar(25)
+  TOID                String?   @db.VarChar(50)
+  USERKEY             String?   @db.VarChar(18)
+  STARTTIME           DateTime? @db.DateTime(0)
+  ENDTIME             DateTime? @db.DateTime(0)
+  TEMPO_ATIVIDADE_MM  Int?
+  ORDERKEY            String?   @db.VarChar(10)
+  ROUTE               String?   @db.VarChar(10)
+  DESTINATARIO        String?   @db.VarChar(15)
+  NOME_DESTINATARIO   String?   @db.VarChar(45)
+  CIDADE              String?   @db.VarChar(45)
+  COD_TRANSPORTADORA  String?   @db.VarChar(15)
+  NOME_TRANSPORTADORA String?   @db.VarChar(120)
+  MODO_TRANSPORTE     String?   @db.VarChar(250)
+  ORDEM_EXTERNA2      String?   @db.VarChar(32)
+  NOTA_FISCAL         String?   @db.VarChar(32)
+  FORNECEDOR          String?   @db.VarChar(1)
+  NOME_FORNECEDOR     String?   @db.VarChar(1)
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model wms_tarefas_separacao {
+  Filial              String?   @db.VarChar(12)
+  Dta_tarefa          DateTime? @db.Date
+  TAREFA              String?   @db.VarChar(250)
+  STATUS              String?   @db.VarChar(250)
+  PRODUTO             String?   @db.VarChar(50)
+  NOME_PRODUTO        String?   @db.VarChar(120)
+  PRIORIDADE          String?   @db.VarChar(250)
+  QTY                 Decimal?  @db.Decimal(10, 2)
+  FROMLOC             String?   @db.VarChar(25)
+  FROMID              String?   @db.VarChar(50)
+  TOLOC               String?   @db.VarChar(25)
+  TOID                String?   @db.VarChar(50)
+  USERKEY             String?   @db.VarChar(18)
+  STARTTIME           DateTime? @db.DateTime(0)
+  ENDTIME             DateTime? @db.DateTime(0)
+  TEMPO_ATIVIDADE_MM  Int?
+  ORDERKEY            String?   @db.VarChar(10)
+  ROUTE               String?   @db.VarChar(10)
+  DESTINATARIO        String?   @db.VarChar(15)
+  NOME_DESTINATARIO   String?   @db.VarChar(45)
+  CIDADE              String?   @db.VarChar(45)
+  COD_TRANSPORTADORA  String?   @db.VarChar(15)
+  NOME_TRANSPORTADORA String?   @db.VarChar(120)
+  MODO_TRANSPORTE     String?   @db.VarChar(250)
+  ORDEM_EXTERNA2      String?   @db.VarChar(32)
+  NOTA_FISCAL         String?   @db.VarChar(32)
+  FORNECEDOR          String?   @db.VarChar(1)
+  NOME_FORNECEDOR     String?   @db.VarChar(1)
+
+  @@ignore
 }

@@ -92,7 +92,7 @@ export class DatabaseServices {
 
     public async getInactivatedClients() {
         try {
-            const clients = await this.prisma.log_atualizacao_cadastral_clientes.findMany({
+            const clients = await this.prisma.log_atualizacao_cadastral_clientes_segunda_vez.findMany({
                 where: { data_updated: { contains: `"Valid":"tNO"` } }
             });
             return clients;
@@ -203,9 +203,9 @@ export class DatabaseServices {
         return carts;
     }
 
-    public async getClientsAlreadyProcessed(): Promise<PrismaTypes.log_atualizacao_cadastral_clientes[]> {
+    public async getClientsAlreadyProcessed(): Promise<PrismaTypes.log_atualizacao_cadastral_clientes_segunda_vez[]> {
         try {
-            const clients = await this.prisma.log_atualizacao_cadastral_clientes.findMany({
+            const clients = await this.prisma.log_atualizacao_cadastral_clientes_segunda_vez.findMany({
                 where: { Status: "SUCCESS" }
             });
             return clients;
@@ -263,9 +263,9 @@ export class DatabaseServices {
         }
     }
 
-    public async logClientRegistration(data: Partial<Omit<PrismaTypes.log_atualizacao_cadastral_clientes, "id" | "timestamp">>) {
+    public async logClientRegistration(data: Partial<Omit<PrismaTypes.log_atualizacao_cadastral_clientes_segunda_vez, "id" | "timestamp">>) {
         try {
-            const clientRegistration = await this.prisma.log_atualizacao_cadastral_clientes.create({
+            const clientRegistration = await this.prisma.log_atualizacao_cadastral_clientes_segunda_vez.create({
                 data: data
             });
             return clientRegistration;
@@ -274,9 +274,9 @@ export class DatabaseServices {
         }
     }
 
-    public async updateClientRegistrationLog(CardCode: string,data: Partial<Omit<PrismaTypes.log_atualizacao_cadastral_clientes, "id" | "timestamp" | "CardCode">>) {
+    public async updateClientRegistrationLog(CardCode: string,data: Partial<Omit<PrismaTypes.log_atualizacao_cadastral_clientes_segunda_vez, "id" | "timestamp" | "CardCode">>) {
         try {
-            const clientRegistration = await this.prisma.log_atualizacao_cadastral_clientes.update({
+            const clientRegistration = await this.prisma.log_atualizacao_cadastral_clientes_segunda_vez.update({
                 where: { CardCode: CardCode },
                 data: data
             });
@@ -288,7 +288,7 @@ export class DatabaseServices {
 
     public async findClientRegistrationLog(CardCode: string) {
         try {
-            const clientRegistration = await this.prisma.log_atualizacao_cadastral_clientes.findUnique({
+            const clientRegistration = await this.prisma.log_atualizacao_cadastral_clientes_segunda_vez.findUnique({
                 where: { CardCode: CardCode }
             });
             return clientRegistration;
