@@ -326,7 +326,8 @@ export class BusinessPartnersController {
     private async ProcessIE(registrations: interfaces.Registration[] | [], estado: string, cardCode: string, clientAdresses: interfaces.RelevantClientData["Adresses"], ClientData: any): Promise<void> {
         try {
             //IE normal e do estado.
-            const foundRegistrations = registrations?.filter((registration) => registration?.state === estado && registration?.type?.id === 1 || registration?.type?.id === 4);
+            const validIETypes = [1, 4, 2];
+            const foundRegistrations = registrations?.filter((registration) => registration?.state === estado && validIETypes.includes(registration?.type?.id));
             let registration: null | interfaces.Registration = null;
             if (foundRegistrations.length == 1) {
                 registration = foundRegistrations[0]
