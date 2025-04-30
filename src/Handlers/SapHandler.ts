@@ -59,14 +59,18 @@ export class SapHandler {
         return this.BusinessPartnersController.AtualizaCadastroFornecedores(type);
     }
 
-    public async updateClientsRegistrationData(entityType: string | null | undefined | number, CardCode?: string | null | undefined | number): Promise<any> {
+    public async updateClientsRegistrationData(entityType: string | null | undefined | number, CardCode?: string | null | undefined | number | any): Promise<any> {
+        
+        console.log("body: ", CardCode);
+        
         if (typeof entityType !== "string") {
             throw new HttpError(400, "Invalid type given");
         }
-        if (CardCode !== undefined && CardCode !== null && typeof CardCode !== "string") {
+        if (CardCode !== undefined && CardCode !== null && typeof CardCode !== "string" && !CardCode.clients) {
             throw new HttpError(400, "Invalid CardCode given");
         }
         return this.BusinessPartnersController.updateClientsRegistrationData(entityType, CardCode);
+        
     }
 
     public async TransformApprovedQuotationsIntoOrders() {

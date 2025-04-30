@@ -47,6 +47,10 @@ class Routes {
             this.serviceRunner(() => this.SapHandler.updateClientsRegistrationData(req.params.entityType), req, res, next)
         })
 
+        this.router.patch("/BusinessPartners/FiscalDataSelected/SelectedClients", (req:  Request, res: Response, next: NextFunction) => {
+            this.serviceRunner(() => this.SapHandler.updateClientsRegistrationData("SelectedClients", req.body), req, res, next)
+        });
+
         this.router.patch("/BusinessPartners/FiscalData/Client/:CardCode", (req:  Request, res: Response, next: NextFunction) => {
             this.serviceRunner(() => this.SapHandler.updateClientsRegistrationData("Client", req.params.CardCode), req, res, next)
         });

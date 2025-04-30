@@ -31,7 +31,7 @@ export class BusinessPartnersController {
         return BusinessPartnersController.instance;
     }
 
-    public async updateClientsRegistrationData(tipo: string, CardCode: string | undefined | null = null) {
+    public async updateClientsRegistrationData(tipo: string, CardCode: string | undefined | null | any = null) {
         try {
             let clients: interfaces.RelevantClientData[] = [];
             const JsonInMemory = new LocalFiscalDataClass();
@@ -39,6 +39,9 @@ export class BusinessPartnersController {
 
             if (tipo == "Client" && !CardCode) {
                 throw new HttpError(400, "No CardCode was given!");
+            }
+            if (tipo == "SelectedClients" && !CardCode.clients) {
+                throw new HttpError(400, "No clients were given in the selected clients!");
             }
 
             clients = await this.getFiscalClientData(tipo, CardCode, JsonInMemory);
@@ -191,7 +194,7 @@ export class BusinessPartnersController {
 
     
 
-    public async getFiscalClientData(tipo: string, CardCode: string | null = null, JsonInMemory: LocalFiscalDataClass): Promise<interfaces.RelevantClientData[]> {
+    public async getFiscalClientData(tipo: string, CardCode: string | null | any = null, JsonInMemory: LocalFiscalDataClass): Promise<interfaces.RelevantClientData[]> {
         let clients: interfaces.RelevantClientData[] = [];
 
         let selectedClients: string[] = [];
@@ -210,7 +213,7 @@ export class BusinessPartnersController {
         } else if (tipo == "ManyRegistrations") {
             selectedClients = await this.getClientsWithMoreThanOneRegistration(JsonInMemory);
         } else if (tipo == "SelectedClients") {
-          //  selectedClients = await this.getSelectedClients();
+            selectedClients = CardCode.clients.split(",");
         } else {
             //Nothing, will get all active clients.
         }
