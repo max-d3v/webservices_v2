@@ -107,7 +107,6 @@ export class GeocodingController {
                 FROM "SBO_COPAPEL_PRD"."OCRD" T0
                 INNER JOIN "SBO_COPAPEL_PRD"."CRD1" T1 ON T0."CardCode" = T1."CardCode"
                 WHERE T0."CardType" = 'C'
-                  AND T0."CardCode" = 'C027277'
                   AND T0."ShipToDef" = T1."Address"
                   AND (T0."validFor" = 'Y' OR T0."validFor" IS NULL)
                   AND (T1."U_Latitude" IS NULL OR T1."U_Longitude" IS NULL OR T1."U_Latitude" = '' OR T1."U_Longitude" = '')
