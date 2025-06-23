@@ -4,6 +4,7 @@ import { ActivitiesController } from "../Controllers/SapControllers/ActivitiesCo
 import { BusinessPartnersController } from "../Controllers/SapControllers/BusinessPartnersController";
 import { OpportunitiesController } from "../Controllers/SapControllers/OpportunitiesController";
 import { QuotationsController } from "../Controllers/SapControllers/QuotationsController";
+import { GeocodingController } from "../Controllers/SapControllers/GeocodingController";
 import { HttpError } from "../Server";
 import * as helperFunctions from '../utils/helperFunctions';
 import { create } from "domain";
@@ -17,6 +18,7 @@ export class SapHandler {
     private BusinessPartnersController: BusinessPartnersController;
     private OpportunitiesController: OpportunitiesController;
     private QuotationsController: QuotationsController;
+    private GeocodingController: GeocodingController;
 
     private loginMaintainer: NodeJS.Timeout | null;
 
@@ -28,6 +30,7 @@ export class SapHandler {
         this.BusinessPartnersController = BusinessPartnersController.getInstance();
         this.OpportunitiesController = OpportunitiesController.getInstance();
         this.QuotationsController = QuotationsController.getInstance();
+        this.GeocodingController = GeocodingController.getInstance();
 
         this.loginMaintainer = null;
     }
@@ -179,6 +182,18 @@ export class SapHandler {
         totalErrors.push(errors);
 
         return helperFunctions.handleMultipleProcessesResult(totalErrors, totalProcessedObjects);
+    }
+
+    // Geocoding methods
+    public async executarGeocodingEmLote(limite: number = 0, processarTodos: boolean = false): Promise<any> {
+        if (typeof limite !== 'number' || limite < 0) {
+            throw new HttpError(400, 'Limite inválido');
+        }
+        return this.GeocodingController.executarGeocodingEmLote(limite, processarTodos);
+    }
+
+    public async contarClientesSemCoordenadas(): Promise<any> {
+        return this.GeocodingController.contarClientesSemCoordenadas();
     }
 
 }

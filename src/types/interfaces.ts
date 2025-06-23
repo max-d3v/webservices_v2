@@ -392,3 +392,56 @@ interface Suframa {
 export interface TicketNumber {
     ClgCode: number;
 }
+
+// Interfaces para Geocoding
+export interface ClienteGeocodingData {
+    Codigo: string;
+    Nome: string;
+    Endereco: string;
+    Cidade: string;
+    Estado: string;
+    CEP: string;
+    Bairro: string;
+    Numero: string;
+}
+
+export interface CoordenadasGeograficas {
+    lat: number;
+    lng: number;
+    source?: string;
+}
+
+export interface GeocodingProcessResult {
+    sucessos: number;
+    falhas: number;
+    atualizacoes: number;
+    total: number;
+    tempoDecorrido: number;
+    taxaSucesso: number;
+}
+
+export interface GeocodingBackupInfo {
+    arquivo_backup: string;
+    arquivo_log: string;
+    diretorio: string;
+}
+
+export interface GeocodingBackupRecord {
+    cardCode: string;
+    cardName: string;
+    dataHora: string;
+    coordenadas_novas: CoordenadasGeograficas;
+    coordenadas_anteriores?: {
+        latitude: string | null;
+        longitude: string | null;
+    };
+    dados_originais: any;
+}
+
+export interface EnderecoBusinessPartner {
+    AddressName: string;
+    AddressType: string;
+    U_Latitude?: string;
+    U_Longitude?: string;
+    RowNum: number;
+}

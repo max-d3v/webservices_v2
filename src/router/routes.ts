@@ -118,6 +118,17 @@ class Routes {
             this.serviceRunner(() => this.SapHandler.getMysqlSapClients(), req, res, next);
         })
 
+        // Geocoding routes
+        this.router.post("/Geocoding/ExecutarLote", (req: Request, res: Response, next: NextFunction) => {
+            const limite = parseInt(req.body.limite) || 0;
+            const processarTodos = req.body.processarTodos === true || req.body.processarTodos === 'true';
+            this.serviceRunner(() => this.SapHandler.executarGeocodingEmLote(limite, processarTodos), req, res, next);
+        })
+
+        this.router.get("/Geocoding/ContarClientesSemCoordenadas", (req: Request, res: Response, next: NextFunction) => {
+            this.serviceRunner(() => this.SapHandler.contarClientesSemCoordenadas(), req, res, next);
+        })
+
         //Testing purposes
         this.router.get("/stale", () => {
             this.stale();
