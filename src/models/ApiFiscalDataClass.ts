@@ -46,6 +46,7 @@ export class ApiFiscalDataClass {
                 url: this.url + endpoint
             }
             const response = await axios.request(config);
+            console.log(response);
             return response.data;    
         } catch (err: any) {
             throw new HttpError(err.statusCode || 500, `Erro ao buscar dados fiscais do CNPJ ${cnpj} via API`);

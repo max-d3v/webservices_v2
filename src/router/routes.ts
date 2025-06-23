@@ -105,6 +105,11 @@ class Routes {
         this.router.get("/BuscarCnpjTodosClientes", (req:  Request, res: Response, next: NextFunction) => {
             this.serviceRunner(() => this.SapHandler.getAllClientsCnpjClear(), req, res, next);
         })
+
+        this.router.get("/BuscarCnpjTodosClientesSelecionados", (req:  Request, res: Response, next: NextFunction) => {
+            this.serviceRunner(() => this.SapHandler.getAllClientsSelecionadosCnpjClear(), req, res, next);
+        })
+
         this.router.get("/BuscarCnpjTodosFornecedores", (req:  Request, res: Response, next: NextFunction) => {
             this.serviceRunner(() => this.SapHandler.getAllFornecedoresCnpjClear(), req, res, next);
         })

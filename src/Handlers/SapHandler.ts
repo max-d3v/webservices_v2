@@ -81,6 +81,9 @@ export class SapHandler {
         return this.QuotationsController.RejectQuotationsInLine();
     }
 
+    public async getAllClientsSelecionadosCnpjClear(): Promise<string> {
+        return this.BusinessPartnersController.getAllClientsSelectedCnpjClear();
+    }
     public async getAllClientsCnpjClear(): Promise<string> {
         return this.BusinessPartnersController.getAllClientsCnpjClear();
     }

@@ -154,25 +154,34 @@ export class BusinessPartnersController {
             }
     
     
-            const cnpjInformation = this.LocalFiscalDataServices.getObjectByValue('taxId', cnpj, JsonInMemory);
+            let cnpjInformation = this.LocalFiscalDataServices.getObjectByValue('taxId', cnpj, JsonInMemory);
+            console.log(cnpjInformation);
             if (!cnpjInformation) {
-                throw new HttpError(404, `CNPJ não encontrado no cache`);
+                ///console.log("não encontrou cache");
+                //;npjInformation = await this.ApiFiscalDataClass.searchCnpj(cnpj);
+                ///console.log(cnpjInformation);
+                ///if (!cnpjInformation) {
+                    throw new HttpError(404, `CNPJ ${cnpj} não encontrado no cache nem API`);
+                //}
             }
     
-            const ClientData: interfaces.ClientUpdateData = {
+            const ClientData: any = {
                 U_TX_IndIEDest: null,
-                U_TX_SN: null,
+               // U_TX_SN: null,
                 BPFiscalTaxIDCollection: null,
                 FreeText: null,
                 Valid: null,
                 Frozen: null
             }
     
-            const simplesOptant = cnpjInformation.company.simples.optant;
-            this.ProcessSimplesOptant(simplesOptant, ClientData);
+            //const simplesOptant = cnpjInformation.company.simples.optant;
+            //this.ProcessSimplesOptant(simplesOptant, ClientData);
     
     
             const registrations = cnpjInformation.registrations;
+            if (!registrations) {
+                console.error("ERRO GRAVE!, NÃO HÁ IES NO ARQUIVO!")
+            }
             const adresses = client.Adresses;
             await this.ProcessIE(registrations, estado, cardCode, adresses, ClientData);
     
@@ -183,7 +192,7 @@ export class BusinessPartnersController {
             const reason = cnpjInformation.reason?.text;
             await this.NewObservation(mainActivityText, status, reason, freeText, cardCode, ClientData);
     
-            helperFunctions.checkAllFields(ClientData);
+            helperFunctions.checkAllFields(ClientData);  
         
             return [{ CardCode: cardCode, data: ClientData }, ClientData];
     
@@ -291,6 +300,17 @@ export class BusinessPartnersController {
         return CardCodesWithGivenTaxIds;
     }
 
+
+    public async getAllClientsSelectedCnpjClear() {
+        const clientes = "";        
+        const split = clientes.split(",");
+        const togetherwith = split.join("','");
+        
+        const clients = await this.sapServices.getAllActiveClientsRegistrationData({field: 'A."CardCode"', value: "'" + togetherwith + "'"});
+        let string = "";
+        clients.map((client: any) => string += client.TaxId0 + ",");
+        return string;
+    }
     public async getAllClientsCnpjClear() {
         const clients = await this.sapServices.getAllActiveClientsRegistrationData();
         let string = "";
@@ -329,6 +349,7 @@ export class BusinessPartnersController {
     private async ProcessIE(registrations: interfaces.Registration[] | [], estado: string, cardCode: string, clientAdresses: interfaces.RelevantClientData["Adresses"], ClientData: any): Promise<void> {
         try {
             //IE normal e do estado.
+            console.log("registros: ", registrations);
             const validIETypes = [1, 4, 2];
             const foundRegistrations = registrations?.filter((registration) => registration?.state === estado && validIETypes.includes(registration?.type?.id));
             let registration: null | interfaces.Registration = null;
