@@ -1,6 +1,7 @@
 import { HttpError } from "./errorHandler";
 import { HttpErrorWithDetails } from "./errorHandler";
 import shortUUID from "short-uuid";
+
 export const objetoVazio = (objeto: Object | null | undefined) => {
   if (typeof objeto !== 'object' || objeto === null || Array.isArray(objeto)) {
     return false;

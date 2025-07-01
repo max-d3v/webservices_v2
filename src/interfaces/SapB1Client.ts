@@ -17,8 +17,8 @@ export type ActionResponse<T> = SapClientResponse & {
 
 // Success response for fetching complete records
 export type GetResponse<T> = Omit<SapClientResponse, "details"> & {
-    status: true;
-    data: T;
+    status: boolean;
+    data: T | null;
 }
 
 // Error response type

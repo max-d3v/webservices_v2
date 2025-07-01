@@ -1,5 +1,4 @@
 import { Request, Response, NextFunction } from "express";
-//import { DatabaseServices } from "../services/DatabaseServices";
 import { logger } from "../../middlewares/logger";
 import { v4 as uuidv4 } from 'uuid';
 import { HttpError } from "../Server"; 
@@ -16,7 +15,6 @@ const runService = async (
     next: NextFunction
 ) => {
     const serviceId = uuidv4();
-    //const databaseServices = DatabaseServices.getInstance();
 
     try {
         logger.info({
@@ -37,8 +35,6 @@ const runService = async (
         if (result.customStatusCode) {
             delete result.customStatusCode;
         }
-
-
         logger.info({
             serviceId: serviceId,
             message: `Service completed`,
@@ -62,14 +58,6 @@ const runService = async (
             message: `Response data`
         });
 
-
-        logger.info({
-            serviceId: serviceId,
-            message: `Logging request`,
-            url: request.originalUrl || "Não foi possível obter o url da request",
-            timestamp: new Date().toISOString()
-        });
-        //await databaseServices.logRequest(request, "success");
     } catch (error: any) {
         logger.error({
             serviceId: serviceId,
@@ -77,22 +65,6 @@ const runService = async (
             url: request.originalUrl,
             timestamp: new Date().toISOString()
         });
-        try {
-            //await databaseServices.logRequest(request, "error");
-            logger.info({
-                serviceId: serviceId,
-                message: `Logged service error`,
-                url: request.originalUrl,
-                timestamp: new Date().toISOString()
-            });
-        } catch (error: any) {
-            logger.error({
-                serviceId: serviceId,
-                message: `Error on logging service error`,
-                url: request.originalUrl,
-                timestamp: new Date().toISOString()
-            });
-        }
         //console.log(error.message)
         next(error);
     }

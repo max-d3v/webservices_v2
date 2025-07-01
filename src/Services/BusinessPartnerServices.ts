@@ -1,7 +1,6 @@
 import { HttpError, HttpErrorWithDetails } from "../utils/errorHandler";
 import { BusinessPartner } from "../Models/BusinessPartner";
 import { SapEntityServices } from "../interfaces/SapEntityServices";
-import { SapB1BusinessPartnerRepository } from "../Repositories/BusinessPartnerRepository";
 import * as utils from '../interfaces/utils';
 
 export class BusinessPartnerServices implements SapEntityServices<BusinessPartner> {

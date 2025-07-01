@@ -334,9 +334,6 @@ export interface BusinessPartner {
     BPCurrenciesCollection: any[];
 }
 
-
-
-
 export interface BPAddress {
     AddressName: string;
     Street: string;

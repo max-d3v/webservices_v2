@@ -25,7 +25,7 @@ export class BusinessPartnerController {
     if (method === utils.HttpMethods.GET) {  
       return await this.handleGetRequest(url, body);
     } else {
-      return await this.handleActionRequest(url, body, method);
+      return await this.handleActionRequest(url, body);
     }
   }
 
@@ -42,7 +42,7 @@ export class BusinessPartnerController {
     return results;
   }
 
-  async handleActionRequest(url: string, body: any, method: string) {
+  async handleActionRequest(url: string, body: any) {
     const [_, __, action, type] = url.split("/");
     //Limit set default for 100.
 

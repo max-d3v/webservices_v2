@@ -85,7 +85,7 @@ export class SapB1ServiceLayerServices {
     public async getEntity<T>(
         entityName: string,
         identifier: number | string
-    ): Promise<types.GetResponse<T> | null> {
+    ): Promise<types.GetResponse<T>> {
         try {
             const data = await this.serviceLayer.get<T>(entityName, identifier);
             return {
@@ -94,7 +94,11 @@ export class SapB1ServiceLayerServices {
                 data
             };
         } catch (error: any) {
-            return null
+            return {
+                status: false,
+                message: `Error retrieving ${entityName} ${identifier}: ${error.message}`,
+                data: null
+            }
         }
     }
 

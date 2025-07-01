@@ -23,8 +23,8 @@ export class SapB1BusinessPartnerRepository implements ISapRepository<BusinessPa
     return SapB1BusinessPartnerRepository.instance;
   }
 
-  async findOne(identifier: string | number): Promise<BusinessPartner | null> {
-    const result = await this.SapClient.getEntity<BusinessPartner>("BusinessPartner", identifier);
+  async findOne(CardCode: string): Promise<BusinessPartner | null> {
+    const result = await this.SapClient.getEntity<BusinessPartner>("BusinessPartner", CardCode);
     return result?.data ?? null
   }
 
@@ -44,7 +44,7 @@ export class SapB1BusinessPartnerRepository implements ISapRepository<BusinessPa
   }
   
 
-  //This is expected that some fail. (All of SAP rules are not implemented for each individual update :)) )
+  //This is expected that some fail. (All of SAP rules are not implemented for each individual update :) ) )
   async updateOne(BusinessPartner: Partial<BusinessPartner>, processingFunction: (params: Partial<BusinessPartner>) => Promise<Partial<BusinessPartner>>): Promise<SapClientTypes.ActionResponse<BusinessPartner> | SapClientTypes.SapClientError> {
     try {
       const identifier = BusinessPartner.CardCode!

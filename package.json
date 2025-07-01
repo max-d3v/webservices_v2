@@ -13,6 +13,11 @@
     "itest": "cross-env NODE_ENV=tst jest --config itest.config.ts --detectOpenHandles"
   },
   "dependencies": {
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/auto-instrumentations-node": "^0.54.0",
+    "@opentelemetry/sdk-metrics": "^1.29.0",
+    "@opentelemetry/sdk-node": "^0.56.0",
+    "@opentelemetry/sdk-trace-node": "^1.29.0",
     "@prisma/client": "^5.19.1",
     "axios": "^1.7.7",
     "bcrypt": "^5.1.1",
@@ -25,9 +30,7 @@
     "short-uuid": "^5.2.0",
     "winston": "^3.14.2"
   },
-  "prisma": {
-    
-  },
+  "prisma": {},
   "devDependencies": {
     "@types/express": "^4.17.21",
     "@types/jest": "^29.5.13",

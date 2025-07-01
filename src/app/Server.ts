@@ -56,7 +56,7 @@ export class Server {
     }
   }
 
-  private async instanciateSapB1Service() {
+  private instanciateSapB1Service() {
     SapB1ServiceLayerServices.getInstance();
   }
 
@@ -65,7 +65,7 @@ export class Server {
     this.app.use(authMiddleware);
   }
 
-  private async applyRoutes(): Promise<void> {
+  private applyRoutes(): void {
     const router = new Router();
     this.app.use("/webservices", (req: Request, res: Response, next: NextFunction) => {
       router.handleRoute(req, res, next)
@@ -88,14 +88,14 @@ export class Server {
 
 
   public async start() {
-    this.profile_cpu_usage()
+    this.app.use(ErrorHandling);
+    this.profile_cpu_usage();
 
     this.applyMiddlewares();
-    await this.instanciateSapB1Service();
-    await this.applyRoutes();
+    this.instanciateSapB1Service();
+    this.applyRoutes();
 
-    this.app.use(ErrorHandling);
-
+    
     this.server = this.app.listen(this.PORT, () => {
       console.log(`Server is running on port ${this.PORT} in ${process.env.NODE_ENV} mode`);
     });
