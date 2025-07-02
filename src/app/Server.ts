@@ -17,7 +17,7 @@ export class HttpError extends Error {
 export class Server {
   private app: Application;
   private PORT: number;
-  private server: http.Server | null;
+  public server: http.Server | null;
   public static instance: Server;
 
   constructor() {

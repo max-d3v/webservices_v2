@@ -1,0 +1,194 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Relatório de Auditoria de Qualidade - N2</title>
+    <style>
+        body { font-family: 'Arial', sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .header { text-align: center; margin-bottom: 30px; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 10px; }
+        .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin: 30px 0; }
+        .metric-card { background: #f8f9fa; padding: 20px; border-radius: 8px; text-align: center; border-left: 4px solid #007bff; }
+        .score { font-size: 2.5em; font-weight: bold; margin: 10px 0; }
+        .score.excellent { color: #28a745; }
+        .score.good { color: #ffc107; }
+        .score.poor { color: #dc3545; }
+        table { width: 100%; border-collapse: collapse; margin: 30px 0; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background: #f8f9fa; font-weight: bold; }
+        .status-ok { color: #28a745; font-weight: bold; }
+        .status-nok { color: #dc3545; font-weight: bold; }
+        .recommendation { background: #fff3cd; padding: 10px; border-radius: 5px; margin: 5px 0; font-size: 0.9em; }
+        .section { margin: 40px 0; }
+        .section h2 { color: #333; border-bottom: 2px solid #007bff; padding-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 RELATÓRIO DE AUDITORIA DE QUALIDADE</h1>
+            <h2>N2 - Qualidade de Software (Testes e Observabilidade)</h2>
+            <p><strong>WebServices Node.js - Sistema SAP B1</strong></p>
+            <p>Gerado em: 01/07/2025, 15:22:49</p>
+        </div>
+
+        <div class="summary">
+            <div class="metric-card">
+                <h3>Score Geral</h3>
+                <div class="score poor">
+                    50%
+                </div>
+            </div>
+            <div class="metric-card">
+                <h3>Métricas Aprovadas</h3>
+                <div class="score">3/6</div>
+            </div>
+            <div class="metric-card">
+                <h3>Métricas Reprovadas</h3>
+                <div class="score">3</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📋 Auditoria das Métricas de Qualidade</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Métrica</th>
+                        <th>Meta</th>
+                        <th>Resultado</th>
+                        <th>Status</th>
+                        <th>Ferramenta</th>
+                        <th>Evidência</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+                    <tr>
+                        <td><strong>M-01</strong></td>
+                        <td>Cobertura de Código (Linhas)</td>
+                        <td>≥ 80%</td>
+                        <td>0%</td>
+                        <td class="status-nok">❌ NOK</td>
+                        <td>Jest + Coverage</td>
+                        <td><code>./coverage/index.html</code></td>
+                    </tr>
+                    
+                    <tr>
+                        <td colspan="7">
+                            <div class="recommendation">
+                                <strong>💡 Recomendação:</strong> Adicionar mais testes unitários para cobrir código não testado
+                            </div>
+                        </td>
+                    </tr>
+                    
+                    
+                    <tr>
+                        <td><strong>M-02</strong></td>
+                        <td>Cobertura de Funções</td>
+                        <td>≥ 80%</td>
+                        <td>0%</td>
+                        <td class="status-nok">❌ NOK</td>
+                        <td>Jest + Coverage</td>
+                        <td><code>./coverage/index.html</code></td>
+                    </tr>
+                    
+                    
+                    <tr>
+                        <td><strong>M-03</strong></td>
+                        <td>Complexidade Ciclomática Média</td>
+                        <td>< 10</td>
+                        <td>2.55</td>
+                        <td class="status-ok">✅ OK</td>
+                        <td>Analisador Customizado</td>
+                        <td><code>./quality-metrics/complexity-report.html</code></td>
+                    </tr>
+                    
+                    
+                    <tr>
+                        <td><strong>M-04</strong></td>
+                        <td>Funções com Alta Complexidade (>10)</td>
+                        <td>< 5</td>
+                        <td>1</td>
+                        <td class="status-ok">✅ OK</td>
+                        <td>Analisador Customizado</td>
+                        <td><code>./quality-metrics/complexity-report.html</code></td>
+                    </tr>
+                    
+                    
+                    <tr>
+                        <td><strong>M-05</strong></td>
+                        <td>Tempo de Resposta Médio</td>
+                        <td>< 2000ms</td>
+                        <td>0ms</td>
+                        <td class="status-ok">✅ OK</td>
+                        <td>Analisador de Performance</td>
+                        <td><code>./quality-metrics/performance-report.html</code></td>
+                    </tr>
+                    
+                    
+                    <tr>
+                        <td><strong>M-06</strong></td>
+                        <td>Taxa de Sucesso das Requisições</td>
+                        <td>≥ 95%</td>
+                        <td>0%</td>
+                        <td class="status-nok">❌ NOK</td>
+                        <td>Analisador de Performance</td>
+                        <td><code>./quality-metrics/performance-report.html</code></td>
+                    </tr>
+                    
+                    
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>📈 Análise dos Resultados</h2>
+            <h3>✅ Métricas Atingidas</h3>
+            <ul>
+                <li><strong>Complexidade Ciclomática Média:</strong> 2.55 (Meta: < 10)</li><li><strong>Funções com Alta Complexidade (>10):</strong> 1 (Meta: < 5)</li><li><strong>Tempo de Resposta Médio:</strong> 0ms (Meta: < 2000ms)</li>
+            </ul>
+
+            <h3>❌ Métricas Não Atingidas</h3>
+            <ul>
+                <li><strong>Cobertura de Código (Linhas):</strong> 0% (Meta: ≥ 80%)</li><li><strong>Cobertura de Funções:</strong> 0% (Meta: ≥ 80%)</li><li><strong>Taxa de Sucesso das Requisições:</strong> 0% (Meta: ≥ 95%)</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>🔧 Ações Corretivas e Melhorias Propostas</h2>
+            <ul>
+                <li><strong>Cobertura de Código (Linhas):</strong> Adicionar mais testes unitários para cobrir código não testado</li>
+                <li><strong>Monitoramento Contínuo:</strong> Implementar pipeline CI/CD com verificação automática de qualidade</li>
+                <li><strong>Code Review:</strong> Estabelecer processo obrigatório de revisão de código</li>
+                <li><strong>Documentação:</strong> Manter documentação atualizada das métricas e processos</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>📊 Conclusão</h2>
+            <p><strong>Grau de Aderência à Qualidade:</strong> 50%</p>
+            <p><strong>Status Geral:</strong> 🔴 Crítico - Sistema necessita de refatoração significativa</p>
+            
+            <h3>Próximos Passos:</h3>
+            <ol>
+                <li>Implementar as ações corretivas recomendadas</li>
+                <li>Estabelecer monitoramento contínuo das métricas</li>
+                <li>Realizar auditorias regulares de qualidade</li>
+                <li>Integrar verificações de qualidade no processo de CI/CD</li>
+            </ol>
+        </div>
+
+        <div class="section">
+            <h2>📎 Anexos</h2>
+            <ul>
+                <li><a href="./coverage/index.html">Relatório de Cobertura de Código</a></li>
+                <li><a href="./complexity-report.html">Relatório de Complexidade Ciclomática</a></li>
+                <li><a href="./performance-report.html">Relatório de Performance</a></li>
+                <li><a href="./audit-report.json">Dados Brutos da Auditoria (JSON)</a></li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

@@ -107,7 +107,11 @@ export class BusinessPartnerServices implements SapEntityServices<BusinessPartne
       }
     }
 
-    if (requiredFieldsAsStrings.equals(matchedFields)) {
+    // Comparar arrays corretamente
+    const arraysEqual = requiredFieldsAsStrings.length === matchedFields.length && 
+                       requiredFieldsAsStrings.every(field => matchedFields.includes(field));
+
+    if (arraysEqual) {
       return true;
     } else {
       const fieldsLeft = requiredFieldsAsStrings.filter(field => !matchedFields.includes(field));

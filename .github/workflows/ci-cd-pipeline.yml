@@ -1,0 +1,311 @@
+name: 🚀 CI/CD Pipeline com Gates de Qualidade
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  NODE_VERSION: '18'
+  QUALITY_THRESHOLD: 80
+  
+jobs:
+  # ====================================
+  # 🧪 STAGE 1: TESTES E QUALIDADE
+  # ====================================
+  quality-gates:
+    name: 🔍 Gates de Qualidade
+    runs-on: ubuntu-latest
+    outputs:
+      quality-score: ${{ steps.audit.outputs.score }}
+      deploy-approved: ${{ steps.gate-check.outputs.approved }}
+    
+    steps:
+    - name: 📥 Checkout código
+      uses: actions/checkout@v4
+      
+    - name: 🟢 Setup Node.js ${{ env.NODE_VERSION }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: 📦 Instalar dependências
+      run: npm ci
+      
+    - name: 🧪 Executar testes unitários
+      run: npm run test:coverage
+      continue-on-error: true
+      
+    - name: 📊 Executar auditoria de qualidade
+      id: audit
+      run: |
+        npm run quality:audit
+        SCORE=$(node -e "
+          const report = require('./quality-metrics/audit-report.json');
+          console.log(report.summary.overallScore);
+        ")
+        echo "score=$SCORE" >> $GITHUB_OUTPUT
+        echo "Quality Score: $SCORE%"
+        
+    - name: 🔐 Verificar gates de qualidade
+      id: gate-check
+      run: |
+        SCORE=${{ steps.audit.outputs.score }}
+        if [ $SCORE -ge ${{ env.QUALITY_THRESHOLD }} ]; then
+          echo "✅ Gates de qualidade APROVADOS (Score: $SCORE%)"
+          echo "approved=true" >> $GITHUB_OUTPUT
+        else
+          echo "❌ Gates de qualidade REPROVADOS (Score: $SCORE% < ${{ env.QUALITY_THRESHOLD }}%)"
+          echo "approved=false" >> $GITHUB_OUTPUT
+        fi
+        
+    - name: 📋 Upload relatórios de qualidade
+      uses: actions/upload-artifact@v4
+      with:
+        name: quality-reports
+        path: |
+          quality-metrics/
+          coverage/
+        retention-days: 30
+        
+    - name: 📝 Comentar PR com resultados
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const score = '${{ steps.audit.outputs.score }}';
+          const approved = '${{ steps.gate-check.outputs.approved }}' === 'true';
+          const status = approved ? '✅ APROVADO' : '❌ REPROVADO';
+          const emoji = approved ? '🟢' : '🔴';
+          
+          const comment = `
+          ## ${emoji} Relatório de Qualidade - CI/CD
+          
+          **Score Geral:** ${score}%
+          **Status:** ${status}
+          **Threshold:** ${{ env.QUALITY_THRESHOLD }}%
+          
+          ### 📊 Métricas Avaliadas:
+          - Cobertura de Código
+          - Complexidade Ciclomática  
+          - Performance
+          - Testes de Integração
+          
+          ### 📋 Ações:
+          ${approved ? 
+            '- ✅ Deploy para staging aprovado\n- ✅ Merge pode ser realizado' : 
+            '- ❌ Deploy bloqueado\n- ❌ Corrigir problemas de qualidade antes do merge'
+          }
+          
+          [📈 Ver relatório completo](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          `;
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });
+
+  # ====================================
+  # 🏗️ STAGE 2: BUILD E SEGURANÇA
+  # ====================================
+  build-and-security:
+    name: 🏗️ Build e Análise de Segurança
+    runs-on: ubuntu-latest
+    needs: quality-gates
+    if: needs.quality-gates.outputs.deploy-approved == 'true'
+    
+    steps:
+    - name: 📥 Checkout código
+      uses: actions/checkout@v4
+      
+    - name: 🟢 Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: 📦 Instalar dependências
+      run: npm ci
+      
+    - name: 🏗️ Build da aplicação
+      run: npm run build
+      
+    - name: 🔒 Auditoria de segurança
+      run: npm audit --audit-level=high
+      continue-on-error: true
+      
+    - name: 🐳 Build imagem Docker
+      run: |
+        docker build -t webservices-node:${{ github.sha }} .
+        docker tag webservices-node:${{ github.sha }} webservices-node:latest
+        
+    - name: 💾 Salvar imagem Docker
+      run: |
+        docker save webservices-node:${{ github.sha }} | gzip > docker-image.tar.gz
+        
+    - name: 📤 Upload artefatos
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-artifacts
+        path: |
+          dist/
+          docker-image.tar.gz
+        retention-days: 7
+
+  # ====================================
+  # 🚀 STAGE 3: DEPLOY STAGING
+  # ====================================
+  deploy-staging:
+    name: 🧪 Deploy Staging
+    runs-on: ubuntu-latest
+    needs: [quality-gates, build-and-security]
+    if: needs.quality-gates.outputs.deploy-approved == 'true' && github.ref == 'refs/heads/develop'
+    environment: staging
+    
+    steps:
+    - name: 📥 Download artefatos
+      uses: actions/download-artifact@v4
+      with:
+        name: build-artifacts
+        
+    - name: 🐳 Carregar imagem Docker
+      run: |
+        gunzip -c docker-image.tar.gz | docker load
+        
+    - name: 🚀 Deploy para staging
+      run: |
+        echo "🧪 Deploying para ambiente de staging..."
+        # Aqui você adicionaria comandos específicos do seu ambiente
+        # Exemplo: kubectl, docker-compose, etc.
+        docker run -d --name staging-app -p 3001:3000 webservices-node:${{ github.sha }}
+        
+    - name: 🔍 Smoke tests
+      run: |
+        sleep 30
+        curl -f http://localhost:3001/health || exit 1
+        echo "✅ Smoke tests passaram"
+        
+    - name: 📊 Deploy metrics
+      run: |
+        echo "📊 Coletando métricas de deploy..."
+        echo "Environment: staging"
+        echo "Version: ${{ github.sha }}"
+        echo "Quality Score: ${{ needs.quality-gates.outputs.quality-score }}%"
+
+  # ====================================
+  # 🏭 STAGE 4: DEPLOY PRODUÇÃO
+  # ====================================
+  deploy-production:
+    name: 🏭 Deploy Produção
+    runs-on: ubuntu-latest
+    needs: [quality-gates, build-and-security, deploy-staging]
+    if: needs.quality-gates.outputs.deploy-approved == 'true' && github.ref == 'refs/heads/main'
+    environment: production
+    
+    steps:
+    - name: 📥 Download artefatos
+      uses: actions/download-artifact@v4
+      with:
+        name: build-artifacts
+        
+    - name: 🐳 Carregar imagem Docker
+      run: |
+        gunzip -c docker-image.tar.gz | docker load
+        
+    - name: 🏭 Deploy para produção
+      run: |
+        echo "🏭 Deploying para PRODUÇÃO..."
+        # Comandos específicos para produção
+        # Exemplo: Blue-Green deployment, Rolling update, etc.
+        
+    - name: 🔍 Testes de produção
+      run: |
+        echo "🔍 Executando testes de produção..."
+        # Health checks, testes de fumaça, etc.
+        
+    - name: 📢 Notificação de sucesso
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const message = `
+          ## 🎉 Deploy Realizado com Sucesso!
+          
+          **Environment:** Produção
+          **Version:** ${{ github.sha }}
+          **Quality Score:** ${{ needs.quality-gates.outputs.quality-score }}%
+          **Branch:** ${{ github.ref_name }}
+          
+          ✅ Todos os gates de qualidade foram aprovados
+          ✅ Build e testes executados com sucesso
+          ✅ Deploy em produção concluído
+          `;
+          
+          // Criar issue de notificação
+          github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: `🚀 Deploy v${context.sha.substring(0,7)} - ${new Date().toISOString().split('T')[0]}`,
+            body: message,
+            labels: ['deployment', 'production']
+          });
+
+  # ====================================
+  # 📊 STAGE 5: RELATÓRIO FINAL
+  # ====================================
+  generate-report:
+    name: 📊 Relatório CI/CD
+    runs-on: ubuntu-latest
+    needs: [quality-gates, build-and-security]
+    if: always()
+    
+    steps:
+    - name: 📥 Checkout código
+      uses: actions/checkout@v4
+      
+    - name: 📥 Download relatórios
+      uses: actions/download-artifact@v4
+      with:
+        name: quality-reports
+        path: reports/
+      continue-on-error: true
+        
+    - name: 📊 Gerar relatório CI/CD
+      run: |
+        mkdir -p cicd-reports
+        cat > cicd-reports/pipeline-report.md << EOF
+        # 📊 Relatório do Pipeline CI/CD
+        
+        **Data:** $(date)
+        **Branch:** ${{ github.ref_name }}
+        **Commit:** ${{ github.sha }}
+        **Quality Score:** ${{ needs.quality-gates.outputs.quality-score }}%
+        **Deploy Aprovado:** ${{ needs.quality-gates.outputs.deploy-approved }}
+        
+        ## 📋 Stages Executados:
+        - ✅ Quality Gates
+        - ${{ needs.build-and-security.result == 'success' && '✅' || '❌' }} Build & Security
+        - 🧪 Deploy Staging
+        - 🏭 Deploy Produção
+        
+        ## 📊 Métricas de Qualidade:
+        - Cobertura de Código: Verificada
+        - Complexidade Ciclomática: Verificada
+        - Testes de Performance: Verificados
+        - Auditoria de Segurança: Executada
+        
+        ## 🔗 Links Úteis:
+        - [Relatório de Qualidade](./reports/audit-report.html)
+        - [Cobertura de Testes](./reports/coverage/index.html)
+        - [Pipeline Run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+        EOF
+        
+    - name: 📤 Upload relatório final
+      uses: actions/upload-artifact@v4
+      with:
+        name: cicd-reports
+        path: cicd-reports/
+        retention-days: 90

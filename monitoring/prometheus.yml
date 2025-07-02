@@ -1,0 +1,51 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - "rules/*.yml"
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+
+scrape_configs:
+  # ===================================
+  # 🚀 APLICAÇÃO WEBSERVICES
+  # ===================================
+  - job_name: 'webservices-app'
+    static_configs:
+      - targets: ['webservices:3000']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+    scrape_timeout: 10s
+
+  # ===================================
+  # 🐳 DOCKER CONTAINERS
+  # ===================================
+  - job_name: 'docker'
+    static_configs:
+      - targets: ['host.docker.internal:9323']
+
+  # ===================================
+  # 🗄️ MYSQL DATABASE
+  # ===================================
+  - job_name: 'mysql'
+    static_configs:
+      - targets: ['mysql:3306']
+
+  # ===================================
+  # 🔴 REDIS CACHE
+  # ===================================
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis:6379']
+
+  # ===================================
+  # 📊 PROMETHEUS SELF-MONITORING
+  # ===================================
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
